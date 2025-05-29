@@ -15,6 +15,36 @@ class Level {
             [ActionType.DIGGER]: 5,
             [ActionType.BUILDER]: 5
         };
+        this.hazards = [];
+        this.initializeHazards();
+    }
+    
+    initializeHazards() {
+        // Add a lava pit
+        this.hazards.push(new Hazard(300, 425, 60, 30, 'lava'));
+        
+        // Add a bear trap
+        this.hazards.push(new Hazard(450, 400, 40, 20, 'bearTrap'));
+        
+        // Add a spike pit
+        this.hazards.push(new Hazard(550, 385, 50, 30, 'spikes'));
+    }
+    
+    updateHazards() {
+        this.hazards.forEach(hazard => hazard.update());
+    }
+    
+    drawHazards(ctx) {
+        this.hazards.forEach(hazard => hazard.draw(ctx));
+    }
+    
+    checkHazardCollisions(lemming) {
+        for (let hazard of this.hazards) {
+            if (hazard.checkCollision(lemming)) {
+                hazard.killLemming(lemming);
+                break; // One hazard kill per frame
+            }
+        }
     }
     
     drawExit(ctx) {

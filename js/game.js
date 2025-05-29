@@ -196,9 +196,15 @@ class Game {
         // Draw terrain
         this.terrain.draw(this.ctx);
         
+        // Draw hazards (before lemmings so they appear behind)
+        this.level.drawHazards(this.ctx);
+        
         // Draw level elements
         this.level.drawExit(this.ctx);
         this.level.drawSpawner(this.ctx);
+        
+        // Update hazards
+        this.level.updateHazards();
         
         // Spawn lemmings
         this.spawnLemming();
@@ -206,6 +212,11 @@ class Game {
         // Update and draw lemmings
         this.lemmings.forEach(lemming => {
             lemming.update(this.terrain, this.lemmings);
+            
+            // Check hazard collisions
+            if (lemming.state !== LemmingState.DEAD && lemming.state !== LemmingState.SAVED) {
+                this.level.checkHazardCollisions(lemming);
+            }
             
             // Check if lemming reached exit
             if (lemming.state !== LemmingState.SAVED && this.level.isAtExit(lemming)) {
