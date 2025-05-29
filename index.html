@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemmings Clone</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="menu">
+            <h1>Lemmings Clone</h1>
+            <button class="menuButton" onclick="game.startLevel()">Play Level</button>
+            <button class="menuButton" onclick="game.openLevelEditor()">Level Editor</button>
+            <button class="menuButton" onclick="game.quit()">Quit</button>
+        </div>
+        
+        <div id="levelInfo" class="hidden">
+            <div>Lemmings Out: <span id="lemmingsOut">0</span>/<span id="totalLemmings">20</span></div>
+            <div>Saved: <span id="lemmingsSaved">0</span>/<span id="requiredLemmings">10</span></div>
+            <div>Alive: <span id="lemmingsAlive">0</span></div>
+        </div>
+        
+        <canvas id="gameCanvas" class="hidden"></canvas>
+        
+        <div id="gameUI" class="hidden">
+            <div id="toolbar">
+                <button class="actionButton" data-action="blocker" onclick="game.selectAction('blocker')">
+                    <span class="actionCount">5</span>
+                    <div style="font-size: 12px; margin-top: 5px;">STOP</div>
+                </button>
+                <button class="actionButton" data-action="basher" onclick="game.selectAction('basher')">
+                    <span class="actionCount">5</span>
+                    <div style="font-size: 12px; margin-top: 5px;">BASH</div>
+                </button>
+                <button class="actionButton" data-action="digger" onclick="game.selectAction('digger')">
+                    <span class="actionCount">5</span>
+                    <div style="font-size: 12px; margin-top: 5px;">DIG</div>
+                </button>
+                <button class="actionButton" data-action="builder" onclick="game.selectAction('builder')">
+                    <span class="actionCount">5</span>
+                    <div style="font-size: 12px; margin-top: 5px;">BUILD</div>
+                </button>
+                
+                <div class="speedControl">
+                    <span>Speed:</span>
+                    <button class="speedButton" onclick="game.decreaseSpawnRate()">-</button>
+                    <span id="spawnRate">2.0s</span>
+                    <button class="speedButton" onclick="game.increaseSpawnRate()">+</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="levelEditor" class="hidden">
+            <h2>Level Editor</h2>
+            <button onclick="game.returnToMenu()">Back to Menu</button>
+        </div>
+    </div>
+
+    <!-- Load all JavaScript files in correct order -->
+    <script src="js/constants.js"></script>
+    <script src="js/particle.js"></script>
+    <script src="js/lemming.js"></script>
+    <script src="js/terrain.js"></script>
+    <script src="js/level.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

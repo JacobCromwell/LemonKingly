@@ -1,0 +1,51 @@
+class Level {
+    constructor() {
+        this.spawnX = 100;
+        this.spawnY = 100;
+        this.exitX = 700;
+        this.exitY = 350;
+        this.exitWidth = 60;
+        this.exitHeight = 50;
+        this.totalLemmings = 20;
+        this.requiredLemmings = 10;
+        this.spawnRate = 2000; // milliseconds
+        this.actionCounts = {
+            [ActionType.BLOCKER]: 5,
+            [ActionType.BASHER]: 5,
+            [ActionType.DIGGER]: 5,
+            [ActionType.BUILDER]: 5
+        };
+    }
+    
+    drawExit(ctx) {
+        // Draw exit gate
+        ctx.fillStyle = '#4CAF50';
+        ctx.fillRect(this.exitX, this.exitY, this.exitWidth, this.exitHeight);
+        
+        // Gate details
+        ctx.strokeStyle = '#2E7D32';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(this.exitX, this.exitY, this.exitWidth, this.exitHeight);
+        
+        // Draw "field" beyond gate
+        ctx.fillStyle = '#81C784';
+        ctx.fillRect(this.exitX + 10, this.exitY + 10, this.exitWidth - 20, this.exitHeight - 20);
+    }
+    
+    drawSpawner(ctx) {
+        // Draw spawner
+        ctx.fillStyle = '#2196F3';
+        ctx.fillRect(this.spawnX - 20, this.spawnY - 30, 40, 30);
+        
+        ctx.strokeStyle = '#1565C0';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(this.spawnX - 20, this.spawnY - 30, 40, 30);
+    }
+    
+    isAtExit(lemming) {
+        return lemming.x >= this.exitX && 
+               lemming.x <= this.exitX + this.exitWidth &&
+               lemming.y >= this.exitY && 
+               lemming.y <= this.exitY + this.exitHeight;
+    }
+}
