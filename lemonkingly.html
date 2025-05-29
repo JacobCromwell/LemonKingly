@@ -245,6 +245,38 @@
             SAVED: 'saved'
         };
         
+        class Particle {
+            constructor(x, y, color, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.vx = vx;
+                this.vy = vy;
+                this.life = 1.0;
+                this.gravity = 0.2;
+                this.size = Math.random() * 3 + 1;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += this.gravity;
+                this.life -= 0.02;
+                this.size *= 0.98;
+            }
+            
+            draw(ctx) {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+                ctx.globalAlpha = 1.0;
+            }
+            
+            isDead() {
+                return this.life <= 0;
+            }
+        }
+        
         class Lemming {
             constructor(x, y) {
                 this.x = x;
@@ -326,6 +358,20 @@
                 if (terrain.hasGround(this.x, this.y + LEMMING_HEIGHT)) {
                     if (this.fallDistance >= MAX_FALL_HEIGHT) {
                         this.state = LemmingState.DEAD;
+                        // Create death particles
+                        if (window.game && window.game.particles) {
+                            for (let i = 0; i < 20; i++) {
+                                const angle = (Math.PI * 2 * i) / 20;
+                                const speed = Math.random() * 3 + 1;
+                                window.game.particles.push(new Particle(
+                                    this.x,
+                                    this.y + LEMMING_HEIGHT/2,
+                                    '#ff0000',
+                                    Math.cos(angle) * speed,
+                                    Math.sin(angle) * speed - 2
+                                ));
+                            }
+                        }
                     } else {
                         this.state = LemmingState.WALKING;
                         this.fallDistance = 0;
@@ -353,8 +399,22 @@
                 }
                 
                 if (foundObstacle) {
-                    // Remove terrain in front
-                    terrain.removeTerrain(bashX - bashWidth/2, this.y, bashWidth * 2, bashHeight);
+                    // Remove terrain in front and get color
+                    const color = terrain.removeTerrain(bashX - bashWidth/2, this.y, bashWidth * 2, bashHeight);
+                    
+                    // Create particles
+                    if (window.game && window.game.particles) {
+                        for (let i = 0; i < 10; i++) {
+                            window.game.particles.push(new Particle(
+                                bashX + Math.random() * bashWidth - bashWidth/2,
+                                this.y + Math.random() * bashHeight,
+                                color,
+                                this.direction * (Math.random() * 3 + 1),
+                                Math.random() * 2 - 3
+                            ));
+                        }
+                    }
+                    
                     this.x += this.direction * 2;
                 } else {
                     // Check if we can walk forward (no obstacle)
@@ -385,8 +445,22 @@
                 }
                 
                 if (foundGround) {
-                    // Remove terrain below
-                    terrain.removeTerrain(this.x - digWidth/2, digY, digWidth, digHeight);
+                    // Remove terrain below and get color
+                    const color = terrain.removeTerrain(this.x - digWidth/2, digY, digWidth, digHeight);
+                    
+                    // Create particles
+                    if (window.game && window.game.particles) {
+                        for (let i = 0; i < 8; i++) {
+                            window.game.particles.push(new Particle(
+                                this.x + Math.random() * digWidth - digWidth/2,
+                                digY + Math.random() * digHeight,
+                                color,
+                                Math.random() * 2 - 1,
+                                Math.random() * 2
+                            ));
+                        }
+                    }
+                    
                     this.y += 2;
                 } else {
                     // No more ground to dig, return to walking
@@ -529,8 +603,15 @@
             }
             
             removeTerrain(x, y, width, height) {
+                // Get color of terrain before removing it
+                const imageData = this.ctx.getImageData(x, y, 1, 1);
+                const color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
+                
                 this.ctx.clearRect(x, y, width, height);
                 this.updateImageData();
+                
+                // Return the color for particle effects
+                return color;
             }
             
             addTerrain(x, y, width, height) {
@@ -611,6 +692,7 @@
                 this.terrain = new Terrain(800, 600);
                 this.level = new Level();
                 this.lemmings = [];
+                this.particles = [];  // Add particle array
                 this.selectedAction = ActionType.NONE;
                 
                 this.lemmingsSpawned = 0;
@@ -633,6 +715,7 @@
                 
                 this.terrain.loadLevel();
                 this.lemmings = [];
+                this.particles = [];  // Reset particles
                 this.lemmingsSpawned = 0;
                 this.lemmingsSaved = 0;
                 this.lastSpawnTime = 0;
@@ -812,6 +895,13 @@
                     lemming.draw(this.ctx);
                 });
                 
+                // Update and draw particles
+                this.particles = this.particles.filter(particle => {
+                    particle.update();
+                    particle.draw(this.ctx);
+                    return !particle.isDead();
+                });
+                
                 // Update UI
                 this.updateStats();
                 
@@ -825,6 +915,7 @@
         
         // Initialize game
         const game = new Game();
+        window.game = game;  // Make game accessible for particles
     </script>
 </body>
 </html>
