@@ -103,13 +103,13 @@ class Lemming {
     bash(terrain) {
         // Bash horizontally
         const bashX = this.x + (this.direction * (LEMMING_WIDTH/2 + 2));
-        const bashWidth = 4;
+        const bashWidth = 6;
         const bashHeight = LEMMING_HEIGHT;
         
         let foundObstacle = false;
         
         // Check ahead for terrain to bash
-        for (let checkX = bashX; checkX < bashX + bashWidth; checkX++) {
+        for (let checkX = bashX; checkX < bashX + (bashWidth*2); checkX++) {
             for (let checkY = this.y; checkY < this.y + bashHeight; checkY++) {
                 if (terrain.hasGround(checkX, checkY)) {
                     foundObstacle = true;
