@@ -61,7 +61,6 @@
         #gameUI {
             background-color: #333;
             padding: 10px;
-            display: none;
         }
         
         #toolbar {
@@ -76,14 +75,19 @@
         
         .actionButton {
             position: relative;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border: 2px solid #666;
             background-color: #555;
             color: white;
             cursor: pointer;
             border-radius: 5px;
             transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
         }
         
         .actionButton:hover {
@@ -178,19 +182,19 @@
             <div id="toolbar">
                 <button class="actionButton" data-action="blocker" onclick="game.selectAction('blocker')">
                     <span class="actionCount">5</span>
-                    🛑
+                    <div style="font-size: 12px; margin-top: 5px;">STOP</div>
                 </button>
                 <button class="actionButton" data-action="basher" onclick="game.selectAction('basher')">
                     <span class="actionCount">5</span>
-                    ➡️
+                    <div style="font-size: 12px; margin-top: 5px;">BASH</div>
                 </button>
                 <button class="actionButton" data-action="digger" onclick="game.selectAction('digger')">
                     <span class="actionCount">5</span>
-                    ⬇️
+                    <div style="font-size: 12px; margin-top: 5px;">DIG</div>
                 </button>
                 <button class="actionButton" data-action="builder" onclick="game.selectAction('builder')">
                     <span class="actionCount">5</span>
-                    🔨
+                    <div style="font-size: 12px; margin-top: 5px;">BUILD</div>
                 </button>
                 
                 <div class="speedControl">
@@ -331,43 +335,62 @@
             
             bash(terrain) {
                 // Bash horizontally
-                const bashX = this.x + (this.direction * LEMMING_WIDTH);
-                const bashStartY = this.y;
-                const bashEndY = this.y + LEMMING_HEIGHT;
+                const bashX = this.x + (this.direction * (LEMMING_WIDTH/2 + 2));
+                const bashWidth = 4;
+                const bashHeight = LEMMING_HEIGHT;
                 
                 let foundObstacle = false;
-                for (let y = bashStartY; y < bashEndY; y += 2) {
-                    if (terrain.hasGround(bashX, y)) {
-                        terrain.removeTerrain(bashX, y, 2, 2);
-                        foundObstacle = true;
+                
+                // Check ahead for terrain to bash
+                for (let checkX = bashX; checkX < bashX + bashWidth; checkX++) {
+                    for (let checkY = this.y; checkY < this.y + bashHeight; checkY++) {
+                        if (terrain.hasGround(checkX, checkY)) {
+                            foundObstacle = true;
+                            break;
+                        }
                     }
+                    if (foundObstacle) break;
                 }
                 
-                if (!foundObstacle) {
-                    // Done bashing
-                    this.state = LemmingState.WALKING;
+                if (foundObstacle) {
+                    // Remove terrain in front
+                    terrain.removeTerrain(bashX - bashWidth/2, this.y, bashWidth * 2, bashHeight);
+                    this.x += this.direction * 2;
                 } else {
-                    this.x += this.direction * 0.5;
+                    // Check if we can walk forward (no obstacle)
+                    if (!terrain.hasGround(this.x + this.direction * WALK_SPEED, this.y + LEMMING_HEIGHT/2)) {
+                        // Done bashing, return to walking
+                        this.state = LemmingState.WALKING;
+                    } else {
+                        // Move forward slowly while bashing
+                        this.x += this.direction * 0.5;
+                    }
                 }
             }
             
             dig(terrain) {
                 // Dig vertically
                 const digY = this.y + LEMMING_HEIGHT;
+                const digWidth = LEMMING_WIDTH + 4; // Slightly wider than lemming
+                const digHeight = 4;
                 
                 let foundGround = false;
-                for (let x = this.x - LEMMING_WIDTH/2; x < this.x + LEMMING_WIDTH/2; x += 2) {
-                    if (terrain.hasGround(x, digY)) {
-                        terrain.removeTerrain(x, digY, 2, 2);
+                
+                // Check if there's ground to dig
+                for (let checkX = this.x - digWidth/2; checkX < this.x + digWidth/2; checkX++) {
+                    if (terrain.hasGround(checkX, digY + 2)) {
                         foundGround = true;
+                        break;
                     }
                 }
                 
-                if (!foundGround) {
-                    // Done digging
-                    this.state = LemmingState.WALKING;
+                if (foundGround) {
+                    // Remove terrain below
+                    terrain.removeTerrain(this.x - digWidth/2, digY, digWidth, digHeight);
+                    this.y += 2;
                 } else {
-                    this.y += 1;
+                    // No more ground to dig, return to walking
+                    this.state = LemmingState.WALKING;
                 }
             }
             
@@ -377,16 +400,28 @@
                     return;
                 }
                 
-                // Place a tile diagonally up
-                const tileX = this.x + (this.direction * (this.buildTilesPlaced * BUILD_TILE_WIDTH));
-                const tileY = this.y + LEMMING_HEIGHT - (this.buildTilesPlaced * BUILD_TILE_HEIGHT);
+                // Build a staircase pattern that lemmings can walk up
+                // Each step is 6 pixels wide and 4 pixels tall for a climbable slope
+                const stepWidth = 6;
+                const stepHeight = 4;
                 
-                terrain.addTerrain(tileX, tileY, BUILD_TILE_WIDTH, BUILD_TILE_HEIGHT);
+                // Calculate position for this building step
+                const tileX = this.x + (this.direction * stepWidth);
+                const tileY = this.y + LEMMING_HEIGHT - stepHeight - 2;
+                
+                // Add the building tile
+                terrain.addTerrain(tileX - stepWidth/2, tileY, stepWidth, stepHeight + 2);
+                
                 this.buildTilesPlaced++;
                 
-                // Move lemming along with building
-                this.x += this.direction * BUILD_TILE_WIDTH;
-                this.y -= BUILD_TILE_HEIGHT;
+                // Move lemming to stand on the new tile
+                this.x = tileX;
+                this.y = tileY - LEMMING_HEIGHT;
+                
+                // Add a small delay effect (handled by game loop timing)
+                if (this.buildTilesPlaced >= MAX_BUILD_TILES) {
+                    this.state = LemmingState.WALKING;
+                }
             }
             
             applyAction(action) {
@@ -585,6 +620,7 @@
                 this.levelComplete = false;
                 
                 this.canvas.addEventListener('click', this.handleClick.bind(this));
+                this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
                 
                 this.updateActionCounts();
             }
@@ -592,7 +628,7 @@
             startLevel() {
                 this.menu.classList.add('hidden');
                 this.canvas.classList.remove('hidden');
-                this.gameUI.classList.remove('hidden');
+                this.gameUI.classList.remove('hidden');  // Fixed!
                 this.levelInfo.classList.remove('hidden');
                 
                 this.terrain.loadLevel();
@@ -614,7 +650,7 @@
             returnToMenu() {
                 this.gameRunning = false;
                 this.canvas.classList.add('hidden');
-                this.gameUI.classList.add('hidden');
+                this.gameUI.style.display = 'none';  // Explicitly hide gameUI
                 this.levelInfo.classList.add('hidden');
                 this.levelEditor.classList.add('hidden');
                 this.menu.classList.remove('hidden');
@@ -643,12 +679,13 @@
                 
                 if (this.selectedAction === ActionType.NONE) return;
                 
-                // Find clicked lemming
+                // Find clicked lemming with larger click area
+                const clickPadding = 10; // Extra pixels around lemming for easier clicking
                 const lemming = this.lemmings.find(l => 
                     l.state !== LemmingState.DEAD && 
                     l.state !== LemmingState.SAVED &&
-                    Math.abs(l.x - x) < LEMMING_WIDTH &&
-                    Math.abs(l.y - y) < LEMMING_HEIGHT
+                    Math.abs(l.x - x) < LEMMING_WIDTH + clickPadding &&
+                    Math.abs(l.y + LEMMING_HEIGHT/2 - y) < LEMMING_HEIGHT/2 + clickPadding
                 );
                 
                 if (lemming && this.level.actionCounts[this.selectedAction] > 0) {
@@ -656,6 +693,28 @@
                         this.level.actionCounts[this.selectedAction]--;
                         this.updateActionCounts();
                     }
+                }
+            }
+            
+            handleMouseMove(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Check if hovering over a lemming
+                const clickPadding = 10;
+                const hoveredLemming = this.lemmings.find(l => 
+                    l.state !== LemmingState.DEAD && 
+                    l.state !== LemmingState.SAVED &&
+                    Math.abs(l.x - x) < LEMMING_WIDTH + clickPadding &&
+                    Math.abs(l.y + LEMMING_HEIGHT/2 - y) < LEMMING_HEIGHT/2 + clickPadding
+                );
+                
+                // Change cursor based on hover state and selected action
+                if (hoveredLemming && this.selectedAction !== ActionType.NONE) {
+                    this.canvas.style.cursor = 'pointer';
+                } else {
+                    this.canvas.style.cursor = 'default';
                 }
             }
             
