@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemmings Clone</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        #menu {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+        
+        #menu h1 {
+            font-size: 48px;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .menuButton {
+            width: 200px;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .menuButton:hover {
+            background-color: #45a049;
+        }
+        
+        #gameCanvas {
+            border: 2px solid #444;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        #gameUI {
+            background-color: #333;
+            padding: 10px;
+            display: none;
+        }
+        
+        #toolbar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 10px;
+            background-color: #444;
+            border-radius: 5px;
+        }
+        
+        .actionButton {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            border: 2px solid #666;
+            background-color: #555;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+        
+        .actionButton:hover {
+            background-color: #666;
+            border-color: #888;
+        }
+        
+        .actionButton.selected {
+            background-color: #4CAF50;
+            border-color: #6FCF70;
+        }
+        
+        .actionCount {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .speedControl {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 20px;
+            padding: 5px 10px;
+            background-color: #555;
+            border-radius: 5px;
+        }
+        
+        .speedButton {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background-color: #666;
+            color: white;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        
+        .speedButton:hover {
+            background-color: #777;
+        }
+        
+        #levelInfo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        #levelEditor {
+            display: none;
+            padding: 20px;
+            background-color: #333;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="menu">
+            <h1>Lemmings Clone</h1>
+            <button class="menuButton" onclick="game.startLevel()">Play Level</button>
+            <button class="menuButton" onclick="game.openLevelEditor()">Level Editor</button>
+            <button class="menuButton" onclick="game.quit()">Quit</button>
+        </div>
+        
+        <div id="levelInfo" class="hidden">
+            <div>Lemmings Out: <span id="lemmingsOut">0</span>/<span id="totalLemmings">20</span></div>
+            <div>Saved: <span id="lemmingsSaved">0</span>/<span id="requiredLemmings">10</span></div>
+            <div>Alive: <span id="lemmingsAlive">0</span></div>
+        </div>
+        
+        <canvas id="gameCanvas" class="hidden"></canvas>
+        
+        <div id="gameUI" class="hidden">
+            <div id="toolbar">
+                <button class="actionButton" data-action="blocker" onclick="game.selectAction('blocker')">
+                    <span class="actionCount">5</span>
+                    🛑
+                </button>
+                <button class="actionButton" data-action="basher" onclick="game.selectAction('basher')">
+                    <span class="actionCount">5</span>
+                    ➡️
+                </button>
+                <button class="actionButton" data-action="digger" onclick="game.selectAction('digger')">
+                    <span class="actionCount">5</span>
+                    ⬇️
+                </button>
+                <button class="actionButton" data-action="builder" onclick="game.selectAction('builder')">
+                    <span class="actionCount">5</span>
+                    🔨
+                </button>
+                
+                <div class="speedControl">
+                    <span>Speed:</span>
+                    <button class="speedButton" onclick="game.decreaseSpawnRate()">-</button>
+                    <span id="spawnRate">2.0s</span>
+                    <button class="speedButton" onclick="game.increaseSpawnRate()">+</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="levelEditor" class="hidden">
+            <h2>Level Editor</h2>
+            <button onclick="game.returnToMenu()">Back to Menu</button>
+        </div>
+    </div>
+
+    <script>
+        // Constants
+        const LEMMING_HEIGHT = 20;
+        const LEMMING_WIDTH = 10;
+        const MAX_FALL_HEIGHT = 1000;
+        const CLIMB_HEIGHT = 10;
+        const GRAVITY = 2;
+        const WALK_SPEED = 1;
+        const BUILD_TILE_WIDTH = 4;
+        const BUILD_TILE_HEIGHT = 2;
+        const MAX_BUILD_TILES = 20;
+        
+        // Action types
+        const ActionType = {
+            NONE: 'none',
+            BLOCKER: 'blocker',
+            BASHER: 'basher',
+            DIGGER: 'digger',
+            BUILDER: 'builder'
+        };
+        
+        // Lemming states
+        const LemmingState = {
+            WALKING: 'walking',
+            FALLING: 'falling',
+            BLOCKING: 'blocking',
+            BASHING: 'bashing',
+            DIGGING: 'digging',
+            BUILDING: 'building',
+            DEAD: 'dead',
+            SAVED: 'saved'
+        };
+        
+        class Lemming {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.direction = 1; // 1 = right, -1 = left
+                this.state = LemmingState.FALLING;
+                this.fallDistance = 0;
+                this.action = ActionType.NONE;
+                this.actionProgress = 0;
+                this.buildTilesPlaced = 0;
+            }
+            
+            update(terrain, lemmings) {
+                if (this.state === LemmingState.DEAD || this.state === LemmingState.SAVED) {
+                    return;
+                }
+                
+                switch (this.state) {
+                    case LemmingState.WALKING:
+                        this.walk(terrain, lemmings);
+                        break;
+                    case LemmingState.FALLING:
+                        this.fall(terrain);
+                        break;
+                    case LemmingState.BLOCKING:
+                        // Blockers don't move
+                        break;
+                    case LemmingState.BASHING:
+                        this.bash(terrain);
+                        break;
+                    case LemmingState.DIGGING:
+                        this.dig(terrain);
+                        break;
+                    case LemmingState.BUILDING:
+                        this.build(terrain);
+                        break;
+                }
+            }
+            
+            walk(terrain, lemmings) {
+                // Check for ground
+                if (!terrain.hasGround(this.x, this.y + LEMMING_HEIGHT)) {
+                    this.state = LemmingState.FALLING;
+                    this.fallDistance = 0;
+                    return;
+                }
+                
+                // Check for other blocking lemmings
+                const nextX = this.x + this.direction * WALK_SPEED;
+                const blocker = lemmings.find(l => 
+                    l !== this && 
+                    l.state === LemmingState.BLOCKING &&
+                    Math.abs(l.x - nextX) < LEMMING_WIDTH &&
+                    Math.abs(l.y - this.y) < LEMMING_HEIGHT
+                );
+                
+                if (blocker) {
+                    this.direction *= -1;
+                    return;
+                }
+                
+                // Check for obstacles
+                const obstacleHeight = terrain.getObstacleHeight(nextX, this.y);
+                if (obstacleHeight > CLIMB_HEIGHT) {
+                    this.direction *= -1;
+                } else if (obstacleHeight > 0) {
+                    // Climb
+                    this.y -= obstacleHeight;
+                    this.x = nextX;
+                } else {
+                    this.x = nextX;
+                }
+            }
+            
+            fall(terrain) {
+                this.y += GRAVITY;
+                this.fallDistance += GRAVITY;
+                
+                if (terrain.hasGround(this.x, this.y + LEMMING_HEIGHT)) {
+                    if (this.fallDistance >= MAX_FALL_HEIGHT) {
+                        this.state = LemmingState.DEAD;
+                    } else {
+                        this.state = LemmingState.WALKING;
+                        this.fallDistance = 0;
+                    }
+                }
+            }
+            
+            bash(terrain) {
+                // Bash horizontally
+                const bashX = this.x + (this.direction * LEMMING_WIDTH);
+                const bashStartY = this.y;
+                const bashEndY = this.y + LEMMING_HEIGHT;
+                
+                let foundObstacle = false;
+                for (let y = bashStartY; y < bashEndY; y += 2) {
+                    if (terrain.hasGround(bashX, y)) {
+                        terrain.removeTerrain(bashX, y, 2, 2);
+                        foundObstacle = true;
+                    }
+                }
+                
+                if (!foundObstacle) {
+                    // Done bashing
+                    this.state = LemmingState.WALKING;
+                } else {
+                    this.x += this.direction * 0.5;
+                }
+            }
+            
+            dig(terrain) {
+                // Dig vertically
+                const digY = this.y + LEMMING_HEIGHT;
+                
+                let foundGround = false;
+                for (let x = this.x - LEMMING_WIDTH/2; x < this.x + LEMMING_WIDTH/2; x += 2) {
+                    if (terrain.hasGround(x, digY)) {
+                        terrain.removeTerrain(x, digY, 2, 2);
+                        foundGround = true;
+                    }
+                }
+                
+                if (!foundGround) {
+                    // Done digging
+                    this.state = LemmingState.WALKING;
+                } else {
+                    this.y += 1;
+                }
+            }
+            
+            build(terrain) {
+                if (this.buildTilesPlaced >= MAX_BUILD_TILES) {
+                    this.state = LemmingState.WALKING;
+                    return;
+                }
+                
+                // Place a tile diagonally up
+                const tileX = this.x + (this.direction * (this.buildTilesPlaced * BUILD_TILE_WIDTH));
+                const tileY = this.y + LEMMING_HEIGHT - (this.buildTilesPlaced * BUILD_TILE_HEIGHT);
+                
+                terrain.addTerrain(tileX, tileY, BUILD_TILE_WIDTH, BUILD_TILE_HEIGHT);
+                this.buildTilesPlaced++;
+                
+                // Move lemming along with building
+                this.x += this.direction * BUILD_TILE_WIDTH;
+                this.y -= BUILD_TILE_HEIGHT;
+            }
+            
+            applyAction(action) {
+                if (this.state === LemmingState.WALKING || this.state === LemmingState.FALLING) {
+                    switch (action) {
+                        case ActionType.BLOCKER:
+                            this.state = LemmingState.BLOCKING;
+                            break;
+                        case ActionType.BASHER:
+                            this.state = LemmingState.BASHING;
+                            break;
+                        case ActionType.DIGGER:
+                            if (this.state === LemmingState.WALKING) {
+                                this.state = LemmingState.DIGGING;
+                            }
+                            break;
+                        case ActionType.BUILDER:
+                            this.state = LemmingState.BUILDING;
+                            this.buildTilesPlaced = 0;
+                            break;
+                    }
+                    this.action = action;
+                    return true;
+                }
+                return false;
+            }
+            
+            draw(ctx) {
+                if (this.state === LemmingState.DEAD) {
+                    ctx.fillStyle = '#ff0000';
+                } else if (this.state === LemmingState.SAVED) {
+                    return; // Don't draw saved lemmings
+                } else if (this.state === LemmingState.BLOCKING) {
+                    ctx.fillStyle = '#ff6600';
+                } else if (this.state === LemmingState.BASHING) {
+                    ctx.fillStyle = '#ffff00';
+                } else if (this.state === LemmingState.DIGGING) {
+                    ctx.fillStyle = '#00ffff';
+                } else if (this.state === LemmingState.BUILDING) {
+                    ctx.fillStyle = '#ff00ff';
+                } else {
+                    ctx.fillStyle = '#00ff00';
+                }
+                
+                ctx.fillRect(this.x - LEMMING_WIDTH/2, this.y, LEMMING_WIDTH, LEMMING_HEIGHT);
+                
+                // Draw direction indicator
+                ctx.fillStyle = 'white';
+                const eyeX = this.x + (this.direction * 2);
+                ctx.fillRect(eyeX - 1, this.y + 4, 2, 2);
+            }
+        }
+        
+        class Terrain {
+            constructor(width, height) {
+                this.width = width;
+                this.height = height;
+                this.canvas = document.createElement('canvas');
+                this.canvas.width = width;
+                this.canvas.height = height;
+                this.ctx = this.canvas.getContext('2d');
+                this.imageData = null;
+            }
+            
+            loadLevel(levelData) {
+                // Draw initial terrain
+                this.ctx.fillStyle = '#8B4513';
+                
+                // Ground
+                this.ctx.fillRect(0, 400, this.width, 200);
+                
+                // Some obstacles
+                this.ctx.fillRect(200, 350, 100, 50);
+                this.ctx.fillRect(400, 300, 150, 100);
+                this.ctx.fillRect(600, 320, 80, 80);
+                
+                this.updateImageData();
+            }
+            
+            updateImageData() {
+                this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+            }
+            
+            hasGround(x, y) {
+                if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
+                    return true; // Treat boundaries as solid
+                }
+                
+                x = Math.floor(x);
+                y = Math.floor(y);
+                
+                const index = (y * this.width + x) * 4;
+                return this.imageData.data[index + 3] > 0; // Check alpha channel
+            }
+            
+            getObstacleHeight(x, y) {
+                let height = 0;
+                let checkY = y + LEMMING_HEIGHT;
+                
+                while (height < CLIMB_HEIGHT + 1 && this.hasGround(x, checkY - height)) {
+                    height++;
+                }
+                
+                return height <= CLIMB_HEIGHT ? height : CLIMB_HEIGHT + 1;
+            }
+            
+            removeTerrain(x, y, width, height) {
+                this.ctx.clearRect(x, y, width, height);
+                this.updateImageData();
+            }
+            
+            addTerrain(x, y, width, height) {
+                this.ctx.fillStyle = '#8B4513';
+                this.ctx.fillRect(x, y, width, height);
+                this.updateImageData();
+            }
+            
+            draw(ctx) {
+                ctx.drawImage(this.canvas, 0, 0);
+            }
+        }
+        
+        class Level {
+            constructor() {
+                this.spawnX = 100;
+                this.spawnY = 100;
+                this.exitX = 700;
+                this.exitY = 350;
+                this.exitWidth = 60;
+                this.exitHeight = 50;
+                this.totalLemmings = 20;
+                this.requiredLemmings = 10;
+                this.spawnRate = 2000; // milliseconds
+                this.actionCounts = {
+                    [ActionType.BLOCKER]: 5,
+                    [ActionType.BASHER]: 5,
+                    [ActionType.DIGGER]: 5,
+                    [ActionType.BUILDER]: 5
+                };
+            }
+            
+            drawExit(ctx) {
+                // Draw exit gate
+                ctx.fillStyle = '#4CAF50';
+                ctx.fillRect(this.exitX, this.exitY, this.exitWidth, this.exitHeight);
+                
+                // Gate details
+                ctx.strokeStyle = '#2E7D32';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.exitX, this.exitY, this.exitWidth, this.exitHeight);
+                
+                // Draw "field" beyond gate
+                ctx.fillStyle = '#81C784';
+                ctx.fillRect(this.exitX + 10, this.exitY + 10, this.exitWidth - 20, this.exitHeight - 20);
+            }
+            
+            drawSpawner(ctx) {
+                // Draw spawner
+                ctx.fillStyle = '#2196F3';
+                ctx.fillRect(this.spawnX - 20, this.spawnY - 30, 40, 30);
+                
+                ctx.strokeStyle = '#1565C0';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.spawnX - 20, this.spawnY - 30, 40, 30);
+            }
+            
+            isAtExit(lemming) {
+                return lemming.x >= this.exitX && 
+                       lemming.x <= this.exitX + this.exitWidth &&
+                       lemming.y >= this.exitY && 
+                       lemming.y <= this.exitY + this.exitHeight;
+            }
+        }
+        
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.width = 800;
+                this.canvas.height = 600;
+                
+                this.menu = document.getElementById('menu');
+                this.gameUI = document.getElementById('gameUI');
+                this.levelInfo = document.getElementById('levelInfo');
+                this.levelEditor = document.getElementById('levelEditor');
+                
+                this.terrain = new Terrain(800, 600);
+                this.level = new Level();
+                this.lemmings = [];
+                this.selectedAction = ActionType.NONE;
+                
+                this.lemmingsSpawned = 0;
+                this.lemmingsSaved = 0;
+                this.lastSpawnTime = 0;
+                this.gameRunning = false;
+                this.levelComplete = false;
+                
+                this.canvas.addEventListener('click', this.handleClick.bind(this));
+                
+                this.updateActionCounts();
+            }
+            
+            startLevel() {
+                this.menu.classList.add('hidden');
+                this.canvas.classList.remove('hidden');
+                this.gameUI.classList.remove('hidden');
+                this.levelInfo.classList.remove('hidden');
+                
+                this.terrain.loadLevel();
+                this.lemmings = [];
+                this.lemmingsSpawned = 0;
+                this.lemmingsSaved = 0;
+                this.lastSpawnTime = 0;
+                this.gameRunning = true;
+                this.levelComplete = false;
+                
+                this.gameLoop();
+            }
+            
+            openLevelEditor() {
+                this.menu.classList.add('hidden');
+                this.levelEditor.classList.remove('hidden');
+            }
+            
+            returnToMenu() {
+                this.gameRunning = false;
+                this.canvas.classList.add('hidden');
+                this.gameUI.classList.add('hidden');
+                this.levelInfo.classList.add('hidden');
+                this.levelEditor.classList.add('hidden');
+                this.menu.classList.remove('hidden');
+            }
+            
+            quit() {
+                if (confirm('Are you sure you want to quit?')) {
+                    window.close();
+                }
+            }
+            
+            selectAction(action) {
+                this.selectedAction = action;
+                
+                // Update UI
+                document.querySelectorAll('.actionButton').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                document.querySelector(`[data-action="${action}"]`).classList.add('selected');
+            }
+            
+            handleClick(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (this.selectedAction === ActionType.NONE) return;
+                
+                // Find clicked lemming
+                const lemming = this.lemmings.find(l => 
+                    l.state !== LemmingState.DEAD && 
+                    l.state !== LemmingState.SAVED &&
+                    Math.abs(l.x - x) < LEMMING_WIDTH &&
+                    Math.abs(l.y - y) < LEMMING_HEIGHT
+                );
+                
+                if (lemming && this.level.actionCounts[this.selectedAction] > 0) {
+                    if (lemming.applyAction(this.selectedAction)) {
+                        this.level.actionCounts[this.selectedAction]--;
+                        this.updateActionCounts();
+                    }
+                }
+            }
+            
+            updateActionCounts() {
+                for (const action in this.level.actionCounts) {
+                    const button = document.querySelector(`[data-action="${action}"]`);
+                    const count = button.querySelector('.actionCount');
+                    count.textContent = this.level.actionCounts[action];
+                }
+            }
+            
+            increaseSpawnRate() {
+                this.level.spawnRate = Math.max(250, this.level.spawnRate - 250);
+                document.getElementById('spawnRate').textContent = (this.level.spawnRate / 1000).toFixed(1) + 's';
+            }
+            
+            decreaseSpawnRate() {
+                this.level.spawnRate = Math.min(5000, this.level.spawnRate + 250);
+                document.getElementById('spawnRate').textContent = (this.level.spawnRate / 1000).toFixed(1) + 's';
+            }
+            
+            spawnLemming() {
+                if (this.lemmingsSpawned < this.level.totalLemmings) {
+                    const currentTime = Date.now();
+                    if (currentTime - this.lastSpawnTime >= this.level.spawnRate) {
+                        this.lemmings.push(new Lemming(this.level.spawnX, this.level.spawnY));
+                        this.lemmingsSpawned++;
+                        this.lastSpawnTime = currentTime;
+                    }
+                }
+            }
+            
+            updateStats() {
+                document.getElementById('lemmingsOut').textContent = this.lemmingsSpawned;
+                document.getElementById('totalLemmings').textContent = this.level.totalLemmings;
+                document.getElementById('lemmingsSaved').textContent = this.lemmingsSaved;
+                document.getElementById('requiredLemmings').textContent = this.level.requiredLemmings;
+                
+                const alive = this.lemmings.filter(l => 
+                    l.state !== LemmingState.DEAD && l.state !== LemmingState.SAVED
+                ).length;
+                document.getElementById('lemmingsAlive').textContent = alive;
+            }
+            
+            checkLevelComplete() {
+                const allSpawned = this.lemmingsSpawned >= this.level.totalLemmings;
+                const noActiveLemmings = this.lemmings.every(l => 
+                    l.state === LemmingState.DEAD || l.state === LemmingState.SAVED
+                );
+                
+                if (allSpawned && noActiveLemmings && !this.levelComplete) {
+                    this.levelComplete = true;
+                    
+                    setTimeout(() => {
+                        if (this.lemmingsSaved >= this.level.requiredLemmings) {
+                            alert(`Level Complete!\nYou saved ${this.lemmingsSaved} lemmings!`);
+                        } else {
+                            alert(`Level Failed!\nYou only saved ${this.lemmingsSaved} of ${this.level.requiredLemmings} required lemmings.`);
+                        }
+                        this.returnToMenu();
+                    }, 500);
+                }
+            }
+            
+            gameLoop() {
+                if (!this.gameRunning) return;
+                
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw background
+                this.ctx.fillStyle = '#87CEEB';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw terrain
+                this.terrain.draw(this.ctx);
+                
+                // Draw level elements
+                this.level.drawExit(this.ctx);
+                this.level.drawSpawner(this.ctx);
+                
+                // Spawn lemmings
+                this.spawnLemming();
+                
+                // Update and draw lemmings
+                this.lemmings.forEach(lemming => {
+                    lemming.update(this.terrain, this.lemmings);
+                    
+                    // Check if lemming reached exit
+                    if (lemming.state !== LemmingState.SAVED && this.level.isAtExit(lemming)) {
+                        lemming.state = LemmingState.SAVED;
+                        this.lemmingsSaved++;
+                    }
+                    
+                    lemming.draw(this.ctx);
+                });
+                
+                // Update UI
+                this.updateStats();
+                
+                // Check if level is complete
+                this.checkLevelComplete();
+                
+                // Continue game loop
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+        
+        // Initialize game
+        const game = new Game();
+    </script>
+</body>
+</html>
