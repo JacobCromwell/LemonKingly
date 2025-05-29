@@ -9,34 +9,51 @@ class Terrain {
         this.imageData = null;
     }
     
+    // loadLevel(levelData) {
+    //     // Draw initial terrain
+    //     this.ctx.fillStyle = '#8B4513';
+        
+    //     // Ground with gaps for hazards
+    //     // First section
+    //     this.ctx.fillRect(0, 400, 270, 200);
+        
+    //     // Gap for lava pit (300-360)
+        
+    //     // Second section
+    //     this.ctx.fillRect(360, 400, 70, 200);
+        
+    //     // Gap for bear trap (430-470)
+        
+    //     // Third section  
+    //     this.ctx.fillRect(470, 400, 55, 200);
+        
+    //     // Gap for spike pit (525-575)
+        
+    //     // Final section
+    //     this.ctx.fillRect(575, 400, 225, 200);
+        
+    //     // Some obstacles
+    //     this.ctx.fillRect(200, 350, 100, 50);
+    //     this.ctx.fillRect(400, 300, 150, 100);
+    //     this.ctx.fillRect(900, 320, 80, 80);
+        
+    //     this.updateImageData();
+    // }
+
+
     loadLevel(levelData) {
         // Draw initial terrain
         this.ctx.fillStyle = '#8B4513';
-        
-        // Ground with gaps for hazards
-        // First section
-        this.ctx.fillRect(0, 400, 270, 200);
-        
-        // Gap for lava pit (300-360)
-        
-        // Second section
-        this.ctx.fillRect(360, 400, 70, 200);
-        
-        // Gap for bear trap (430-470)
-        
-        // Third section  
-        this.ctx.fillRect(470, 400, 55, 200);
-        
-        // Gap for spike pit (525-575)
-        
-        // Final section
-        this.ctx.fillRect(575, 400, 225, 200);
-        
+
+        // Ground
+        this.ctx.fillRect(0, 400, this.width, 200);
+
+
         // Some obstacles
         this.ctx.fillRect(200, 350, 100, 50);
         this.ctx.fillRect(400, 300, 150, 100);
         this.ctx.fillRect(600, 320, 80, 80);
-        
+
         this.updateImageData();
     }
     

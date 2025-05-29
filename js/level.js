@@ -21,13 +21,13 @@ class Level {
     
     initializeHazards() {
         // Add a lava pit
-        this.hazards.push(new Hazard(300, 425, 60, 30, 'lava'));
+        this.hazards.push(new Hazard(50, 410, 60, 30, 'lava'));
         
         // Add a bear trap
-        this.hazards.push(new Hazard(450, 400, 40, 20, 'bearTrap'));
+        this.hazards.push(new Hazard(383, 400, 40, 20, 'bearTrap'));
         
         // Add a spike pit
-        this.hazards.push(new Hazard(550, 385, 50, 30, 'spikes'));
+        this.hazards.push(new Hazard(575, 385, 50, 30, 'spikes'));
     }
     
     updateHazards() {
