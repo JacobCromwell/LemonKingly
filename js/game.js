@@ -31,6 +31,43 @@ class Game {
         this.updateActionCounts();
     }
     
+    showLevelSelect() {
+        document.getElementById('levelSelectDialog').classList.remove('hidden');
+    }
+    
+    closeLevelSelect() {
+        document.getElementById('levelSelectDialog').classList.add('hidden');
+    }
+    
+    playDefaultLevel() {
+        this.closeLevelSelect();
+        // Clear any test level data to ensure we load default
+        sessionStorage.removeItem('testLevel');
+        this.startLevel();
+    }
+    
+    loadAndPlayLevel(file) {
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const levelData = JSON.parse(e.target.result);
+                this.closeLevelSelect();
+                
+                // Store as test level temporarily
+                sessionStorage.setItem('testLevel', JSON.stringify(levelData));
+                
+                // Load the custom level
+                this.startLevel();
+                this.loadCustomLevel(levelData);
+            } catch (err) {
+                alert('Error loading level: ' + err.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+    
     startLevel() {
         this.menu.classList.add('hidden');
         this.canvas.classList.remove('hidden');
@@ -39,6 +76,8 @@ class Game {
         
         // Reset to default level if not testing
         if (!sessionStorage.getItem('testLevel')) {
+            // Create fresh instances
+            this.terrain = new Terrain(800, 600);
             this.terrain.loadLevel();
             this.level = new Level();
             this.customBackground = null;
@@ -48,7 +87,7 @@ class Game {
         this.particles = [];
         this.lemmingsSpawned = 0;
         this.lemmingsSaved = 0;
-        this.lastSpawnTime = 0;
+        this.lastSpawnTime = Date.now(); // Initialize spawn time
         this.gameRunning = true;
         this.levelComplete = false;
         
@@ -98,9 +137,13 @@ class Game {
         
         // Hide editor, show game
         this.levelEditor.classList.add('hidden');
+        this.levelEditor.style.display = 'none';
         this.canvas.classList.remove('hidden');
         this.gameUI.classList.remove('hidden');
         this.levelInfo.classList.remove('hidden');
+        
+        // Create fresh terrain instance
+        this.terrain = new Terrain(800, 600);
         
         // Load custom level
         this.loadCustomLevel(testLevelData);
@@ -110,7 +153,7 @@ class Game {
         this.particles = [];
         this.lemmingsSpawned = 0;
         this.lemmingsSaved = 0;
-        this.lastSpawnTime = 0;
+        this.lastSpawnTime = Date.now(); // Initialize spawn time
         this.gameRunning = true;
         this.levelComplete = false;
         
@@ -335,7 +378,7 @@ class Game {
     }
     
     gameLoop() {
-        if (!this.gameRunning) return;
+        //if (!this.gameRunning) return;
         
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);

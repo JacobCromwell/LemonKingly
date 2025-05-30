@@ -10,7 +10,7 @@
     <div id="gameContainer">
         <div id="menu">
             <h1>Lemmings Clone</h1>
-            <button class="menuButton" onclick="game.startLevel()">Play Level</button>
+            <button class="menuButton" onclick="game.showLevelSelect()">Play Level</button>
             <button class="menuButton" onclick="game.openLevelEditor()">Level Editor</button>
             <button class="menuButton" onclick="game.quit()">Quit</button>
         </div>
@@ -57,6 +57,18 @@
         
         <div id="levelEditor" class="hidden">
             <!-- Editor UI will be dynamically created here -->
+        </div>
+        
+        <div id="levelSelectDialog" class="hidden">
+            <div class="dialogContent">
+                <h2>Select Level</h2>
+                <button class="dialogButton" onclick="game.playDefaultLevel()">Play Default Level</button>
+                <label class="fileLabel dialogButton">
+                    Load Custom Level
+                    <input type="file" accept=".json" onchange="game.loadAndPlayLevel(this.files[0])" style="display: none;">
+                </label>
+                <button class="dialogButton cancel" onclick="game.closeLevelSelect()">Cancel</button>
+            </div>
         </div>
     </div>
 
