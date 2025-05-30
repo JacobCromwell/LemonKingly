@@ -15,6 +15,13 @@ class Lemming {
             return;
         }
         
+        // Check if lemming has fallen out of bounds
+        if (this.y > terrain.height + 50) { // Give some buffer below canvas
+            this.state = LemmingState.DEAD;
+            audioManager.playSound('death');
+            return;
+        }
+        
         switch (this.state) {
             case LemmingState.WALKING:
                 this.walk(terrain, lemmings);
@@ -185,8 +192,15 @@ class Lemming {
             
             this.y += 2;
         } else {
-            // No more ground to dig, return to walking
-            this.state = LemmingState.WALKING;
+            // No more ground to dig - check if we're standing on solid ground
+            if (terrain.hasGround(this.x, this.y + LEMMING_HEIGHT)) {
+                // There's ground underneath, return to walking
+                this.state = LemmingState.WALKING;
+            } else {
+                // No ground underneath, start falling
+                this.state = LemmingState.FALLING;
+                this.fallDistance = 0;
+            }
         }
     }
     
