@@ -2,8 +2,8 @@ class LevelEditor {
     constructor() {
         this.canvas = document.getElementById('editorCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.canvas.width = 800;
-        this.canvas.height = 600;
+        this.canvas.width = 1200;
+        this.canvas.height = 900;
         
         this.backgroundImage = null;
         this.foregroundImage = null;
@@ -215,8 +215,13 @@ class LevelEditor {
             const img = new Image();
             img.onload = () => {
                 this.foregroundImage = img;
-                alert('Click on a color in the image to set it as transparent (non-terrain)');
-                this.pickingTransparentColor = true;
+                // Draw the image first so user can see it
+                this.draw();
+                // Then prompt for transparent color
+                setTimeout(() => {
+                    alert('Click on a color in the image to set it as transparent (non-terrain)');
+                    this.pickingTransparentColor = true;
+                }, 100);
             };
             img.src = event.target.result;
         };
@@ -499,6 +504,12 @@ class LevelEditor {
     }
     
     testLevel() {
+        // Update level data from inputs
+        this.levelName = document.getElementById('levelName').value;
+        this.levelData.totalLemmings = parseInt(document.getElementById('totalLemmings').value);
+        this.levelData.requiredLemmings = parseInt(document.getElementById('requiredLemmings').value);
+        this.levelData.spawnRate = parseInt(document.getElementById('spawnRate').value);
+        
         // Save current level to temporary storage
         const levelData = {
             spawn: this.spawnPoint,

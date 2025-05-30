@@ -25,6 +25,9 @@ class Game {
         this.canvas.addEventListener('click', this.handleClick.bind(this));
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
         
+        // Add ESC key handler
+        document.addEventListener('keydown', this.handleKeyDown.bind(this));
+        
         this.updateActionCounts();
     }
     
@@ -55,7 +58,7 @@ class Game {
     openLevelEditor() {
         this.menu.classList.add('hidden');
         this.levelEditor.classList.remove('hidden');
-        this.levelEditor.style.display = 'flex';
+        this.levelEditor.style.display = 'flex'
         
         // Dynamically load editor scripts if not already loaded
         if (!window.editor) {
@@ -127,7 +130,16 @@ class Game {
             this.level.totalLemmings = levelData.levelSettings.totalLemmings;
             this.level.requiredLemmings = levelData.levelSettings.requiredLemmings;
             this.level.spawnRate = levelData.levelSettings.spawnRate;
-            this.level.actionCounts = levelData.levelSettings.actionCounts;
+            
+            // Convert action counts to proper format
+            if (levelData.levelSettings.actionCounts) {
+                this.level.actionCounts = {
+                    [ActionType.BLOCKER]: levelData.levelSettings.actionCounts.blocker || 5,
+                    [ActionType.BASHER]: levelData.levelSettings.actionCounts.basher || 5,
+                    [ActionType.DIGGER]: levelData.levelSettings.actionCounts.digger || 5,
+                    [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 5
+                };
+            }
         }
         
         // Load terrain
@@ -235,6 +247,30 @@ class Game {
         } else {
             this.canvas.style.cursor = 'default';
         }
+    }
+    
+    handleKeyDown(e) {
+        if (e.key === 'Escape' && this.gameRunning) {
+            this.endLevel();
+        }
+    }
+    
+    endLevel() {
+        if (!this.gameRunning) return;
+        
+        this.gameRunning = false;
+        this.levelComplete = true;
+        
+        // Calculate results
+        const success = this.lemmingsSaved >= this.level.requiredLemmings;
+        const message = success
+            ? `Level Complete!\nYou saved ${this.lemmingsSaved} of ${this.level.requiredLemmings} required lemmings!`
+            : `Level Failed!\nYou only saved ${this.lemmingsSaved} of ${this.level.requiredLemmings} required lemmings.`;
+        
+        setTimeout(() => {
+            alert(message);
+            this.returnToMenu();
+        }, 100);
     }
     
     updateActionCounts() {

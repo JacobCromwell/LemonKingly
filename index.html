@@ -26,19 +26,19 @@
         <div id="gameUI" class="hidden">
             <div id="toolbar">
                 <button class="actionButton" data-action="blocker" onclick="game.selectAction('blocker')">
-                    <span class="actionCount">50</span>
+                    <span class="actionCount">5</span>
                     <div style="font-size: 12px; margin-top: 5px;">STOP</div>
                 </button>
                 <button class="actionButton" data-action="basher" onclick="game.selectAction('basher')">
-                    <span class="actionCount">50</span>
+                    <span class="actionCount">5</span>
                     <div style="font-size: 12px; margin-top: 5px;">BASH</div>
                 </button>
                 <button class="actionButton" data-action="digger" onclick="game.selectAction('digger')">
-                    <span class="actionCount">50</span>
+                    <span class="actionCount">5</span>
                     <div style="font-size: 12px; margin-top: 5px;">DIG</div>
                 </button>
                 <button class="actionButton" data-action="builder" onclick="game.selectAction('builder')">
-                    <span class="actionCount">50</span>
+                    <span class="actionCount">5</span>
                     <div style="font-size: 12px; margin-top: 5px;">BUILD</div>
                 </button>
                 
@@ -48,6 +48,10 @@
                     <span id="spawnRate">2.0s</span>
                     <button class="speedButton" onclick="game.increaseSpawnRate()">+</button>
                 </div>
+                
+                <button class="endLevelButton" onclick="game.endLevel()">
+                    End Level
+                </button>
             </div>
         </div>
         

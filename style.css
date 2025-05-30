@@ -133,6 +133,22 @@ body {
     background-color: #777;
 }
 
+.endLevelButton {
+    margin-left: 20px;
+    padding: 8px 16px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.endLevelButton:hover {
+    background-color: #da190b;
+}
+
 #levelInfo {
     position: absolute;
     top: 10px;
