@@ -12,6 +12,7 @@
             <h1>Lemmings Clone</h1>
             <button class="menuButton" onclick="game.showLevelSelect()">Play Level</button>
             <button class="menuButton" onclick="game.openLevelEditor()">Level Editor</button>
+            <button class="menuButton" onclick="game.showSettings()">Settings</button>
             <button class="menuButton" onclick="game.quit()">Quit</button>
         </div>
         
@@ -70,10 +71,40 @@
                 <button class="dialogButton cancel" onclick="game.closeLevelSelect()">Cancel</button>
             </div>
         </div>
+        
+        <div id="settingsDialog" class="hidden">
+            <div class="dialogContent">
+                <h2>Settings</h2>
+                <button class="dialogButton" onclick="game.showAudioSettings()">Audio</button>
+                <button class="dialogButton cancel" onclick="game.closeSettings()">Back</button>
+            </div>
+        </div>
+        
+        <div id="audioSettingsDialog" class="hidden">
+            <div class="dialogContent">
+                <h2>Audio Settings</h2>
+                <div class="sliderContainer">
+                    <label>Sound Effects: <span id="soundVolumeLabel">50</span>%</label>
+                    <input type="range" id="soundVolumeSlider" min="0" max="100" value="50" 
+                           oninput="game.updateSoundVolume(this.value)">
+                </div>
+                <div class="sliderContainer">
+                    <label>Music: <span id="musicVolumeLabel">50</span>%</label>
+                    <input type="range" id="musicVolumeSlider" min="0" max="100" value="50"
+                           oninput="game.updateMusicVolume(this.value)">
+                </div>
+                <label class="fileLabel dialogButton">
+                    Load Music File
+                    <input type="file" accept="audio/*" onchange="game.loadMusicFile(this.files[0])" style="display: none;">
+                </label>
+                <button class="dialogButton cancel" onclick="game.closeAudioSettings()">Back</button>
+            </div>
+        </div>
     </div>
 
     <!-- Load all JavaScript files in correct order -->
     <script src="js/constants.js"></script>
+    <script src="js/audioManager.js"></script>
     <script src="js/particle.js"></script>
     <script src="js/hazard.js"></script>
     <script src="js/lemming.js"></script>

@@ -31,6 +31,48 @@ class Game {
         this.updateActionCounts();
     }
     
+    showSettings() {
+        document.getElementById('settingsDialog').classList.remove('hidden');
+    }
+    
+    closeSettings() {
+        document.getElementById('settingsDialog').classList.add('hidden');
+    }
+    
+    showAudioSettings() {
+        document.getElementById('settingsDialog').classList.add('hidden');
+        document.getElementById('audioSettingsDialog').classList.remove('hidden');
+        
+        // Update sliders with current values
+        document.getElementById('soundVolumeSlider').value = audioManager.soundVolume;
+        document.getElementById('soundVolumeLabel').textContent = audioManager.soundVolume;
+        document.getElementById('musicVolumeSlider').value = audioManager.musicVolume;
+        document.getElementById('musicVolumeLabel').textContent = audioManager.musicVolume;
+    }
+    
+    closeAudioSettings() {
+        document.getElementById('audioSettingsDialog').classList.add('hidden');
+        document.getElementById('settingsDialog').classList.remove('hidden');
+    }
+    
+    updateSoundVolume(value) {
+        audioManager.setSoundVolume(value);
+        document.getElementById('soundVolumeLabel').textContent = value;
+    }
+    
+    updateMusicVolume(value) {
+        audioManager.setMusicVolume(value);
+        document.getElementById('musicVolumeLabel').textContent = value;
+    }
+    
+    loadMusicFile(file) {
+        if (!file) return;
+        
+        const url = URL.createObjectURL(file);
+        audioManager.loadMusic(url);
+        audioManager.playMusic();
+    }
+    
     showLevelSelect() {
         document.getElementById('levelSelectDialog').classList.remove('hidden');
     }
@@ -91,13 +133,15 @@ class Game {
         this.gameRunning = true;
         this.levelComplete = false;
         
+        // Start music if loaded
+        audioManager.playMusic();
+        
         this.gameLoop();
     }
     
     openLevelEditor() {
         this.menu.classList.add('hidden');
         this.levelEditor.classList.remove('hidden');
-        this.levelEditor.style.display = 'flex'
         
         // Dynamically load editor scripts if not already loaded
         if (!window.editor) {
@@ -228,6 +272,9 @@ class Game {
         
         // Clear test level data
         sessionStorage.removeItem('testLevel');
+        
+        // Pause music when returning to menu
+        audioManager.pauseMusic();
     }
     
     quit() {
@@ -420,6 +467,7 @@ class Game {
             if (lemming.state !== LemmingState.SAVED && this.level.isAtExit(lemming)) {
                 lemming.state = LemmingState.SAVED;
                 this.lemmingsSaved++;
+                audioManager.playSound('save');
             }
             
             lemming.draw(this.ctx);

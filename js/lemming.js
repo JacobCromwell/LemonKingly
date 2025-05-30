@@ -79,6 +79,7 @@ class Lemming {
         if (terrain.hasGround(this.x, this.y + LEMMING_HEIGHT)) {
             if (this.fallDistance >= MAX_FALL_HEIGHT) {
                 this.state = LemmingState.DEAD;
+                audioManager.playSound('death');
                 // Create death particles
                 if (window.game && window.game.particles) {
                     for (let i = 0; i < 20; i++) {
@@ -103,13 +104,13 @@ class Lemming {
     bash(terrain) {
         // Bash horizontally
         const bashX = this.x + (this.direction * (LEMMING_WIDTH/2 + 2));
-        const bashWidth = 6;
+        const bashWidth = 4;
         const bashHeight = LEMMING_HEIGHT;
         
         let foundObstacle = false;
         
         // Check ahead for terrain to bash
-        for (let checkX = bashX; checkX < bashX + (bashWidth*2); checkX++) {
+        for (let checkX = bashX; checkX < bashX + bashWidth; checkX++) {
             for (let checkY = this.y; checkY < this.y + bashHeight; checkY++) {
                 if (terrain.hasGround(checkX, checkY)) {
                     foundObstacle = true;
@@ -197,17 +198,12 @@ class Lemming {
         
         // Build a staircase pattern that lemmings can walk up
         // Each step is 6 pixels wide and 4 pixels tall for a climbable slope
-        const stepWidth = 8;
-        const stepHeight = 3;
+        const stepWidth = 6;
+        const stepHeight = 4;
         
         // Calculate position for this building step
-        const tileX = this.x + (this.direction * stepWidth - 2);
-        let tileY = 0;
-        if(this.buildTilesPlaced === 0){
-            tileY = this.y + LEMMING_HEIGHT - 1;
-        } else {
-            tileY = this.y + LEMMING_HEIGHT - stepHeight - 2;
-        }
+        const tileX = this.x + (this.direction * stepWidth);
+        const tileY = this.y + LEMMING_HEIGHT - stepHeight - 2;
         
         // Add the building tile
         terrain.addTerrain(tileX - stepWidth/2, tileY, stepWidth, stepHeight + 2);
@@ -229,18 +225,22 @@ class Lemming {
             switch (action) {
                 case ActionType.BLOCKER:
                     this.state = LemmingState.BLOCKING;
+                    audioManager.playSound('blocker');
                     break;
                 case ActionType.BASHER:
                     this.state = LemmingState.BASHING;
+                    audioManager.playSound('basher');
                     break;
                 case ActionType.DIGGER:
                     if (this.state === LemmingState.WALKING) {
                         this.state = LemmingState.DIGGING;
+                        audioManager.playSound('digger');
                     }
                     break;
                 case ActionType.BUILDER:
                     this.state = LemmingState.BUILDING;
                     this.buildTilesPlaced = 0;
+                    audioManager.playSound('builder');
                     break;
             }
             this.action = action;
