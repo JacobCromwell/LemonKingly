@@ -378,7 +378,7 @@ class Game {
     }
     
     gameLoop() {
-        //if (!this.gameRunning) return;
+        if (!this.gameRunning) return;
         
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
