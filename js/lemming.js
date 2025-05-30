@@ -104,13 +104,13 @@ class Lemming {
     bash(terrain) {
         // Bash horizontally
         const bashX = this.x + (this.direction * (LEMMING_WIDTH/2 + 2));
-        const bashWidth = 4;
+        const bashWidth = 6;
         const bashHeight = LEMMING_HEIGHT;
         
         let foundObstacle = false;
         
         // Check ahead for terrain to bash
-        for (let checkX = bashX; checkX < bashX + bashWidth; checkX++) {
+        for (let checkX = bashX; checkX < bashX + (bashWidth*2); checkX++) {
             for (let checkY = this.y; checkY < this.y + bashHeight; checkY++) {
                 if (terrain.hasGround(checkX, checkY)) {
                     foundObstacle = true;
@@ -198,12 +198,18 @@ class Lemming {
         
         // Build a staircase pattern that lemmings can walk up
         // Each step is 6 pixels wide and 4 pixels tall for a climbable slope
-        const stepWidth = 6;
-        const stepHeight = 4;
+        const stepWidth = 8;
+        const stepHeight = 3;
         
         // Calculate position for this building step
-        const tileX = this.x + (this.direction * stepWidth);
-        const tileY = this.y + LEMMING_HEIGHT - stepHeight - 2;
+        const tileX = this.x + (this.direction * stepWidth - 2);
+        let tileY = 0;
+
+        if(this.buildTilesPlaced === 0){
+            tileY = this.y + LEMMING_HEIGHT - 1;
+        } else {
+            tileY = this.y + LEMMING_HEIGHT - stepHeight - 2;
+        }
         
         // Add the building tile
         terrain.addTerrain(tileX - stepWidth/2, tileY, stepWidth, stepHeight + 2);

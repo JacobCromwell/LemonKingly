@@ -64,9 +64,7 @@
             <div class="dialogContent">
                 <h2>Select Level</h2>
                 <button class="dialogButton" onclick="game.playDefaultLevel()">Play Default Level</button>
-                <label class="fileLabel dialogButton">
-                    Load Custom Level
-                    <input type="file" accept=".json" onchange="game.loadAndPlayLevel(this.files[0])" style="display: none;">
+                <label class="fileLabel dialogButton">Load Custom Level<input type="file" accept=".json" onchange="game.loadAndPlayLevel(this.files[0])" style="display: none;">
                 </label>
                 <button class="dialogButton cancel" onclick="game.closeLevelSelect()">Cancel</button>
             </div>

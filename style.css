@@ -228,6 +228,7 @@ body {
 .fileLabel.dialogButton {
     display: block;
     text-align: center;
+    padding: 12px 0px;
 }
 
 .sliderContainer {

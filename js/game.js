@@ -115,6 +115,8 @@ class Game {
         this.canvas.classList.remove('hidden');
         this.gameUI.classList.remove('hidden');
         this.levelInfo.classList.remove('hidden');
+
+        this.gameUI.style.display = '';
         
         // Reset to default level if not testing
         if (!sessionStorage.getItem('testLevel')) {
@@ -142,6 +144,7 @@ class Game {
     openLevelEditor() {
         this.menu.classList.add('hidden');
         this.levelEditor.classList.remove('hidden');
+        this.levelEditor.style.display = 'flex';
         
         // Dynamically load editor scripts if not already loaded
         if (!window.editor) {
@@ -221,10 +224,10 @@ class Game {
             // Convert action counts to proper format
             if (levelData.levelSettings.actionCounts) {
                 this.level.actionCounts = {
-                    [ActionType.BLOCKER]: levelData.levelSettings.actionCounts.blocker || 5,
-                    [ActionType.BASHER]: levelData.levelSettings.actionCounts.basher || 5,
-                    [ActionType.DIGGER]: levelData.levelSettings.actionCounts.digger || 5,
-                    [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 5
+                    [ActionType.BLOCKER]: levelData.levelSettings.actionCounts.blocker || 50,
+                    [ActionType.BASHER]: levelData.levelSettings.actionCounts.basher || 50,
+                    [ActionType.DIGGER]: levelData.levelSettings.actionCounts.digger || 50,
+                    [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 50
                 };
             }
         }
