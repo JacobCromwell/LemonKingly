@@ -227,7 +227,8 @@ class Game {
                     [ActionType.BLOCKER]: levelData.levelSettings.actionCounts.blocker || 50,
                     [ActionType.BASHER]: levelData.levelSettings.actionCounts.basher || 50,
                     [ActionType.DIGGER]: levelData.levelSettings.actionCounts.digger || 50,
-                    [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 50
+                    [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 50,
+                    [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 50
                 };
             }
         }

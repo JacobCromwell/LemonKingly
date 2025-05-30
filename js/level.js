@@ -10,10 +10,11 @@ class Level {
         this.requiredLemmings = 10;
         this.spawnRate = 2000; // milliseconds
         this.actionCounts = {
-            [ActionType.BLOCKER]: 5,
-            [ActionType.BASHER]: 5,
-            [ActionType.DIGGER]: 5,
-            [ActionType.BUILDER]: 5
+            [ActionType.BLOCKER]: 50,
+            [ActionType.BASHER]: 50,
+            [ActionType.DIGGER]: 50,
+            [ActionType.BUILDER]: 50,
+            [ActionType.CLIMBER]: 50
         };
         this.hazards = [];
         this.initializeHazards();

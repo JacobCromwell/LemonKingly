@@ -30,7 +30,8 @@ class LevelEditor {
                 blocker: 5,
                 basher: 5,
                 digger: 5,
-                builder: 5
+                builder: 5,
+                climber: 5
             }
         };
         

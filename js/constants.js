@@ -15,7 +15,8 @@ const ActionType = {
     BLOCKER: 'blocker',
     BASHER: 'basher',
     DIGGER: 'digger',
-    BUILDER: 'builder'
+    BUILDER: 'builder',
+    CLIMBER: 'climber'
 };
 
 // Lemming states
@@ -26,6 +27,7 @@ const LemmingState = {
     BASHING: 'bashing',
     DIGGING: 'digging',
     BUILDING: 'building',
+    CLIMBING: 'climbing',
     DEAD: 'dead',
     SAVED: 'saved'
 };

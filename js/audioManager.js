@@ -180,6 +180,30 @@ class AudioManager {
             osc.start();
             osc.stop(this.audioContext.currentTime + 0.3);
         });
+
+        // Generate climber sound (rope/climbing)
+        this.sounds.climber = this.createSound(() => {
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
+            const masterGain = this.audioContext.createGain();
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(300, this.audioContext.currentTime);
+            osc.frequency.linearRampToValueAtTime(400, this.audioContext.currentTime + 0.05);
+            osc.frequency.linearRampToValueAtTime(350, this.audioContext.currentTime + 0.1);
+            
+            gain.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
+            
+            masterGain.gain.value = this.soundVolume / 100;
+            
+            osc.connect(gain);
+            gain.connect(masterGain);
+            masterGain.connect(this.audioContext.destination);
+            
+            osc.start();
+            osc.stop(this.audioContext.currentTime + 0.15);
+        });
     }
     
     createSound(generatorFunction) {

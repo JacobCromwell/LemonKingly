@@ -1,3 +1,4 @@
+// Updated lemming.js - Add climbing behavior
 class Lemming {
     constructor(x, y) {
         this.x = x;
@@ -8,6 +9,8 @@ class Lemming {
         this.action = ActionType.NONE;
         this.actionProgress = 0;
         this.buildTilesPlaced = 0;
+        this.isClimber = false; // Permanent climber ability
+        this.originalDirection = 1; // Store original direction for climbing
     }
     
     update(terrain, lemmings) {
@@ -41,6 +44,9 @@ class Lemming {
             case LemmingState.BUILDING:
                 this.build(terrain);
                 break;
+            case LemmingState.CLIMBING:
+                this.climb(terrain);
+                break;
         }
     }
     
@@ -69,13 +75,64 @@ class Lemming {
         // Check for obstacles
         const obstacleHeight = terrain.getObstacleHeight(nextX, this.y);
         if (obstacleHeight > CLIMB_HEIGHT) {
-            this.direction *= -1;
+            if (this.isClimber) {
+                // Start climbing
+                this.originalDirection = this.direction;
+                this.state = LemmingState.CLIMBING;
+            } else {
+                this.direction *= -1;
+            }
         } else if (obstacleHeight > 0) {
             // Climb
             this.y -= obstacleHeight;
             this.x = nextX;
         } else {
             this.x = nextX;
+        }
+    }
+    
+    climb(terrain) {
+        // Move up along the wall
+        this.y -= 1;
+        
+        // Check for overhead obstacle
+        const checkX = this.x + (this.originalDirection * (LEMMING_WIDTH/2 + 1));
+        if (terrain.hasGround(checkX, this.y - 1)) {
+            // Hit overhead obstacle - fall and reverse direction
+            this.state = LemmingState.FALLING;
+            this.fallDistance = 0;
+            this.direction = -this.originalDirection;
+            return;
+        }
+        
+        // Check if we've cleared the obstacle (can walk on top)
+        const clearanceWidth = LEMMING_WIDTH * 2; // Double the lemming's width
+        let canWalkOnTop = true;
+        
+        // Check for ground to stand on
+        if (!terrain.hasGround(this.x, this.y + LEMMING_HEIGHT)) {
+            canWalkOnTop = false;
+        }
+        
+        // Check for obstacles in the walking path ahead
+        for (let checkOffset = 1; checkOffset <= clearanceWidth; checkOffset++) {
+            const checkX = this.x + (this.originalDirection * checkOffset);
+            
+            // Check if there's an obstacle blocking the path at walking height
+            for (let checkY = this.y; checkY < this.y + LEMMING_HEIGHT; checkY++) {
+                if (terrain.hasGround(checkX, checkY)) {
+                    canWalkOnTop = false;
+                    break;
+                }
+            }
+            
+            if (!canWalkOnTop) break;
+        }
+        
+        if (canWalkOnTop) {
+            // We've cleared the obstacle, resume walking in original direction
+            this.state = LemmingState.WALKING;
+            this.direction = this.originalDirection;
         }
     }
     
@@ -262,6 +319,10 @@ class Lemming {
                     this.buildTilesPlaced = 0;
                     audioManager.playSound('builder');
                     break;
+                case ActionType.CLIMBER:
+                    this.isClimber = true;
+                    audioManager.playSound('climber');
+                    break;
             }
             this.action = action;
             return true;
@@ -282,8 +343,17 @@ class Lemming {
             ctx.fillStyle = '#00ffff';
         } else if (this.state === LemmingState.BUILDING) {
             ctx.fillStyle = '#ff00ff';
+        } else if (this.state === LemmingState.CLIMBING) {
+            ctx.fillStyle = '#ffaa00'; // Orange for climbing
         } else {
             ctx.fillStyle = '#00ff00';
+        }
+        
+        // Add visual indicator for climbers
+        if (this.isClimber && this.state !== LemmingState.CLIMBING) {
+            // Draw a small climbing indicator (rope/hook)
+            ctx.fillStyle = '#8B4513'; // Brown rope color
+            ctx.fillRect(this.x - 1, this.y - 2, 2, 4);
         }
         
         ctx.fillRect(this.x - LEMMING_WIDTH/2, this.y, LEMMING_WIDTH, LEMMING_HEIGHT);
