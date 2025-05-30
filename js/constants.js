@@ -29,3 +29,6 @@ const LemmingState = {
     DEAD: 'dead',
     SAVED: 'saved'
 };
+
+// Make MAX_FALL_HEIGHT available globally for editor
+window.MAX_FALL_HEIGHT = MAX_FALL_HEIGHT;

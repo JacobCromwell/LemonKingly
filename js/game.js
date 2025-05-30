@@ -34,7 +34,13 @@ class Game {
         this.gameUI.classList.remove('hidden');
         this.levelInfo.classList.remove('hidden');
         
-        this.terrain.loadLevel();
+        // Reset to default level if not testing
+        if (!sessionStorage.getItem('testLevel')) {
+            this.terrain.loadLevel();
+            this.level = new Level();
+            this.customBackground = null;
+        }
+        
         this.lemmings = [];
         this.particles = [];
         this.lemmingsSpawned = 0;
@@ -49,6 +55,112 @@ class Game {
     openLevelEditor() {
         this.menu.classList.add('hidden');
         this.levelEditor.classList.remove('hidden');
+        this.levelEditor.style.display = 'flex';
+        
+        // Dynamically load editor scripts if not already loaded
+        if (!window.editor) {
+            // Create editor UI first
+            if (typeof createEditorUI === 'function') {
+                createEditorUI();
+            } else {
+                // Load editor UI script
+                const uiScript = document.createElement('script');
+                uiScript.src = 'js/editor/editorUI.js';
+                uiScript.onload = () => {
+                    createEditorUI();
+                    this.loadEditorScripts();
+                };
+                document.head.appendChild(uiScript);
+                return;
+            }
+            
+            this.loadEditorScripts();
+        }
+    }
+    
+    loadEditorScripts() {
+        // Load level editor script
+        const editorScript = document.createElement('script');
+        editorScript.src = 'js/editor/levelEditor.js';
+        editorScript.onload = () => {
+            window.editor = new LevelEditor();
+        };
+        document.head.appendChild(editorScript);
+    }
+    
+    testLevelFromEditor() {
+        // Get test level data from sessionStorage
+        const testLevelData = JSON.parse(sessionStorage.getItem('testLevel'));
+        if (!testLevelData) return;
+        
+        // Hide editor, show game
+        this.levelEditor.classList.add('hidden');
+        this.canvas.classList.remove('hidden');
+        this.gameUI.classList.remove('hidden');
+        this.levelInfo.classList.remove('hidden');
+        
+        // Load custom level
+        this.loadCustomLevel(testLevelData);
+        
+        // Start game
+        this.lemmings = [];
+        this.particles = [];
+        this.lemmingsSpawned = 0;
+        this.lemmingsSaved = 0;
+        this.lastSpawnTime = 0;
+        this.gameRunning = true;
+        this.levelComplete = false;
+        
+        this.gameLoop();
+    }
+    
+    loadCustomLevel(levelData) {
+        // Update level settings
+        this.level.spawnX = levelData.spawn.x;
+        this.level.spawnY = levelData.spawn.y;
+        this.level.exitX = levelData.exit.x;
+        this.level.exitY = levelData.exit.y;
+        this.level.exitWidth = levelData.exit.width;
+        this.level.exitHeight = levelData.exit.height;
+        
+        if (levelData.levelSettings) {
+            this.level.totalLemmings = levelData.levelSettings.totalLemmings;
+            this.level.requiredLemmings = levelData.levelSettings.requiredLemmings;
+            this.level.spawnRate = levelData.levelSettings.spawnRate;
+            this.level.actionCounts = levelData.levelSettings.actionCounts;
+        }
+        
+        // Load terrain
+        if (levelData.terrain) {
+            const terrainImg = new Image();
+            terrainImg.onload = () => {
+                this.terrain.ctx.clearRect(0, 0, this.terrain.width, this.terrain.height);
+                this.terrain.ctx.drawImage(terrainImg, 0, 0);
+                this.terrain.updateImageData();
+            };
+            terrainImg.src = levelData.terrain;
+        }
+        
+        // Load hazards
+        this.level.hazards = [];
+        if (levelData.hazards) {
+            levelData.hazards.forEach(h => {
+                this.level.hazards.push(new Hazard(h.x, h.y, h.width, h.height, h.type));
+            });
+        }
+        
+        // Store background for rendering
+        this.customBackground = null;
+        if (levelData.background) {
+            const bgImg = new Image();
+            bgImg.onload = () => {
+                this.customBackground = bgImg;
+            };
+            bgImg.src = levelData.background;
+        }
+        
+        // Update action counts in UI
+        this.updateActionCounts();
     }
     
     returnToMenu() {
@@ -58,6 +170,9 @@ class Game {
         this.levelInfo.classList.add('hidden');
         this.levelEditor.classList.add('hidden');
         this.menu.classList.remove('hidden');
+        
+        // Clear test level data
+        sessionStorage.removeItem('testLevel');
     }
     
     quit() {
@@ -190,8 +305,12 @@ class Game {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Draw background
-        this.ctx.fillStyle = '#87CEEB';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        if (this.customBackground) {
+            this.ctx.drawImage(this.customBackground, 0, 0);
+        } else {
+            this.ctx.fillStyle = '#87CEEB';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
         
         // Draw terrain
         this.terrain.draw(this.ctx);

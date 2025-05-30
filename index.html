@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lemmings Clone</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="gameContainer">
@@ -26,19 +26,19 @@
         <div id="gameUI" class="hidden">
             <div id="toolbar">
                 <button class="actionButton" data-action="blocker" onclick="game.selectAction('blocker')">
-                    <span class="actionCount">5</span>
+                    <span class="actionCount">50</span>
                     <div style="font-size: 12px; margin-top: 5px;">STOP</div>
                 </button>
                 <button class="actionButton" data-action="basher" onclick="game.selectAction('basher')">
-                    <span class="actionCount">5</span>
+                    <span class="actionCount">50</span>
                     <div style="font-size: 12px; margin-top: 5px;">BASH</div>
                 </button>
                 <button class="actionButton" data-action="digger" onclick="game.selectAction('digger')">
-                    <span class="actionCount">5</span>
+                    <span class="actionCount">50</span>
                     <div style="font-size: 12px; margin-top: 5px;">DIG</div>
                 </button>
                 <button class="actionButton" data-action="builder" onclick="game.selectAction('builder')">
-                    <span class="actionCount">5</span>
+                    <span class="actionCount">50</span>
                     <div style="font-size: 12px; margin-top: 5px;">BUILD</div>
                 </button>
                 
@@ -52,8 +52,7 @@
         </div>
         
         <div id="levelEditor" class="hidden">
-            <h2>Level Editor</h2>
-            <button onclick="game.returnToMenu()">Back to Menu</button>
+            <!-- Editor UI will be dynamically created here -->
         </div>
     </div>
 
