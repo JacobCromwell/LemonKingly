@@ -2,8 +2,8 @@ class LevelEditor {
     constructor() {
         this.canvas = document.getElementById('editorCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.canvas.width = 1200;
-        this.canvas.height = 900;
+        this.canvas.width = 800;
+        this.canvas.height = 600;
         
         this.backgroundImage = null;
         this.foregroundImage = null;

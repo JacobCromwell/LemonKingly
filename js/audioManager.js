@@ -27,6 +27,7 @@ class AudioManager {
         this.sounds.blocker = this.createSound(() => {
             const osc = this.audioContext.createOscillator();
             const gain = this.audioContext.createGain();
+            const masterGain = this.audioContext.createGain();
             
             osc.type = 'square';
             osc.frequency.setValueAtTime(80, this.audioContext.currentTime);
@@ -35,8 +36,11 @@ class AudioManager {
             gain.gain.setValueAtTime(0.3, this.audioContext.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
             
+            masterGain.gain.value = this.soundVolume / 100;
+            
             osc.connect(gain);
-            gain.connect(this.audioContext.destination);
+            gain.connect(masterGain);
+            masterGain.connect(this.audioContext.destination);
             
             osc.start();
             osc.stop(this.audioContext.currentTime + 0.1);
@@ -47,6 +51,7 @@ class AudioManager {
             const noise = this.createNoise();
             const filter = this.audioContext.createBiquadFilter();
             const gain = this.audioContext.createGain();
+            const masterGain = this.audioContext.createGain();
             
             filter.type = 'highpass';
             filter.frequency.value = 1000;
@@ -54,9 +59,12 @@ class AudioManager {
             gain.gain.setValueAtTime(0.4, this.audioContext.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.05);
             
+            masterGain.gain.value = this.soundVolume / 100;
+            
             noise.connect(filter);
             filter.connect(gain);
-            gain.connect(this.audioContext.destination);
+            gain.connect(masterGain);
+            masterGain.connect(this.audioContext.destination);
             
             noise.start();
             noise.stop(this.audioContext.currentTime + 0.05);
@@ -68,6 +76,7 @@ class AudioManager {
             const noise = this.createNoise();
             const gain = this.audioContext.createGain();
             const noiseGain = this.audioContext.createGain();
+            const masterGain = this.audioContext.createGain();
             
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(100, this.audioContext.currentTime);
@@ -79,10 +88,13 @@ class AudioManager {
             noiseGain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
             noiseGain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
             
+            masterGain.gain.value = this.soundVolume / 100;
+            
             osc.connect(gain);
             noise.connect(noiseGain);
-            gain.connect(this.audioContext.destination);
-            noiseGain.connect(this.audioContext.destination);
+            gain.connect(masterGain);
+            noiseGain.connect(masterGain);
+            masterGain.connect(this.audioContext.destination);
             
             osc.start();
             noise.start();
@@ -95,6 +107,7 @@ class AudioManager {
             const osc = this.audioContext.createOscillator();
             const osc2 = this.audioContext.createOscillator();
             const gain = this.audioContext.createGain();
+            const masterGain = this.audioContext.createGain();
             
             osc.type = 'square';
             osc.frequency.setValueAtTime(440, this.audioContext.currentTime);
@@ -107,9 +120,12 @@ class AudioManager {
             gain.gain.setValueAtTime(0.2, this.audioContext.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
             
+            masterGain.gain.value = this.soundVolume / 100;
+            
             osc.connect(gain);
             osc2.connect(gain);
-            gain.connect(this.audioContext.destination);
+            gain.connect(masterGain);
+            masterGain.connect(this.audioContext.destination);
             
             osc.start();
             osc2.start();
@@ -121,6 +137,7 @@ class AudioManager {
         this.sounds.death = this.createSound(() => {
             const osc = this.audioContext.createOscillator();
             const gain = this.audioContext.createGain();
+            const masterGain = this.audioContext.createGain();
             
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(400, this.audioContext.currentTime);
@@ -129,8 +146,11 @@ class AudioManager {
             gain.gain.setValueAtTime(0.3, this.audioContext.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
             
+            masterGain.gain.value = this.soundVolume / 100;
+            
             osc.connect(gain);
-            gain.connect(this.audioContext.destination);
+            gain.connect(masterGain);
+            masterGain.connect(this.audioContext.destination);
             
             osc.start();
             osc.stop(this.audioContext.currentTime + 0.3);
@@ -139,8 +159,8 @@ class AudioManager {
         // Generate save sound (success)
         this.sounds.save = this.createSound(() => {
             const osc = this.audioContext.createOscillator();
-            const osc2 = this.audioContext.createOscillator();
             const gain = this.audioContext.createGain();
+            const masterGain = this.audioContext.createGain();
             
             osc.type = 'sine';
             osc.frequency.setValueAtTime(523, this.audioContext.currentTime); // C5
@@ -151,8 +171,11 @@ class AudioManager {
             gain.gain.setValueAtTime(0.2, this.audioContext.currentTime + 0.25);
             gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
             
+            masterGain.gain.value = this.soundVolume / 100;
+            
             osc.connect(gain);
-            gain.connect(this.audioContext.destination);
+            gain.connect(masterGain);
+            masterGain.connect(this.audioContext.destination);
             
             osc.start();
             osc.stop(this.audioContext.currentTime + 0.3);
@@ -163,18 +186,11 @@ class AudioManager {
         return () => {
             if (!this.initialized || this.soundVolume === 0) return;
             
-            const gainNode = this.audioContext.createGain();
-            gainNode.gain.value = this.soundVolume / 100;
-            
-            // Temporarily connect to destination for generation
-            const originalDestination = this.audioContext.destination;
-            this.audioContext.destination = gainNode;
-            gainNode.connect(originalDestination);
-            
-            generatorFunction();
-            
-            // Restore destination
-            this.audioContext.destination = originalDestination;
+            try {
+                generatorFunction();
+            } catch (e) {
+                console.warn('Sound playback error:', e);
+            }
         };
     }
     
