@@ -45,6 +45,19 @@ function createEditorUI() {
                 
                 <div class="toolSection">
                     <h4>View</h4>
+                    <div class="zoomControls">
+                        <button class="zoomButton" onclick="editor.zoom = Math.max(editor.minZoom, editor.zoom - editor.zoomStep); editor.updateZoomDisplay(); editor.draw();" title="Zoom Out">
+                            <span class="toolIcon">➖</span>
+                        </button>
+                        <span id="zoomLabel" class="zoomLabel">100%</span>
+                        <button class="zoomButton" onclick="editor.zoom = Math.min(editor.maxZoom, editor.zoom + editor.zoomStep); editor.updateZoomDisplay(); editor.draw();" title="Zoom In">
+                            <span class="toolIcon">➕</span>
+                        </button>
+                    </div>
+                    <button class="toolButton" onclick="editor.centerCamera(); editor.draw();" title="Center View">
+                        <span class="toolIcon">⊙</span>
+                        <span class="toolLabel">Center</span>
+                    </button>
                     <button class="toolButton" data-tool="grid" onclick="editor.toggleGrid()" title="Toggle Grid">
                         <span class="toolIcon">⊞</span>
                         <span class="toolLabel">Grid</span>
@@ -241,11 +254,51 @@ function createEditorUI() {
             align-items: center;
             background-color: #111;
             padding: 20px;
+            position: relative;
         }
         
         #editorCanvas {
             border: 2px solid #444;
             background-color: white;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .zoomControls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 5px 0;
+            background-color: #555;
+            border-radius: 4px;
+            padding: 4px;
+        }
+        
+        .zoomButton {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background-color: #666;
+            color: white;
+            cursor: pointer;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        
+        .zoomButton:hover {
+            background-color: #777;
+        }
+        
+        .zoomLabel {
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            min-width: 50px;
+            text-align: center;
         }
     `;
     document.head.appendChild(style);
