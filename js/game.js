@@ -102,7 +102,6 @@ class Game {
                 
                 // Load the custom level
                 this.startLevel();
-                this.loadCustomLevel(levelData);
             } catch (err) {
                 alert('Error loading level: ' + err.message);
             }
@@ -118,25 +117,36 @@ class Game {
 
         this.gameUI.style.display = '';
         
-        // Reset to default level if not testing
-        if (!sessionStorage.getItem('testLevel')) {
-            // Create fresh instances
+        // Initialize game state
+        this.lemmings = [];
+        this.particles = [];
+        this.lemmingsSpawned = 0;
+        this.lemmingsSaved = 0;
+        this.gameRunning = true;
+        this.levelComplete = false;
+        
+        // Check if this is a custom level test
+        const testLevelData = sessionStorage.getItem('testLevel');
+        if (testLevelData) {
+            // Load custom level
+            this.loadCustomLevel(JSON.parse(testLevelData));
+        } else {
+            // Reset to default level
             this.terrain = new Terrain(800, 600);
             this.terrain.loadLevel();
             this.level = new Level();
             this.customBackground = null;
         }
         
-        this.lemmings = [];
-        this.particles = [];
-        this.lemmingsSpawned = 0;
-        this.lemmingsSaved = 0;
-        this.lastSpawnTime = Date.now(); // Initialize spawn time
-        this.gameRunning = true;
-        this.levelComplete = false;
+        // Set spawn timing - allow first lemming to spawn immediately
+        this.lastSpawnTime = Date.now() - this.level.spawnRate;
         
         // Start music if loaded
         audioManager.playMusic();
+        
+        // Update UI to show current level settings
+        this.updateActionCounts();
+        this.updateStats();
         
         this.gameLoop();
     }
@@ -180,7 +190,10 @@ class Game {
     testLevelFromEditor() {
         // Get test level data from sessionStorage
         const testLevelData = JSON.parse(sessionStorage.getItem('testLevel'));
-        if (!testLevelData) return;
+        if (!testLevelData) {
+            console.error('No test level data found');
+            return;
+        }
         
         // Hide editor, show game
         this.levelEditor.classList.add('hidden');
@@ -189,25 +202,33 @@ class Game {
         this.gameUI.classList.remove('hidden');
         this.levelInfo.classList.remove('hidden');
         
+        // Initialize game state
+        this.lemmings = [];
+        this.particles = [];
+        this.lemmingsSpawned = 0;
+        this.lemmingsSaved = 0;
+        this.gameRunning = true;
+        this.levelComplete = false;
+        
         // Create fresh terrain instance
         this.terrain = new Terrain(800, 600);
         
         // Load custom level
         this.loadCustomLevel(testLevelData);
         
-        // Start game
-        this.lemmings = [];
-        this.particles = [];
-        this.lemmingsSpawned = 0;
-        this.lemmingsSaved = 0;
-        this.lastSpawnTime = Date.now(); // Initialize spawn time
-        this.gameRunning = true;
-        this.levelComplete = false;
+        // Set spawn timing - allow first lemming to spawn immediately
+        this.lastSpawnTime = Date.now() - this.level.spawnRate;
+        
+        // Update UI
+        this.updateActionCounts();
+        this.updateStats();
         
         this.gameLoop();
     }
     
     loadCustomLevel(levelData) {
+        console.log('Loading custom level:', levelData);
+        
         // Update level settings
         this.level.spawnX = levelData.spawn.x;
         this.level.spawnY = levelData.spawn.y;
@@ -224,11 +245,11 @@ class Game {
             // Convert action counts to proper format
             if (levelData.levelSettings.actionCounts) {
                 this.level.actionCounts = {
-                    [ActionType.BLOCKER]: levelData.levelSettings.actionCounts.blocker || 50,
-                    [ActionType.BASHER]: levelData.levelSettings.actionCounts.basher || 50,
-                    [ActionType.DIGGER]: levelData.levelSettings.actionCounts.digger || 50,
-                    [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 50,
-                    [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 50
+                    [ActionType.BLOCKER]: levelData.levelSettings.actionCounts.blocker || 5,
+                    [ActionType.BASHER]: levelData.levelSettings.actionCounts.basher || 5,
+                    [ActionType.DIGGER]: levelData.levelSettings.actionCounts.digger || 5,
+                    [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 5,
+                    [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 5
                 };
             }
         }
@@ -262,8 +283,7 @@ class Game {
             bgImg.src = levelData.background;
         }
         
-        // Update action counts in UI
-        this.updateActionCounts();
+        console.log('Level loaded. Total lemmings:', this.level.totalLemmings, 'Spawn rate:', this.level.spawnRate);
     }
     
     returnToMenu() {
@@ -370,8 +390,12 @@ class Game {
     updateActionCounts() {
         for (const action in this.level.actionCounts) {
             const button = document.querySelector(`[data-action="${action}"]`);
-            const count = button.querySelector('.actionCount');
-            count.textContent = this.level.actionCounts[action];
+            if (button) {
+                const count = button.querySelector('.actionCount');
+                if (count) {
+                    count.textContent = this.level.actionCounts[action];
+                }
+            }
         }
     }
     
@@ -389,6 +413,7 @@ class Game {
         if (this.lemmingsSpawned < this.level.totalLemmings) {
             const currentTime = Date.now();
             if (currentTime - this.lastSpawnTime >= this.level.spawnRate) {
+                console.log('Spawning lemming', this.lemmingsSpawned + 1, 'at', this.level.spawnX, this.level.spawnY);
                 this.lemmings.push(new Lemming(this.level.spawnX, this.level.spawnY));
                 this.lemmingsSpawned++;
                 this.lastSpawnTime = currentTime;
@@ -406,6 +431,9 @@ class Game {
             l.state !== LemmingState.DEAD && l.state !== LemmingState.SAVED
         ).length;
         document.getElementById('lemmingsAlive').textContent = alive;
+        
+        // Update spawn rate display
+        document.getElementById('spawnRate').textContent = (this.level.spawnRate / 1000).toFixed(1) + 's';
     }
     
     checkLevelComplete() {
