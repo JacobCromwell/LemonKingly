@@ -7,6 +7,8 @@ class Terrain {
         this.canvas.height = height;
         this.ctx = this.canvas.getContext('2d');
         this.imageData = null;
+
+         this.updateImageData();
     }
     
     // loadLevel(levelData) {
@@ -58,7 +60,13 @@ class Terrain {
     }
     
     updateImageData() {
-        this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+        try {
+            this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+        } catch (error) {
+            console.error('Error updating image data:', error);
+            // Create empty image data as fallback
+            this.imageData = this.ctx.createImageData(this.width, this.height);
+        }
     }
     
     hasGround(x, y) {
