@@ -14,6 +14,8 @@ class Game {
         this.level = new Level();
         this.lemmings = [];
         this.particles = [];
+        this.particlePool = [];
+        this.maxParticlePool = 100;
         this.selectedAction = ActionType.NONE;
         
         this.lemmingsSpawned = 0;
@@ -158,33 +160,47 @@ class Game {
         
         // Dynamically load editor scripts if not already loaded
         if (!window.editor) {
-            // Create editor UI first
-            if (typeof createEditorUI === 'function') {
-                createEditorUI();
-            } else {
-                // Load editor UI script
-                const uiScript = document.createElement('script');
-                uiScript.src = 'js/editor/editorUI.js';
-                uiScript.onload = () => {
-                    createEditorUI();
-                    this.loadEditorScripts();
-                };
-                document.head.appendChild(uiScript);
-                return;
-            }
-            
             this.loadEditorScripts();
         }
     }
     
     loadEditorScripts() {
-        // Load level editor script
-        const editorScript = document.createElement('script');
-        editorScript.src = 'js/editor/levelEditor.js';
-        editorScript.onload = () => {
-            window.editor = new LevelEditor();
+        // Scripts to load in order
+        const editorScripts = [
+            'js/editor/EditorUIBuilder.js',
+            'js/editor/EditorBase.js',
+            'js/editor/EditorInputHandler.js',
+            'js/editor/EditorToolsHandler.js',
+            'js/editor/EditorImageHandler.js',
+            'js/editor/EditorFileHandler.js',
+            'js/editor/LevelEditor.js'
+        ];
+        
+        let loadIndex = 0;
+        
+        const loadNextScript = () => {
+            if (loadIndex >= editorScripts.length) {
+                // All scripts loaded, create UI and initialize editor
+                window.editorUI.createEditorUI();
+                window.editor = new LevelEditor();
+                return;
+            }
+            
+            const script = document.createElement('script');
+            script.src = editorScripts[loadIndex];
+            script.onload = () => {
+                loadIndex++;
+                loadNextScript();
+            };
+            script.onerror = () => {
+                console.error('Failed to load script:', editorScripts[loadIndex]);
+                loadIndex++;
+                loadNextScript();
+            };
+            document.head.appendChild(script);
         };
-        document.head.appendChild(editorScript);
+        
+        loadNextScript();
     }
     
     testLevelFromEditor() {
@@ -241,6 +257,11 @@ class Game {
             this.level.totalLemmings = levelData.levelSettings.totalLemmings;
             this.level.requiredLemmings = levelData.levelSettings.requiredLemmings;
             this.level.spawnRate = levelData.levelSettings.spawnRate;
+
+            // Use default values if properties are missing or null
+            this.level.totalLemmings = levelData.levelSettings.totalLemmings || 20;
+            this.level.requiredLemmings = levelData.levelSettings.requiredLemmings || 10;
+            this.level.spawnRate = levelData.levelSettings.spawnRate || 2000;
             
             // Convert action counts to proper format
             if (levelData.levelSettings.actionCounts) {
@@ -251,6 +272,12 @@ class Game {
                     [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 5,
                     [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 5
                 };
+            }        
+            else {
+            // Fallback to defaults if levelSettings doesn't exist
+            this.level.totalLemmings = 20;
+            this.level.requiredLemmings = 10;
+            this.level.spawnRate = 2000;
             }
         }
         
@@ -260,6 +287,11 @@ class Game {
             terrainImg.onload = () => {
                 this.terrain.ctx.clearRect(0, 0, this.terrain.width, this.terrain.height);
                 this.terrain.ctx.drawImage(terrainImg, 0, 0);
+                this.terrain.updateImageData();
+            };
+            terrainImg.onerror = () => {
+                console.error('Failed to load terrain image');
+                // Initialize with empty terrain if image fails to load
                 this.terrain.updateImageData();
             };
             terrainImg.src = levelData.terrain;
@@ -283,7 +315,7 @@ class Game {
             bgImg.src = levelData.background;
         }
         
-        console.log('Level loaded. Total lemmings:', this.level.totalLemmings, 'Spawn rate:', this.level.spawnRate);
+        console.log('Level loaded. Total lemmings:', this.level.totalLemmings, 'Required:', this.level.requiredLemmings, 'Spawn rate:', this.level.spawnRate);
     }
     
     returnToMenu() {
@@ -506,11 +538,21 @@ class Game {
         });
         
         // Update and draw particles
-        this.particles = this.particles.filter(particle => {
+        // Better approach - reuse particles
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const particle = this.particles[i];
             particle.update();
-            particle.draw(this.ctx);
-            return !particle.isDead();
-        });
+            
+            if (particle.isDead()) {
+                // Move to pool instead of destroying
+                this.particles.splice(i, 1);
+                if (this.particlePool.length < this.maxParticlePool) {
+                    this.particlePool.push(particle);
+                }
+            } else {
+                particle.draw(this.ctx);
+            }
+        }
         
         // Update UI
         this.updateStats();
@@ -520,5 +562,18 @@ class Game {
         
         // Continue game loop
         requestAnimationFrame(() => this.gameLoop());
+    }
+
+    addParticle(x, y, color, vx, vy) {
+        let particle;
+        if (this.particlePool.length > 0) {
+            // Reuse particle from pool
+            particle = this.particlePool.pop();
+            particle.reset(x, y, color, vx, vy);
+        } else {
+            // Create new particle
+            particle = new Particle(x, y, color, vx, vy);
+        }
+        this.particles.push(particle);
     }
 }

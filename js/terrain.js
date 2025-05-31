@@ -1,3 +1,5 @@
+// In js/terrain.js - Add collision cache system
+
 class Terrain {
     constructor(width, height) {
         this.width = width;
@@ -7,39 +9,13 @@ class Terrain {
         this.canvas.height = height;
         this.ctx = this.canvas.getContext('2d');
         this.imageData = null;
-    }
-    
-    // loadLevel(levelData) {
-    //     // Draw initial terrain
-    //     this.ctx.fillStyle = '#8B4513';
         
-    //     // Ground with gaps for hazards
-    //     // First section
-    //     this.ctx.fillRect(0, 400, 270, 200);
-        
-    //     // Gap for lava pit (300-360)
-        
-    //     // Second section
-    //     this.ctx.fillRect(360, 400, 70, 200);
-        
-    //     // Gap for bear trap (430-470)
-        
-    //     // Third section  
-    //     this.ctx.fillRect(470, 400, 55, 200);
-        
-    //     // Gap for spike pit (525-575)
-        
-    //     // Final section
-    //     this.ctx.fillRect(575, 400, 225, 200);
-        
-    //     // Some obstacles
-    //     this.ctx.fillRect(200, 350, 100, 50);
-    //     this.ctx.fillRect(400, 300, 150, 100);
-    //     this.ctx.fillRect(900, 320, 80, 80);
-        
-    //     this.updateImageData();
-    // }
+        // Add collision cache
+        this.collisionGrid = null;
+        this.gridCellSize = 10; // Check every 10 pixels for performance
 
+        this.updateImageData();
+    }
 
     loadLevel(levelData) {
         // Draw initial terrain
@@ -58,9 +34,51 @@ class Terrain {
     }
     
     updateImageData() {
-        this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+        try {
+            this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+        } catch (error) {
+            console.error('Error updating image data:', error);
+            // Create empty image data as fallback
+            this.imageData = this.ctx.createImageData(this.width, this.height);
+        }
     }
     
+    updateCollisionCache() {
+        const gridWidth = Math.ceil(this.width / this.gridCellSize);
+        const gridHeight = Math.ceil(this.height / this.gridCellSize);
+        this.collisionGrid = new Array(gridHeight);
+        
+        for (let gy = 0; gy < gridHeight; gy++) {
+            this.collisionGrid[gy] = new Array(gridWidth);
+            for (let gx = 0; gx < gridWidth; gx++) {
+                // Check if this grid cell contains any solid pixels
+                let hasSolid = false;
+                const startX = gx * this.gridCellSize;
+                const startY = gy * this.gridCellSize;
+                const endX = Math.min(startX + this.gridCellSize, this.width);
+                const endY = Math.min(startY + this.gridCellSize, this.height);
+                
+                checkLoop: for (let y = startY; y < endY; y++) {
+                    for (let x = startX; x < endX; x++) {
+                        const index = (y * this.width + x) * 4;
+                        if (this.imageData.data[index + 3] > 0) {
+                            hasSolid = true;
+                            break checkLoop;
+                        }
+                    }
+                }
+                
+                this.collisionGrid[gy][gx] = hasSolid;
+            }
+        }
+    }
+    
+    updateImageData() {
+        this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+        this.updateCollisionCache();
+    }
+    
+    // OPTIMIZE hasGround() with fast path:
     hasGround(x, y) {
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
             return true; // Treat boundaries as solid
@@ -69,11 +87,23 @@ class Terrain {
         x = Math.floor(x);
         y = Math.floor(y);
         
+        // Quick check using collision grid first
+        if (this.collisionGrid) {
+            const gx = Math.floor(x / this.gridCellSize);
+            const gy = Math.floor(y / this.gridCellSize);
+            
+            // If grid cell has no collision, skip expensive pixel check
+            if (!this.collisionGrid[gy][gx]) {
+                return false;
+            }
+        }
+        
+        // Only do pixel-perfect check if grid cell has collision
         const index = (y * this.width + x) * 4;
-        return this.imageData.data[index + 3] > 0; // Check alpha channel
+        return this.imageData.data[index + 3] > 0;
     }
-    
-    getObstacleHeight(x, y) {
+
+        getObstacleHeight(x, y) {
         let height = 0;
         let checkY = y + LEMMING_HEIGHT;
         
@@ -85,14 +115,12 @@ class Terrain {
     }
     
     removeTerrain(x, y, width, height) {
-        // Get color of terrain before removing it
         const imageData = this.ctx.getImageData(x, y, 1, 1);
         const color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
         
         this.ctx.clearRect(x, y, width, height);
         this.updateImageData();
         
-        // Return the color for particle effects
         return color;
     }
     
@@ -101,8 +129,8 @@ class Terrain {
         this.ctx.fillRect(x, y, width, height);
         this.updateImageData();
     }
-    
-    draw(ctx) {
+
+        draw(ctx) {
         ctx.drawImage(this.canvas, 0, 0);
     }
 }

@@ -4,8 +4,8 @@ class Level {
         this.spawnY = 100;
         this.exitX = 700;
         this.exitY = 350;
-        this.exitWidth = 60;
-        this.exitHeight = 50;
+        this.exitWidth = 30; // Reduced from 60
+        this.exitHeight = 25; // Reduced from 50
         this.totalLemmings = 20;
         this.requiredLemmings = 10;
         this.spawnRate = 2000; // milliseconds
@@ -60,17 +60,17 @@ class Level {
         
         // Draw "field" beyond gate
         ctx.fillStyle = '#81C784';
-        ctx.fillRect(this.exitX + 10, this.exitY + 10, this.exitWidth - 20, this.exitHeight - 20);
+        ctx.fillRect(this.exitX + 5, this.exitY + 5, this.exitWidth - 10, this.exitHeight - 10);
     }
     
     drawSpawner(ctx) {
         // Draw spawner
         ctx.fillStyle = '#2196F3';
-        ctx.fillRect(this.spawnX - 20, this.spawnY - 30, 40, 30);
+        ctx.fillRect(this.spawnX - 10, this.spawnY - 15, 20, 15);
         
         ctx.strokeStyle = '#1565C0';
         ctx.lineWidth = 2;
-        ctx.strokeRect(this.spawnX - 20, this.spawnY - 30, 40, 30);
+        ctx.strokeRect(this.spawnX - 10, this.spawnY - 15, 20, 15);
     }
     
     isAtExit(lemming) {
