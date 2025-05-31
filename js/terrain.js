@@ -7,47 +7,17 @@ class Terrain {
         this.canvas.height = height;
         this.ctx = this.canvas.getContext('2d');
         this.imageData = null;
+        
+        // Initialize with empty image data
+        this.updateImageData();
     }
     
-    // loadLevel(levelData) {
-    //     // Draw initial terrain
-    //     this.ctx.fillStyle = '#8B4513';
-        
-    //     // Ground with gaps for hazards
-    //     // First section
-    //     this.ctx.fillRect(0, 400, 270, 200);
-        
-    //     // Gap for lava pit (300-360)
-        
-    //     // Second section
-    //     this.ctx.fillRect(360, 400, 70, 200);
-        
-    //     // Gap for bear trap (430-470)
-        
-    //     // Third section  
-    //     this.ctx.fillRect(470, 400, 55, 200);
-        
-    //     // Gap for spike pit (525-575)
-        
-    //     // Final section
-    //     this.ctx.fillRect(575, 400, 225, 200);
-        
-    //     // Some obstacles
-    //     this.ctx.fillRect(200, 350, 100, 50);
-    //     this.ctx.fillRect(400, 300, 150, 100);
-    //     this.ctx.fillRect(900, 320, 80, 80);
-        
-    //     this.updateImageData();
-    // }
-
-
     loadLevel(levelData) {
         // Draw initial terrain
         this.ctx.fillStyle = '#8B4513';
 
         // Ground
         this.ctx.fillRect(0, 400, this.width, 200);
-
 
         // Some obstacles
         this.ctx.fillRect(200, 350, 100, 50);
@@ -58,10 +28,21 @@ class Terrain {
     }
     
     updateImageData() {
-        this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+        try {
+            this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+        } catch (error) {
+            console.error('Error updating image data:', error);
+            // Create empty image data as fallback
+            this.imageData = this.ctx.createImageData(this.width, this.height);
+        }
     }
     
     hasGround(x, y) {
+        if (!this.imageData) {
+            console.warn('No image data available, assuming no ground');
+            return false;
+        }
+        
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
             return true; // Treat boundaries as solid
         }
@@ -86,8 +67,16 @@ class Terrain {
     
     removeTerrain(x, y, width, height) {
         // Get color of terrain before removing it
-        const imageData = this.ctx.getImageData(x, y, 1, 1);
-        const color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
+        let color = '#8B4513'; // Default brown color
+        
+        try {
+            const imageData = this.ctx.getImageData(x, y, 1, 1);
+            if (imageData.data[3] > 0) { // If there's actually terrain there
+                color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
+            }
+        } catch (error) {
+            console.warn('Error getting terrain color:', error);
+        }
         
         this.ctx.clearRect(x, y, width, height);
         this.updateImageData();

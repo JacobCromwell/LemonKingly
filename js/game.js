@@ -238,9 +238,10 @@ class Game {
         this.level.exitHeight = levelData.exit.height;
         
         if (levelData.levelSettings) {
-            this.level.totalLemmings = levelData.levelSettings.totalLemmings;
-            this.level.requiredLemmings = levelData.levelSettings.requiredLemmings;
-            this.level.spawnRate = levelData.levelSettings.spawnRate;
+            // Use default values if properties are missing or null
+            this.level.totalLemmings = levelData.levelSettings.totalLemmings || 20;
+            this.level.requiredLemmings = levelData.levelSettings.requiredLemmings || 10;
+            this.level.spawnRate = levelData.levelSettings.spawnRate || 2000;
             
             // Convert action counts to proper format
             if (levelData.levelSettings.actionCounts) {
@@ -252,6 +253,11 @@ class Game {
                     [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 5
                 };
             }
+        } else {
+            // Fallback to defaults if levelSettings doesn't exist
+            this.level.totalLemmings = 20;
+            this.level.requiredLemmings = 10;
+            this.level.spawnRate = 2000;
         }
         
         // Load terrain
@@ -261,8 +267,17 @@ class Game {
                 this.terrain.ctx.clearRect(0, 0, this.terrain.width, this.terrain.height);
                 this.terrain.ctx.drawImage(terrainImg, 0, 0);
                 this.terrain.updateImageData();
+                console.log('Terrain loaded and image data updated');
+            };
+            terrainImg.onerror = () => {
+                console.error('Failed to load terrain image');
+                // Initialize with empty terrain if image fails to load
+                this.terrain.updateImageData();
             };
             terrainImg.src = levelData.terrain;
+        } else {
+            // No terrain data, initialize empty terrain
+            this.terrain.updateImageData();
         }
         
         // Load hazards
@@ -283,7 +298,7 @@ class Game {
             bgImg.src = levelData.background;
         }
         
-        console.log('Level loaded. Total lemmings:', this.level.totalLemmings, 'Spawn rate:', this.level.spawnRate);
+        console.log('Level loaded. Total lemmings:', this.level.totalLemmings, 'Required:', this.level.requiredLemmings, 'Spawn rate:', this.level.spawnRate);
     }
     
     returnToMenu() {
