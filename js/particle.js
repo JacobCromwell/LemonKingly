@@ -10,6 +10,17 @@ class Particle {
         this.size = Math.random() * 3 + 1;
     }
     
+    reset(x, y, color, vx, vy) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vx = vx;
+        this.vy = vy;
+        this.life = 1.0;
+        this.gravity = 0.2;
+        this.size = Math.random() * 3 + 1;
+    }
+    
     update() {
         this.x += this.vx;
         this.y += this.vy;

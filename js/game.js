@@ -14,6 +14,8 @@ class Game {
         this.level = new Level();
         this.lemmings = [];
         this.particles = [];
+        this.particlePool = [];
+        this.maxParticlePool = 100;
         this.selectedAction = ActionType.NONE;
         
         this.lemmingsSpawned = 0;
@@ -536,11 +538,21 @@ class Game {
         });
         
         // Update and draw particles
-        this.particles = this.particles.filter(particle => {
+        // Better approach - reuse particles
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const particle = this.particles[i];
             particle.update();
-            particle.draw(this.ctx);
-            return !particle.isDead();
-        });
+            
+            if (particle.isDead()) {
+                // Move to pool instead of destroying
+                this.particles.splice(i, 1);
+                if (this.particlePool.length < this.maxParticlePool) {
+                    this.particlePool.push(particle);
+                }
+            } else {
+                particle.draw(this.ctx);
+            }
+        }
         
         // Update UI
         this.updateStats();
@@ -550,5 +562,18 @@ class Game {
         
         // Continue game loop
         requestAnimationFrame(() => this.gameLoop());
+    }
+
+    addParticle(x, y, color, vx, vy) {
+        let particle;
+        if (this.particlePool.length > 0) {
+            // Reuse particle from pool
+            particle = this.particlePool.pop();
+            particle.reset(x, y, color, vx, vy);
+        } else {
+            // Create new particle
+            particle = new Particle(x, y, color, vx, vy);
+        }
+        this.particles.push(particle);
     }
 }
