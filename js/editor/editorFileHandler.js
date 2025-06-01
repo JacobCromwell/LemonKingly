@@ -56,7 +56,7 @@ class EditorFileHandler {
     
     loadLevelData(data) {
         this.editor.levelName = data.name || 'untitled';
-        this.editor.levelWidth = data.width || 800;
+        this.editor.levelWidth = data.width || 1200;
         this.editor.levelHeight = data.height || 160;
         this.editor.spawnPoint = data.spawn;
         this.editor.exitPoint = data.exit;

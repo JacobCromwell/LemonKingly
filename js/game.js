@@ -2,7 +2,7 @@ class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.canvas.width = 800;
+        this.canvas.width = 1200;
         this.canvas.height = 600;
         
         this.menu = document.getElementById('menu');
@@ -10,7 +10,7 @@ class Game {
         this.levelInfo = document.getElementById('levelInfo');
         this.levelEditor = document.getElementById('levelEditor');
         
-        this.terrain = new Terrain(800, 600);
+        this.terrain = new Terrain(1200, 600);
         this.level = new Level();
         this.lemmings = [];
         this.particles = [];
@@ -134,7 +134,7 @@ class Game {
             this.loadCustomLevel(JSON.parse(testLevelData));
         } else {
             // Reset to default level
-            this.terrain = new Terrain(800, 600);
+            this.terrain = new Terrain(1200, 600);
             this.terrain.loadLevel();
             this.level = new Level();
             this.customBackground = null;
@@ -227,7 +227,7 @@ class Game {
         this.levelComplete = false;
         
         // Create fresh terrain instance
-        this.terrain = new Terrain(800, 600);
+        this.terrain = new Terrain(1200, 600);
         
         // Load custom level
         this.loadCustomLevel(testLevelData);

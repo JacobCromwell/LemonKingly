@@ -6,13 +6,13 @@ class EditorBase {
         this.ctx = this.canvas.getContext('2d');
         
         // Set display size
-        this.displayWidth = 800;
+        this.displayWidth = 1200;
         this.displayHeight = 600;
         this.canvas.width = this.displayWidth;
         this.canvas.height = this.displayHeight;
         
         // Level dimensions
-        this.levelWidth = 800;
+        this.levelWidth = 1200;
         this.levelHeight = 160;
         
         // Viewport and zoom
