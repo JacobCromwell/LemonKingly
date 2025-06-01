@@ -1,5 +1,5 @@
 class Game {
-    constructor() {
+constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.canvas.width = 1200;
@@ -23,6 +23,14 @@ class Game {
         this.lastSpawnTime = 0;
         this.gameRunning = false;
         this.levelComplete = false;
+        
+        // Camera position for scrolling
+        this.camera = { x: 0, y: 0 };
+        this.levelWidth = 1200;
+        this.levelHeight = 600;
+        
+        // Minimap interaction
+        this.isDraggingMinimap = false;
         
         this.canvas.addEventListener('click', this.handleClick.bind(this));
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
@@ -575,5 +583,109 @@ class Game {
             particle = new Particle(x, y, color, vx, vy);
         }
         this.particles.push(particle);
+    }
+
+    drawMinimap() {
+        // Clear minimap
+        this.minimapCtx.fillStyle = '#000000';
+        this.minimapCtx.fillRect(0, 0, this.minimapCanvas.width, this.minimapCanvas.height);
+        
+        // Calculate scale
+        const scaleX = this.minimapCanvas.width / this.levelWidth;
+        const scaleY = this.minimapCanvas.height / this.levelHeight;
+        
+        // Draw terrain (green)
+        if (this.terrain && this.terrain.canvas) {
+            this.minimapCtx.save();
+            this.minimapCtx.scale(scaleX, scaleY);
+            
+            // Create temporary canvas for terrain processing
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = this.levelWidth;
+            tempCanvas.height = this.levelHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Draw terrain
+            tempCtx.drawImage(this.terrain.canvas, 0, 0);
+            
+            // Get image data and convert to green
+            const imageData = tempCtx.getImageData(0, 0, this.levelWidth, this.levelHeight);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] > 0) { // If pixel is not transparent
+                    data[i] = 0;     // Red
+                    data[i + 1] = 255; // Green
+                    data[i + 2] = 0;   // Blue
+                }
+            }
+            
+            tempCtx.putImageData(imageData, 0, 0);
+            this.minimapCtx.drawImage(tempCanvas, 0, 0);
+            
+            this.minimapCtx.restore();
+        }
+        
+        // Draw spawn point (teal)
+        this.minimapCtx.fillStyle = '#00ffff';
+        this.minimapCtx.fillRect(
+            this.level.spawnX * scaleX - 3,
+            this.level.spawnY * scaleY - 3,
+            6,
+            6
+        );
+        
+        // Draw exit (light purple)
+        this.minimapCtx.fillStyle = '#ff99ff';
+        this.minimapCtx.fillRect(
+            this.level.exitX * scaleX,
+            this.level.exitY * scaleY,
+            this.level.exitWidth * scaleX,
+            this.level.exitHeight * scaleY
+        );
+        
+        // Draw lemmings (yellow)
+        this.minimapCtx.fillStyle = '#ffff00';
+        this.lemmings.forEach(lemming => {
+            if (lemming.state !== LemmingState.DEAD && lemming.state !== LemmingState.SAVED) {
+                this.minimapCtx.fillRect(
+                    lemming.x * scaleX - 1,
+                    lemming.y * scaleY - 1,
+                    2,
+                    2
+                );
+            }
+        });
+        
+        // Draw viewport rectangle (white)
+        this.minimapCtx.strokeStyle = '#ffffff';
+        this.minimapCtx.lineWidth = 2;
+        this.minimapCtx.strokeRect(
+            this.camera.x * scaleX,
+            this.camera.y * scaleY,
+            this.canvas.width * scaleX,
+            this.canvas.height * scaleY
+        );
+    }
+    
+    setupMinimap() {
+        // Minimap setup
+        this.minimapCanvas = document.getElementById('minimapCanvas');
+        if (this.minimapCanvas) {
+            // Ensure minimap is visible
+            this.minimapCanvas.classList.remove('hidden');
+            this.minimapCanvas.style.display = 'block';
+            
+            this.minimapCtx = this.minimapCanvas.getContext('2d');
+            this.minimapCanvas.width = 500;
+            this.minimapCanvas.height = 200;
+            
+            // Minimap event handlers
+            this.minimapCanvas.addEventListener('mousedown', this.handleMinimapMouseDown.bind(this));
+            this.minimapCanvas.addEventListener('mousemove', this.handleMinimapMouseMove.bind(this));
+            this.minimapCanvas.addEventListener('mouseup', this.handleMinimapMouseUp.bind(this));
+            this.minimapCanvas.addEventListener('mouseleave', this.handleMinimapMouseUp.bind(this));
+            this.minimapCanvas.addEventListener('click', this.handleMinimapClick.bind(this));
+        }
     }
 }
