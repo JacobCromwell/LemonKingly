@@ -59,6 +59,26 @@ body {
     gap: 10px;
 }
 
+#minimapContainer {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 2px solid #666;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+#minimapCanvas {
+    display: block;
+    border: 1px solid #444;
+    cursor: pointer;
+}
+
+#minimapContainer:hover {
+    border-color: #888;
+}
+
 #toolbar {
     display: flex;
     justify-content: center;
