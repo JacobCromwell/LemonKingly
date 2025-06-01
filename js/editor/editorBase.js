@@ -13,11 +13,13 @@ class EditorBase {
         
         // Level dimensions
         this.levelWidth = 1200;
-        this.levelHeight = 160;
+        this.levelHeight = 600;
+        this.maxLevelWidth = 6000;
+        this.maxLevelHeight = 1200;
         
         // Viewport and zoom
         this.zoom = 2.0;
-        this.minZoom = 1.0;
+        this.minZoom = 0.2;
         this.maxZoom = 8.0;
         this.zoomStep = 0.5;
         
@@ -65,6 +67,63 @@ class EditorBase {
                 climber: 5
             }
         };
+        
+        // Add level size change listeners
+        this.setupLevelSizeInputs();
+    }
+    
+    setupLevelSizeInputs() {
+        // Set up listeners after UI is created
+        setTimeout(() => {
+            const widthInput = document.getElementById('levelWidth');
+            const heightInput = document.getElementById('levelHeight');
+            
+            if (widthInput) {
+                widthInput.addEventListener('change', (e) => {
+                    const newWidth = Math.min(this.maxLevelWidth, Math.max(1200, parseInt(e.target.value)));
+                    this.resizeLevel(newWidth, this.levelHeight);
+                });
+            }
+            
+            if (heightInput) {
+                heightInput.addEventListener('change', (e) => {
+                    const newHeight = Math.min(this.maxLevelHeight, Math.max(400, parseInt(e.target.value)));
+                    this.resizeLevel(this.levelWidth, newHeight);
+                });
+            }
+        }, 100);
+    }
+    
+    resizeLevel(newWidth, newHeight) {
+        // Create new terrain with new size
+        const oldTerrain = this.terrain;
+        this.terrain = new Terrain(newWidth, newHeight);
+        
+        // Copy old terrain data
+        if (oldTerrain && oldTerrain.canvas) {
+            this.terrain.ctx.drawImage(oldTerrain.canvas, 0, 0);
+            this.terrain.updateImageData();
+        }
+        
+        // Update level dimensions
+        this.levelWidth = newWidth;
+        this.levelHeight = newHeight;
+        
+        // Adjust zoom if needed
+        const zoomX = this.displayWidth / this.levelWidth;
+        const zoomY = this.displayHeight / this.levelHeight;
+        const maxFitZoom = Math.min(zoomX, zoomY) * 0.9;
+        
+        if (this.zoom > maxFitZoom) {
+            this.zoom = maxFitZoom;
+            this.updateZoomDisplay();
+        }
+        
+        // Update minimum zoom
+        this.minZoom = Math.min(0.2, maxFitZoom);
+        
+        this.clampCamera();
+        this.draw();
     }
     
     // Coordinate conversion methods

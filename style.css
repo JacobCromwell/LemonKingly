@@ -54,6 +54,9 @@ body {
 #gameUI {
     background-color: #333;
     padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 #toolbar {
