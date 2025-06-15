@@ -28,6 +28,11 @@ class Game {
         this.camera = { x: 0, y: 0 };
         this.levelWidth = 1200;
         this.levelHeight = 600;
+        
+        // NEW: Add zoom support for game mode
+        this.zoom = 1.0;
+        this.minZoom = 0.2;
+        this.maxZoom = 8.0;
 
         // Minimap interaction
         this.isDraggingMinimap = false;
@@ -148,6 +153,8 @@ class Game {
             this.terrain.loadLevel();
             this.level = new Level();
             this.customBackground = null;
+            this.zoom = 1.0; // Default zoom for built-in levels
+            this.camera = { x: 0, y: 0 };
         }
 
         // Set spawn timing - allow first lemming to spawn immediately
@@ -236,8 +243,10 @@ class Game {
         this.gameRunning = true;
         this.levelComplete = false;
 
-        // Create fresh terrain instance
-        this.terrain = new Terrain(1200, 600);
+        // Create fresh terrain instance with correct dimensions
+        const levelWidth = testLevelData?.width || 1200;
+        const levelHeight = testLevelData?.height || 600;
+        this.terrain = new Terrain(levelWidth, levelHeight);
 
         // Load custom level
         this.loadCustomLevel(testLevelData);
@@ -263,6 +272,31 @@ class Game {
         this.level.exitWidth = levelData.exit.width;
         this.level.exitHeight = levelData.exit.height;
 
+        // Update level dimensions and create properly sized terrain
+        this.levelWidth = levelData.width || 1200;
+        this.levelHeight = levelData.height || 600;
+        
+        // Create terrain with correct dimensions
+        this.terrain = new Terrain(this.levelWidth, this.levelHeight);
+
+        // NEW: Apply saved zoom and camera settings
+        if (levelData.zoom !== undefined) {
+            this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, levelData.zoom));
+            console.log('Applied saved zoom:', this.zoom);
+        } else {
+            this.zoom = 1.0; // Default zoom for levels without zoom data
+        }
+
+        if (levelData.camera) {
+            this.camera.x = levelData.camera.x;
+            this.camera.y = levelData.camera.y;
+            this.clampCamera();
+            console.log('Applied saved camera position:', this.camera);
+        } else {
+            // Default camera behavior - center on spawn point
+            this.centerCameraOnSpawn();
+        }
+
         if (levelData.levelSettings) {
             this.level.totalLemmings = levelData.levelSettings.totalLemmings;
             this.level.requiredLemmings = levelData.levelSettings.requiredLemmings;
@@ -283,12 +317,11 @@ class Game {
                     [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 5
                 };
             }
-            else {
-                // Fallback to defaults if levelSettings doesn't exist
-                this.level.totalLemmings = 20;
-                this.level.requiredLemmings = 10;
-                this.level.spawnRate = 2000;
-            }
+        } else {
+            // Fallback to defaults if levelSettings doesn't exist
+            this.level.totalLemmings = 20;
+            this.level.requiredLemmings = 10;
+            this.level.spawnRate = 2000;
         }
 
         // Load terrain
@@ -305,6 +338,9 @@ class Game {
                 this.terrain.updateImageData();
             };
             terrainImg.src = levelData.terrain;
+        } else {
+            // No terrain data, just initialize empty terrain
+            this.terrain.updateImageData();
         }
 
         // Load hazards
@@ -326,6 +362,278 @@ class Game {
         }
 
         console.log('Level loaded. Total lemmings:', this.level.totalLemmings, 'Required:', this.level.requiredLemmings, 'Spawn rate:', this.level.spawnRate);
+    }
+
+    // NEW: Center camera on spawn point
+    centerCameraOnSpawn() {
+        const viewportWidth = this.canvas.width / this.zoom;
+        const viewportHeight = this.canvas.height / this.zoom;
+        
+        this.camera.x = this.level.spawnX - viewportWidth / 2;
+        this.camera.y = this.level.spawnY - viewportHeight / 2;
+        
+        this.clampCamera();
+    }
+
+    // NEW: Clamp camera to level bounds
+    clampCamera() {
+        const viewportWidth = this.canvas.width / this.zoom;
+        const viewportHeight = this.canvas.height / this.zoom;
+        
+        this.camera.x = Math.max(0, Math.min(this.levelWidth - viewportWidth, this.camera.x));
+        this.camera.y = Math.max(0, Math.min(this.levelHeight - viewportHeight, this.camera.y));
+    }
+
+    // UPDATED: Handle click with zoom transformation
+    handleClick(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+
+        // NEW: Transform screen coordinates to world coordinates
+        const worldX = (screenX / this.zoom) + this.camera.x;
+        const worldY = (screenY / this.zoom) + this.camera.y;
+
+        if (this.selectedAction === ActionType.NONE) return;
+
+        // Find clicked lemming with larger click area
+        const clickPadding = 10; // Extra pixels around lemming for easier clicking
+        const lemming = this.lemmings.find(l =>
+            l.state !== LemmingState.DEAD &&
+            l.state !== LemmingState.SAVED &&
+            Math.abs(l.x - worldX) < LEMMING_WIDTH + clickPadding &&
+            Math.abs(l.y + LEMMING_HEIGHT / 2 - worldY) < LEMMING_HEIGHT / 2 + clickPadding
+        );
+
+        if (lemming && this.level.actionCounts[this.selectedAction] > 0) {
+            if (lemming.applyAction(this.selectedAction)) {
+                this.level.actionCounts[this.selectedAction]--;
+                this.updateActionCounts();
+            }
+        }
+    }
+
+    // UPDATED: Handle mouse move with zoom transformation
+    handleMouseMove(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+
+        // NEW: Transform screen coordinates to world coordinates
+        const worldX = (screenX / this.zoom) + this.camera.x;
+        const worldY = (screenY / this.zoom) + this.camera.y;
+
+        // Check if hovering over a lemming
+        const clickPadding = 10;
+        const hoveredLemming = this.lemmings.find(l =>
+            l.state !== LemmingState.DEAD &&
+            l.state !== LemmingState.SAVED &&
+            Math.abs(l.x - worldX) < LEMMING_WIDTH + clickPadding &&
+            Math.abs(l.y + LEMMING_HEIGHT / 2 - worldY) < LEMMING_HEIGHT / 2 + clickPadding
+        );
+
+        // Change cursor based on hover state and selected action
+        if (hoveredLemming && this.selectedAction !== ActionType.NONE) {
+            this.canvas.style.cursor = 'pointer';
+        } else {
+            this.canvas.style.cursor = 'default';
+        }
+    }
+
+    // UPDATED: Game loop with zoom support
+    gameLoop() {
+        if (!this.gameRunning) return;
+
+        // Clear canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // NEW: Apply zoom and camera transformation
+        this.ctx.save();
+        this.ctx.scale(this.zoom, this.zoom);
+        this.ctx.translate(-this.camera.x, -this.camera.y);
+
+        // Draw background
+        if (this.customBackground) {
+            this.ctx.drawImage(this.customBackground, 0, 0, this.levelWidth, this.levelHeight);
+        } else {
+            this.ctx.fillStyle = '#87CEEB';
+            this.ctx.fillRect(0, 0, this.levelWidth, this.levelHeight);
+        }
+
+        // Draw terrain
+        this.terrain.draw(this.ctx);
+
+        // Draw hazards (before lemmings so they appear behind)
+        this.level.drawHazards(this.ctx);
+
+        // Draw level elements (spawn, exit) - these will be scaled by zoom
+        this.level.drawExit(this.ctx);
+        this.level.drawSpawner(this.ctx);
+
+        // Update hazards
+        this.level.updateHazards();
+
+        // Spawn lemmings
+        this.spawnLemming();
+
+        // Update and draw lemmings
+        this.lemmings.forEach(lemming => {
+            lemming.update(this.terrain, this.lemmings);
+
+            // Check hazard collisions
+            if (lemming.state !== LemmingState.DEAD && lemming.state !== LemmingState.SAVED) {
+                this.level.checkHazardCollisions(lemming);
+            }
+
+            // Check if lemming reached exit
+            if (lemming.state !== LemmingState.SAVED && this.level.isAtExit(lemming)) {
+                lemming.state = LemmingState.SAVED;
+                this.lemmingsSaved++;
+                audioManager.playSound('save');
+            }
+
+            // Draw lemming (will be scaled by zoom)
+            lemming.draw(this.ctx);
+        });
+
+        // Update and draw particles
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const particle = this.particles[i];
+            particle.update();
+
+            if (particle.isDead()) {
+                this.particles.splice(i, 1);
+                if (this.particlePool.length < this.maxParticlePool) {
+                    this.particlePool.push(particle);
+                }
+            } else {
+                particle.draw(this.ctx);
+            }
+        }
+
+        // NEW: Restore context (end zoom transformation)
+        this.ctx.restore();
+
+        // Draw UI elements at normal scale (minimap, etc.)
+        this.drawMinimap();
+
+        // Update UI
+        this.updateStats();
+
+        // Check if level is complete
+        this.checkLevelComplete();
+
+        // Continue game loop
+        requestAnimationFrame(() => this.gameLoop());
+    }
+
+    // UPDATED: Minimap drawing with proper world coordinates
+    drawMinimap() {
+        if (!this.minimapCanvas || !this.minimapCtx) return;
+
+        // Clear minimap
+        this.minimapCtx.fillStyle = '#000000';
+        this.minimapCtx.fillRect(0, 0, this.minimapCanvas.width, this.minimapCanvas.height);
+
+        // Calculate scale
+        const scaleX = this.minimapCanvas.width / this.levelWidth;
+        const scaleY = this.minimapCanvas.height / this.levelHeight;
+
+        // Draw terrain (green)
+        if (this.terrain && this.terrain.canvas) {
+            this.minimapCtx.save();
+            this.minimapCtx.scale(scaleX, scaleY);
+
+            // Create temporary canvas for terrain processing
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = this.levelWidth;
+            tempCanvas.height = this.levelHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            // Draw terrain
+            tempCtx.drawImage(this.terrain.canvas, 0, 0);
+
+            // Get image data and convert to green
+            const imageData = tempCtx.getImageData(0, 0, this.levelWidth, this.levelHeight);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] > 0) { // If pixel is not transparent
+                    data[i] = 0;     // Red
+                    data[i + 1] = 255; // Green
+                    data[i + 2] = 0;   // Blue
+                }
+            }
+
+            tempCtx.putImageData(imageData, 0, 0);
+            this.minimapCtx.drawImage(tempCanvas, 0, 0);
+
+            this.minimapCtx.restore();
+        }
+
+        // Draw spawn point (teal)
+        this.minimapCtx.fillStyle = '#00ffff';
+        this.minimapCtx.fillRect(
+            this.level.spawnX * scaleX - 3,
+            this.level.spawnY * scaleY - 3,
+            6,
+            6
+        );
+
+        // Draw exit (light purple)
+        this.minimapCtx.fillStyle = '#ff99ff';
+        this.minimapCtx.fillRect(
+            this.level.exitX * scaleX,
+            this.level.exitY * scaleY,
+            this.level.exitWidth * scaleX,
+            this.level.exitHeight * scaleY
+        );
+
+        // Draw lemmings (yellow)
+        this.minimapCtx.fillStyle = '#ffff00';
+        this.lemmings.forEach(lemming => {
+            if (lemming.state !== LemmingState.DEAD && lemming.state !== LemmingState.SAVED) {
+                this.minimapCtx.fillRect(
+                    lemming.x * scaleX - 1,
+                    lemming.y * scaleY - 1,
+                    2,
+                    2
+                );
+            }
+        });
+
+        // NEW: Draw viewport rectangle (white) - shows current zoomed view
+        this.minimapCtx.strokeStyle = '#ffffff';
+        this.minimapCtx.lineWidth = 2;
+        const viewportWidth = this.canvas.width / this.zoom;
+        const viewportHeight = this.canvas.height / this.zoom;
+        this.minimapCtx.strokeRect(
+            this.camera.x * scaleX,
+            this.camera.y * scaleY,
+            viewportWidth * scaleX,
+            viewportHeight * scaleY
+        );
+    }
+
+    // NEW: Updated minimap click to work with zoom
+    handleMinimapClick(e) {
+        const rect = this.minimapCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Convert minimap coordinates to level coordinates
+        const scaleX = this.levelWidth / this.minimapCanvas.width;
+        const scaleY = this.levelHeight / this.minimapCanvas.height;
+
+        // Center camera on clicked position (accounting for current zoom)
+        const viewportWidth = this.canvas.width / this.zoom;
+        const viewportHeight = this.canvas.height / this.zoom;
+        
+        this.camera.x = (x * scaleX) - (viewportWidth / 2);
+        this.camera.y = (y * scaleY) - (viewportHeight / 2);
+
+        // Clamp camera to level bounds
+        this.clampCamera();
     }
 
     returnToMenu() {
@@ -357,52 +665,6 @@ class Game {
             btn.classList.remove('selected');
         });
         document.querySelector(`[data-action="${action}"]`).classList.add('selected');
-    }
-
-    handleClick(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        if (this.selectedAction === ActionType.NONE) return;
-
-        // Find clicked lemming with larger click area
-        const clickPadding = 10; // Extra pixels around lemming for easier clicking
-        const lemming = this.lemmings.find(l =>
-            l.state !== LemmingState.DEAD &&
-            l.state !== LemmingState.SAVED &&
-            Math.abs(l.x - x) < LEMMING_WIDTH + clickPadding &&
-            Math.abs(l.y + LEMMING_HEIGHT / 2 - y) < LEMMING_HEIGHT / 2 + clickPadding
-        );
-
-        if (lemming && this.level.actionCounts[this.selectedAction] > 0) {
-            if (lemming.applyAction(this.selectedAction)) {
-                this.level.actionCounts[this.selectedAction]--;
-                this.updateActionCounts();
-            }
-        }
-    }
-
-    handleMouseMove(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        // Check if hovering over a lemming
-        const clickPadding = 10;
-        const hoveredLemming = this.lemmings.find(l =>
-            l.state !== LemmingState.DEAD &&
-            l.state !== LemmingState.SAVED &&
-            Math.abs(l.x - x) < LEMMING_WIDTH + clickPadding &&
-            Math.abs(l.y + LEMMING_HEIGHT / 2 - y) < LEMMING_HEIGHT / 2 + clickPadding
-        );
-
-        // Change cursor based on hover state and selected action
-        if (hoveredLemming && this.selectedAction !== ActionType.NONE) {
-            this.canvas.style.cursor = 'pointer';
-        } else {
-            this.canvas.style.cursor = 'default';
-        }
     }
 
     handleKeyDown(e) {
@@ -498,83 +760,6 @@ class Game {
         }
     }
 
-    gameLoop() {
-        if (!this.gameRunning) return;
-
-        // Clear canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Draw background
-        if (this.customBackground) {
-            this.ctx.drawImage(this.customBackground, 0, 0);
-        } else {
-            this.ctx.fillStyle = '#87CEEB';
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        }
-
-        // Draw terrain
-        this.terrain.draw(this.ctx);
-
-        // Draw hazards (before lemmings so they appear behind)
-        this.level.drawHazards(this.ctx);
-
-        // Draw level elements
-        this.level.drawExit(this.ctx);
-        this.level.drawSpawner(this.ctx);
-
-        // Update hazards
-        this.level.updateHazards();
-
-        // Spawn lemmings
-        this.spawnLemming();
-
-        // Update and draw lemmings
-        this.lemmings.forEach(lemming => {
-            lemming.update(this.terrain, this.lemmings);
-
-            // Check hazard collisions
-            if (lemming.state !== LemmingState.DEAD && lemming.state !== LemmingState.SAVED) {
-                this.level.checkHazardCollisions(lemming);
-            }
-
-            // Check if lemming reached exit
-            if (lemming.state !== LemmingState.SAVED && this.level.isAtExit(lemming)) {
-                lemming.state = LemmingState.SAVED;
-                this.lemmingsSaved++;
-                audioManager.playSound('save');
-            }
-
-            lemming.draw(this.ctx);
-        });
-
-        // Update and draw particles
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            const particle = this.particles[i];
-            particle.update();
-
-            if (particle.isDead()) {
-                this.particles.splice(i, 1);
-                if (this.particlePool.length < this.maxParticlePool) {
-                    this.particlePool.push(particle);
-                }
-            } else {
-                particle.draw(this.ctx);
-            }
-        }
-
-        // Draw minimap
-        this.drawMinimap();
-
-        // Update UI
-        this.updateStats();
-
-        // Check if level is complete
-        this.checkLevelComplete();
-
-        // Continue game loop
-        requestAnimationFrame(() => this.gameLoop());
-    }
-
     // Add minimap click handlers - these methods were referenced but missing implementations
     handleMinimapMouseDown(e) {
         this.isDraggingMinimap = true;
@@ -591,24 +776,6 @@ class Game {
         this.isDraggingMinimap = false;
     }
 
-    handleMinimapClick(e) {
-        const rect = this.minimapCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        // Convert minimap coordinates to level coordinates
-        const scaleX = this.levelWidth / this.minimapCanvas.width;
-        const scaleY = this.levelHeight / this.minimapCanvas.height;
-
-        // Center camera on clicked position
-        this.camera.x = (x * scaleX) - (this.canvas.width / 2);
-        this.camera.y = (y * scaleY) - (this.canvas.height / 2);
-
-        // Clamp camera to level bounds
-        this.camera.x = Math.max(0, Math.min(this.levelWidth - this.canvas.width, this.camera.x));
-        this.camera.y = Math.max(0, Math.min(this.levelHeight - this.canvas.height, this.camera.y));
-    }
-
     addParticle(x, y, color, vx, vy) {
         let particle;
         if (this.particlePool.length > 0) {
@@ -620,91 +787,6 @@ class Game {
             particle = new Particle(x, y, color, vx, vy);
         }
         this.particles.push(particle);
-    }
-
-    drawMinimap() {
-        if (!this.minimapCanvas || !this.minimapCtx) return;
-
-        // Clear minimap
-        this.minimapCtx.fillStyle = '#000000';
-        this.minimapCtx.fillRect(0, 0, this.minimapCanvas.width, this.minimapCanvas.height);
-
-        // Calculate scale
-        const scaleX = this.minimapCanvas.width / this.levelWidth;
-        const scaleY = this.minimapCanvas.height / this.levelHeight;
-
-        // Draw terrain (green)
-        if (this.terrain && this.terrain.canvas) {
-            this.minimapCtx.save();
-            this.minimapCtx.scale(scaleX, scaleY);
-
-            // Create temporary canvas for terrain processing
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = this.levelWidth;
-            tempCanvas.height = this.levelHeight;
-            const tempCtx = tempCanvas.getContext('2d');
-
-            // Draw terrain
-            tempCtx.drawImage(this.terrain.canvas, 0, 0);
-
-            // Get image data and convert to green
-            const imageData = tempCtx.getImageData(0, 0, this.levelWidth, this.levelHeight);
-            const data = imageData.data;
-
-            for (let i = 0; i < data.length; i += 4) {
-                if (data[i + 3] > 0) { // If pixel is not transparent
-                    data[i] = 0;     // Red
-                    data[i + 1] = 255; // Green
-                    data[i + 2] = 0;   // Blue
-                }
-            }
-
-            tempCtx.putImageData(imageData, 0, 0);
-            this.minimapCtx.drawImage(tempCanvas, 0, 0);
-
-            this.minimapCtx.restore();
-        }
-
-        // Draw spawn point (teal)
-        this.minimapCtx.fillStyle = '#00ffff';
-        this.minimapCtx.fillRect(
-            this.level.spawnX * scaleX - 3,
-            this.level.spawnY * scaleY - 3,
-            6,
-            6
-        );
-
-        // Draw exit (light purple)
-        this.minimapCtx.fillStyle = '#ff99ff';
-        this.minimapCtx.fillRect(
-            this.level.exitX * scaleX,
-            this.level.exitY * scaleY,
-            this.level.exitWidth * scaleX,
-            this.level.exitHeight * scaleY
-        );
-
-        // Draw lemmings (yellow)
-        this.minimapCtx.fillStyle = '#ffff00';
-        this.lemmings.forEach(lemming => {
-            if (lemming.state !== LemmingState.DEAD && lemming.state !== LemmingState.SAVED) {
-                this.minimapCtx.fillRect(
-                    lemming.x * scaleX - 1,
-                    lemming.y * scaleY - 1,
-                    2,
-                    2
-                );
-            }
-        });
-
-        // Draw viewport rectangle (white)
-        this.minimapCtx.strokeStyle = '#ffffff';
-        this.minimapCtx.lineWidth = 2;
-        this.minimapCtx.strokeRect(
-            this.camera.x * scaleX,
-            this.camera.y * scaleY,
-            this.canvas.width * scaleX,
-            this.canvas.height * scaleY
-        );
     }
 
     setupMinimap() {

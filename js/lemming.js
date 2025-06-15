@@ -1,4 +1,4 @@
-// Updated lemming.js - Add climbing behavior
+// Updated lemming.js - Lemmings will be scaled by the game's zoom level
 class Lemming {
     constructor(x, y) {
         this.x = x;
@@ -365,6 +365,7 @@ class Lemming {
             ctx.fillRect(this.x - 1, this.y - 2, 2, 4);
         }
 
+        // Draw lemming body - this will be scaled by the game's zoom level
         ctx.fillRect(this.x - LEMMING_WIDTH / 2, this.y, LEMMING_WIDTH, LEMMING_HEIGHT);
 
         // Draw direction indicator

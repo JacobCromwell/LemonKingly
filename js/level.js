@@ -48,6 +48,7 @@ class Level {
         }
     }
     
+    // Draw exit - will be scaled by game's zoom level
     drawExit(ctx) {
         // Draw exit gate
         ctx.fillStyle = '#4CAF50';
@@ -61,16 +62,34 @@ class Level {
         // Draw "field" beyond gate
         ctx.fillStyle = '#81C784';
         ctx.fillRect(this.exitX + 5, this.exitY + 5, this.exitWidth - 10, this.exitHeight - 10);
+        
+        // Add EXIT text that scales appropriately
+        ctx.fillStyle = 'white';
+        ctx.font = `${Math.max(8, this.exitWidth / 4)}px Arial`; // Scale font with exit size
+        ctx.textAlign = 'center';
+        ctx.fillText('EXIT', this.exitX + this.exitWidth/2, this.exitY + this.exitHeight/2 + 3);
+        ctx.textAlign = 'start'; // Reset text alignment
     }
     
+    // UPDATED: Draw spawner - will be scaled by game's zoom level
     drawSpawner(ctx) {
+        const spawnerWidth = 20;
+        const spawnerHeight = 15;
+        
         // Draw spawner
         ctx.fillStyle = '#2196F3';
-        ctx.fillRect(this.spawnX - 10, this.spawnY - 15, 20, 15);
+        ctx.fillRect(this.spawnX - spawnerWidth/2, this.spawnY - spawnerHeight, spawnerWidth, spawnerHeight);
         
         ctx.strokeStyle = '#1565C0';
         ctx.lineWidth = 2;
-        ctx.strokeRect(this.spawnX - 10, this.spawnY - 15, 20, 15);
+        ctx.strokeRect(this.spawnX - spawnerWidth/2, this.spawnY - spawnerHeight, spawnerWidth, spawnerHeight);
+        
+        // Add SPAWN text that scales appropriately
+        ctx.fillStyle = 'white';
+        ctx.font = `${Math.max(6, spawnerWidth / 3)}px Arial`; // Scale font with spawner size
+        ctx.textAlign = 'center';
+        ctx.fillText('SPAWN', this.spawnX, this.spawnY - spawnerHeight/2 + 2);
+        ctx.textAlign = 'start'; // Reset text alignment
     }
     
     isAtExit(lemming) {

@@ -28,7 +28,13 @@ class EditorFileHandler {
                 type: h.type
             })),
             terrain: this.editor.terrain.canvas.toDataURL(),
-            background: this.editor.backgroundImage ? this.editor.backgroundImage.src : null
+            background: this.editor.backgroundImage ? this.editor.backgroundImage.src : null,
+            // Save zoom and camera position
+            zoom: this.editor.zoom,
+            camera: {
+                x: this.editor.camera.x,
+                y: this.editor.camera.y
+            }
         };
 
         const dataStr = JSON.stringify(levelData, null, 2);
@@ -64,6 +70,18 @@ class EditorFileHandler {
         this.editor.exitPoint = data.exit;
         this.editor.levelData = data.levelSettings;
 
+        // Load zoom and camera position if available
+        if (data.zoom !== undefined) {
+            this.editor.zoom = Math.max(this.editor.minZoom, Math.min(this.editor.maxZoom, data.zoom));
+            this.editor.updateZoomDisplay();
+        }
+
+        if (data.camera) {
+            this.editor.camera.x = data.camera.x;
+            this.editor.camera.y = data.camera.y;
+            this.editor.clampCamera();
+        }
+
         // Recreate terrain at correct size
         this.editor.terrain = new Terrain(this.editor.levelWidth, this.editor.levelHeight);
 
@@ -89,14 +107,16 @@ class EditorFileHandler {
             this.editor.terrain.ctx.drawImage(terrainImg, 0, 0);
             this.editor.terrain.updateImageData();
 
-            // Auto-adjust zoom
-            const zoomX = this.editor.displayWidth / this.editor.levelWidth;
-            const zoomY = this.editor.displayHeight / this.editor.levelHeight;
-            this.editor.zoom = Math.min(zoomX, zoomY) * 0.9;
-            this.editor.zoom = Math.max(this.editor.minZoom, Math.min(this.editor.maxZoom, this.editor.zoom));
+            // If no zoom was saved, auto-adjust zoom (backward compatibility)
+            if (data.zoom === undefined) {
+                const zoomX = this.editor.displayWidth / this.editor.levelWidth;
+                const zoomY = this.editor.displayHeight / this.editor.levelHeight;
+                this.editor.zoom = Math.min(zoomX, zoomY) * 0.9;
+                this.editor.zoom = Math.max(this.editor.minZoom, Math.min(this.editor.maxZoom, this.editor.zoom));
+                this.editor.updateZoomDisplay();
+                this.editor.centerCamera();
+            }
 
-            this.editor.updateZoomDisplay();
-            this.editor.centerCamera();
             this.editor.draw();
         };
         terrainImg.src = data.terrain;
@@ -124,7 +144,13 @@ class EditorFileHandler {
             background: this.editor.backgroundImage ? this.editor.backgroundImage.src : null,
             levelSettings: this.editor.levelData,
             width: this.editor.levelWidth,
-            height: this.editor.levelHeight
+            height: this.editor.levelHeight,
+            // Include zoom and camera for test level
+            zoom: this.editor.zoom,
+            camera: {
+                x: this.editor.camera.x,
+                y: this.editor.camera.y
+            }
         };
 
         // Store in sessionStorage for game to load
