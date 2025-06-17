@@ -1,6 +1,28 @@
 // Game Constants
-const LEMMING_HEIGHT = 20;
-const LEMMING_WIDTH = 10;
+const LEMMING_BASE_ZOOM = 1.26; // 126% zoom where lemmings are their base size
+const LEMMING_BASE_HEIGHT = 10; // Height at base zoom (126%)
+const LEMMING_BASE_WIDTH = 8; // Width at base zoom (126%)
+
+// Dynamic lemming size functions
+function getLemmingWidth(zoom) {
+    return (LEMMING_BASE_WIDTH * zoom) / LEMMING_BASE_ZOOM;
+}
+
+function getLemmingHeight(zoom) {
+    return (LEMMING_BASE_HEIGHT * zoom) / LEMMING_BASE_ZOOM;
+}
+
+// Make functions globally available
+window.getLemmingWidth = getLemmingWidth;
+window.getLemmingHeight = getLemmingHeight;
+window.LEMMING_BASE_ZOOM = LEMMING_BASE_ZOOM;
+window.LEMMING_BASE_WIDTH = LEMMING_BASE_WIDTH;
+window.LEMMING_BASE_HEIGHT = LEMMING_BASE_HEIGHT;
+
+// Legacy constants for backward compatibility (will be calculated dynamically)
+const LEMMING_HEIGHT = LEMMING_BASE_HEIGHT; // 10px at base zoom
+const LEMMING_WIDTH = LEMMING_BASE_WIDTH; // 8px at base zoom
+
 const MAX_FALL_HEIGHT = 1000;
 const CLIMB_HEIGHT = 10;
 const GRAVITY = 2;

@@ -1,6 +1,6 @@
-// Updated lemming.js - Lemmings will be scaled by the game's zoom level
+// Updated lemming.js - Dynamic scaling based on zoom level
 class Lemming {
-    constructor(x, y) {
+    constructor(x, y, zoom = 1.0) {
         this.x = x;
         this.y = y;
         this.direction = 1; // 1 = right, -1 = left
@@ -11,6 +11,41 @@ class Lemming {
         this.buildTilesPlaced = 0;
         this.isClimber = false; // Permanent climber ability
         this.originalDirection = 1; // Store original direction for climbing
+        
+        // Store zoom for dynamic sizing
+        this.zoom = zoom;
+    }
+
+    // Get current lemming dimensions based on zoom
+    getWidth() {
+        // Try multiple ways to access the function
+        const func = window.getLemmingWidth || getLemmingWidth;
+        if (func) {
+            return func(this.zoom);
+        } else {
+            // Fallback calculation
+            const baseZoom = window.LEMMING_BASE_ZOOM || 1.26;
+            const baseWidth = window.LEMMING_BASE_WIDTH || 8;
+            return (baseWidth * this.zoom) / baseZoom;
+        }
+    }
+
+    getHeight() {
+        // Try multiple ways to access the function
+        const func = window.getLemmingHeight || getLemmingHeight;
+        if (func) {
+            return func(this.zoom);
+        } else {
+            // Fallback calculation
+            const baseZoom = window.LEMMING_BASE_ZOOM || 1.26;
+            const baseHeight = window.LEMMING_BASE_HEIGHT || 10;
+            return (baseHeight * this.zoom) / baseZoom;
+        }
+    }
+
+    // Update zoom level (called when zoom changes)
+    updateZoom(zoom) {
+        this.zoom = zoom;
     }
 
     update(terrain, lemmings) {
@@ -51,7 +86,10 @@ class Lemming {
     }
 
     walk(terrain, lemmings) {
-        if (!terrain.hasGround(this.x, this.y + LEMMING_HEIGHT)) {
+        const lemmingHeight = this.getHeight();
+        const lemmingWidth = this.getWidth();
+
+        if (!terrain.hasGround(this.x, this.y + lemmingHeight)) {
             this.state = LemmingState.FALLING;
             this.fallDistance = 0;
             return;
@@ -65,12 +103,12 @@ class Lemming {
             const l = lemmings[i];
             if (l === this || l.state !== LemmingState.BLOCKING) continue;
 
-            // Early exit if lemming is too far away
+            // Early exit if lemming is too far away - use scaled width
             const xDist = Math.abs(l.x - nextX);
-            if (xDist >= LEMMING_WIDTH) continue;
+            if (xDist >= lemmingWidth) continue;
 
             const yDist = Math.abs(l.y - this.y);
-            if (yDist < LEMMING_HEIGHT) {
+            if (yDist < lemmingHeight) {
                 blocker = l;
                 break;
             }
@@ -101,11 +139,14 @@ class Lemming {
     }
 
     climb(terrain) {
+        const lemmingWidth = this.getWidth();
+        const lemmingHeight = this.getHeight();
+
         // Move up along the wall
         this.y -= 1;
 
         // Check for overhead obstacle
-        const checkX = this.x + (this.originalDirection * (LEMMING_WIDTH / 2 + 1));
+        const checkX = this.x + (this.originalDirection * (lemmingWidth / 2 + 1));
         if (terrain.hasGround(checkX, this.y - 1)) {
             // Hit overhead obstacle - fall and reverse direction
             this.state = LemmingState.FALLING;
@@ -115,11 +156,11 @@ class Lemming {
         }
 
         // Check if we've cleared the obstacle (can walk on top)
-        const clearanceWidth = LEMMING_WIDTH * 2; // Double the lemming's width
+        const clearanceWidth = lemmingWidth * 2; // Double the lemming's width
         let canWalkOnTop = true;
 
         // Check for ground to stand on
-        if (!terrain.hasGround(this.x, this.y + LEMMING_HEIGHT)) {
+        if (!terrain.hasGround(this.x, this.y + lemmingHeight)) {
             canWalkOnTop = false;
         }
 
@@ -128,7 +169,7 @@ class Lemming {
             const checkX = this.x + (this.originalDirection * checkOffset);
 
             // Check if there's an obstacle blocking the path at walking height
-            for (let checkY = this.y; checkY < this.y + LEMMING_HEIGHT; checkY++) {
+            for (let checkY = this.y; checkY < this.y + lemmingHeight; checkY++) {
                 if (terrain.hasGround(checkX, checkY)) {
                     canWalkOnTop = false;
                     break;
@@ -146,10 +187,12 @@ class Lemming {
     }
 
     fall(terrain) {
+        const lemmingHeight = this.getHeight();
+
         this.y += GRAVITY;
         this.fallDistance += GRAVITY;
 
-        if (terrain.hasGround(this.x, this.y + LEMMING_HEIGHT)) {
+        if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
             if (this.fallDistance >= MAX_FALL_HEIGHT) {
                 this.state = LemmingState.DEAD;
                 audioManager.playSound('death');
@@ -160,7 +203,7 @@ class Lemming {
                         const speed = Math.random() * 3 + 1;
                         window.game.particles.push(new Particle(
                             this.x,
-                            this.y + LEMMING_HEIGHT / 2,
+                            this.y + lemmingHeight / 2,
                             '#ff0000',
                             Math.cos(angle) * speed,
                             Math.sin(angle) * speed - 2
@@ -175,10 +218,13 @@ class Lemming {
     }
 
     bash(terrain) {
+        const lemmingWidth = this.getWidth();
+        const lemmingHeight = this.getHeight();
+
         // Bash horizontally
-        const bashX = this.x + (this.direction * (LEMMING_WIDTH / 2 + 2));
+        const bashX = this.x + (this.direction * (lemmingWidth / 2 + 2));
         const bashWidth = 6;
-        const bashHeight = LEMMING_HEIGHT;
+        const bashHeight = lemmingHeight;
 
         let foundObstacle = false;
 
@@ -213,7 +259,7 @@ class Lemming {
             this.x += this.direction * 2;
         } else {
             // Check if we can walk forward (no obstacle)
-            if (!terrain.hasGround(this.x + this.direction * WALK_SPEED, this.y + LEMMING_HEIGHT / 2)) {
+            if (!terrain.hasGround(this.x + this.direction * WALK_SPEED, this.y + lemmingHeight / 2)) {
                 // Done bashing, return to walking
                 this.state = LemmingState.WALKING;
             } else {
@@ -224,9 +270,12 @@ class Lemming {
     }
 
     dig(terrain) {
+        const lemmingWidth = this.getWidth();
+        const lemmingHeight = this.getHeight();
+
         // Dig vertically
-        const digY = this.y + LEMMING_HEIGHT;
-        const digWidth = LEMMING_WIDTH + 4; // Slightly wider than lemming
+        const digY = this.y + lemmingHeight;
+        const digWidth = lemmingWidth + 4; // Slightly wider than lemming
         const digHeight = 4;
 
         let foundGround = false;
@@ -259,7 +308,7 @@ class Lemming {
             this.y += 2;
         } else {
             // No more ground to dig - check if we're standing on solid ground
-            if (terrain.hasGround(this.x, this.y + LEMMING_HEIGHT)) {
+            if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
                 // There's ground underneath, return to walking
                 this.state = LemmingState.WALKING;
             } else {
@@ -271,6 +320,8 @@ class Lemming {
     }
 
     build(terrain) {
+        const lemmingHeight = this.getHeight();
+
         if (this.buildTilesPlaced >= MAX_BUILD_TILES) {
             this.state = LemmingState.WALKING;
             return;
@@ -286,9 +337,9 @@ class Lemming {
         let tileY = 0;
 
         if (this.buildTilesPlaced === 0) {
-            tileY = this.y + LEMMING_HEIGHT - 1;
+            tileY = this.y + lemmingHeight - 1;
         } else {
-            tileY = this.y + LEMMING_HEIGHT - stepHeight - 2;
+            tileY = this.y + lemmingHeight - stepHeight - 2;
         }
 
         // Add the building tile
@@ -298,7 +349,7 @@ class Lemming {
 
         // Move lemming to stand on the new tile
         this.x = tileX;
-        this.y = tileY - LEMMING_HEIGHT;
+        this.y = tileY - lemmingHeight;
 
         // Add a small delay effect (handled by game loop timing)
         if (this.buildTilesPlaced >= MAX_BUILD_TILES) {
@@ -340,6 +391,9 @@ class Lemming {
     }
 
     draw(ctx) {
+        const lemmingWidth = this.getWidth();
+        const lemmingHeight = this.getHeight();
+
         if (this.state === LemmingState.DEAD) {
             ctx.fillStyle = '#ff0000';
         } else if (this.state === LemmingState.SAVED) {
@@ -360,17 +414,21 @@ class Lemming {
 
         // Add visual indicator for climbers
         if (this.isClimber && this.state !== LemmingState.CLIMBING) {
-            // Draw a small climbing indicator (rope/hook)
+            // Draw a small climbing indicator (rope/hook) - scaled
             ctx.fillStyle = '#8B4513'; // Brown rope color
-            ctx.fillRect(this.x - 1, this.y - 2, 2, 4);
+            const ropeWidth = Math.max(1, lemmingWidth * 0.25);
+            const ropeHeight = Math.max(2, lemmingHeight * 0.4);
+            ctx.fillRect(this.x - ropeWidth/2, this.y - ropeHeight/2, ropeWidth, ropeHeight);
         }
 
-        // Draw lemming body - this will be scaled by the game's zoom level
-        ctx.fillRect(this.x - LEMMING_WIDTH / 2, this.y, LEMMING_WIDTH, LEMMING_HEIGHT);
+        // Draw lemming body - now uses dynamic size based on zoom
+        ctx.fillRect(this.x - lemmingWidth / 2, this.y, lemmingWidth, lemmingHeight);
 
-        // Draw direction indicator
+        // Draw direction indicator - scaled
         ctx.fillStyle = 'white';
-        const eyeX = this.x + (this.direction * 2);
-        ctx.fillRect(eyeX - 1, this.y + 4, 2, 2);
+        const eyeSize = Math.max(1, lemmingWidth * 0.25);
+        const eyeX = this.x + (this.direction * (lemmingWidth * 0.25));
+        const eyeY = this.y + (lemmingHeight * 0.2);
+        ctx.fillRect(eyeX - eyeSize/2, eyeY, eyeSize, eyeSize);
     }
 }

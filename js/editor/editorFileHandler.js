@@ -29,7 +29,7 @@ class EditorFileHandler {
             })),
             terrain: this.editor.terrain.canvas.toDataURL(),
             background: this.editor.backgroundImage ? this.editor.backgroundImage.src : null,
-            // Save zoom and camera position
+            // NEW: Save zoom and camera position
             zoom: this.editor.zoom,
             camera: {
                 x: this.editor.camera.x,
@@ -70,7 +70,7 @@ class EditorFileHandler {
         this.editor.exitPoint = data.exit;
         this.editor.levelData = data.levelSettings;
 
-        // Load zoom and camera position if available
+        // NEW: Load zoom and camera position if available
         if (data.zoom !== undefined) {
             this.editor.zoom = Math.max(this.editor.minZoom, Math.min(this.editor.maxZoom, data.zoom));
             this.editor.updateZoomDisplay();
@@ -135,6 +135,17 @@ class EditorFileHandler {
         this.editor.levelData.requiredLemmings = parseInt(document.getElementById('requiredLemmings').value);
         this.editor.levelData.spawnRate = parseInt(document.getElementById('spawnRate').value);
 
+        // Create a test lemming to show in editor with current zoom
+        if (!this.editor.testLemmings) {
+            this.editor.testLemmings = [];
+        }
+        
+        // Clear existing test lemmings
+        this.editor.testLemmings = [];
+        
+        // Add a test lemming at spawn point with current editor zoom
+        this.editor.testLemmings.push(new Lemming(this.editor.spawnPoint.x, this.editor.spawnPoint.y, this.editor.zoom));
+
         // Save current level to temporary storage
         const levelData = {
             spawn: this.editor.spawnPoint,
@@ -145,7 +156,7 @@ class EditorFileHandler {
             levelSettings: this.editor.levelData,
             width: this.editor.levelWidth,
             height: this.editor.levelHeight,
-            // Include zoom and camera for test level
+            // NEW: Include zoom and camera for test level
             zoom: this.editor.zoom,
             camera: {
                 x: this.editor.camera.x,

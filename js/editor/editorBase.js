@@ -21,7 +21,7 @@ class EditorBase {
         this.zoom = 2.0;
         this.minZoom = 0.2;
         this.maxZoom = 8.0;
-        this.zoomStep = 0.5;
+        this.zoomStep = 0.2;
         
         // Camera position
         this.camera = { x: 0, y: 0 };

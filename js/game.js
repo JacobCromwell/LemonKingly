@@ -398,12 +398,15 @@ class Game {
 
         // Find clicked lemming with larger click area
         const clickPadding = 10; // Extra pixels around lemming for easier clicking
-        const lemming = this.lemmings.find(l =>
-            l.state !== LemmingState.DEAD &&
-            l.state !== LemmingState.SAVED &&
-            Math.abs(l.x - worldX) < LEMMING_WIDTH + clickPadding &&
-            Math.abs(l.y + LEMMING_HEIGHT / 2 - worldY) < LEMMING_HEIGHT / 2 + clickPadding
-        );
+        const lemming = this.lemmings.find(l => {
+            if (l.state === LemmingState.DEAD || l.state === LemmingState.SAVED) return false;
+            
+            const lemmingWidth = l.getWidth();
+            const lemmingHeight = l.getHeight();
+            
+            return Math.abs(l.x - worldX) < lemmingWidth + clickPadding &&
+                   Math.abs(l.y + lemmingHeight / 2 - worldY) < lemmingHeight / 2 + clickPadding;
+        });
 
         if (lemming && this.level.actionCounts[this.selectedAction] > 0) {
             if (lemming.applyAction(this.selectedAction)) {
@@ -425,12 +428,15 @@ class Game {
 
         // Check if hovering over a lemming
         const clickPadding = 10;
-        const hoveredLemming = this.lemmings.find(l =>
-            l.state !== LemmingState.DEAD &&
-            l.state !== LemmingState.SAVED &&
-            Math.abs(l.x - worldX) < LEMMING_WIDTH + clickPadding &&
-            Math.abs(l.y + LEMMING_HEIGHT / 2 - worldY) < LEMMING_HEIGHT / 2 + clickPadding
-        );
+        const hoveredLemming = this.lemmings.find(l => {
+            if (l.state === LemmingState.DEAD || l.state === LemmingState.SAVED) return false;
+            
+            const lemmingWidth = l.getWidth();
+            const lemmingHeight = l.getHeight();
+            
+            return Math.abs(l.x - worldX) < lemmingWidth + clickPadding &&
+                   Math.abs(l.y + lemmingHeight / 2 - worldY) < lemmingHeight / 2 + clickPadding;
+        });
 
         // Change cursor based on hover state and selected action
         if (hoveredLemming && this.selectedAction !== ActionType.NONE) {
@@ -478,6 +484,11 @@ class Game {
 
         // Update and draw lemmings
         this.lemmings.forEach(lemming => {
+            // Update lemming zoom if it has changed
+            if (lemming.zoom !== this.zoom) {
+                lemming.updateZoom(this.zoom);
+            }
+
             lemming.update(this.terrain, this.lemmings);
 
             // Check hazard collisions
@@ -718,7 +729,8 @@ class Game {
             const currentTime = Date.now();
             if (currentTime - this.lastSpawnTime >= this.level.spawnRate) {
                 console.log('Spawning lemming', this.lemmingsSpawned + 1, 'at', this.level.spawnX, this.level.spawnY);
-                this.lemmings.push(new Lemming(this.level.spawnX, this.level.spawnY));
+                // Pass current zoom to lemming constructor
+                this.lemmings.push(new Lemming(this.level.spawnX, this.level.spawnY, this.zoom));
                 this.lemmingsSpawned++;
                 this.lastSpawnTime = currentTime;
             }
