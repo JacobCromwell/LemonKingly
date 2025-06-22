@@ -23,7 +23,7 @@ window.LEMMING_BASE_HEIGHT = LEMMING_BASE_HEIGHT;
 const LEMMING_HEIGHT = LEMMING_BASE_HEIGHT; // 10px at base zoom
 const LEMMING_WIDTH = LEMMING_BASE_WIDTH; // 8px at base zoom
 
-const MAX_FALL_HEIGHT = 1000;
+const MAX_FALL_HEIGHT = 60;
 const CLIMB_HEIGHT = 10;
 const GRAVITY = 2;
 const WALK_SPEED = 1;

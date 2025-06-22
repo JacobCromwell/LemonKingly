@@ -2,6 +2,11 @@
 
 The level editor has been refactored into a modular architecture to support future expansion and maintain code organization.
 
+# Note to Editor Users
+Current best zoom level for classic lemmings levels is 280% . If this zoom is causing problems tweak LEMMING_BASE_ZOOM value.
+The lemming levels I was finding had a max height of 160px so that is what everything is calibrated around.
+
+
 ## File Structure
 
 ```
