@@ -1,4 +1,14 @@
 // Game Constants
+
+// When adding new actions, update:
+// 1. ActionType enum below
+// 2. ACTIONS object above  
+// 3. lemming.js - applyAction() and draw()
+// 4. audioManager.js - generateSoundEffects()
+// 5. index.html - toolbar button
+// 6. level.js - default actionCounts
+// 7. game.js - loadCustomLevel() fallbacks
+
 const LEMMING_BASE_ZOOM = 2.8; // 126% zoom where lemmings are their base size
 const LEMMING_BASE_HEIGHT = 10; // Height at base zoom (126%)
 const LEMMING_BASE_WIDTH = 6; // Width at base zoom (126%)
