@@ -1,7 +1,7 @@
 // Game Constants
-const LEMMING_BASE_ZOOM = 1.26; // 126% zoom where lemmings are their base size
+const LEMMING_BASE_ZOOM = 2.8; // 126% zoom where lemmings are their base size
 const LEMMING_BASE_HEIGHT = 10; // Height at base zoom (126%)
-const LEMMING_BASE_WIDTH = 8; // Width at base zoom (126%)
+const LEMMING_BASE_WIDTH = 6; // Width at base zoom (126%)
 
 // Dynamic lemming size functions
 function getLemmingWidth(zoom) {
