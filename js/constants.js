@@ -38,7 +38,8 @@ const ActionType = {
     BASHER: 'basher',
     DIGGER: 'digger',
     BUILDER: 'builder',
-    CLIMBER: 'climber'
+    CLIMBER: 'climber',
+    FLOATER: 'floater'
 };
 
 // Lemming states

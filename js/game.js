@@ -28,7 +28,7 @@ class Game {
         this.camera = { x: 0, y: 0 };
         this.levelWidth = 1200;
         this.levelHeight = 600;
-        
+
         // NEW: Add zoom support for game mode
         this.zoom = 1.0;
         this.minZoom = 0.2;
@@ -275,11 +275,11 @@ class Game {
         // Update level dimensions and create properly sized terrain
         this.levelWidth = levelData.width || 1200;
         this.levelHeight = levelData.height || 600;
-        
+
         // Create terrain with correct dimensions
         this.terrain = new Terrain(this.levelWidth, this.levelHeight);
 
-        // NEW: Apply saved zoom and camera settings
+        // Apply saved zoom and camera settings
         if (levelData.zoom !== undefined) {
             this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, levelData.zoom));
             console.log('Applied saved zoom:', this.zoom);
@@ -307,21 +307,40 @@ class Game {
             this.level.requiredLemmings = levelData.levelSettings.requiredLemmings || 10;
             this.level.spawnRate = levelData.levelSettings.spawnRate || 2000;
 
-            // Convert action counts to proper format
+            // FIXED: Convert action counts to proper format with backward compatibility
             if (levelData.levelSettings.actionCounts) {
                 this.level.actionCounts = {
                     [ActionType.BLOCKER]: levelData.levelSettings.actionCounts.blocker || 5,
                     [ActionType.BASHER]: levelData.levelSettings.actionCounts.basher || 5,
                     [ActionType.DIGGER]: levelData.levelSettings.actionCounts.digger || 5,
                     [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 5,
-                    [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 5
+                    [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 5,
+                    [ActionType.FLOATER]: levelData.levelSettings.actionCounts.floater || 5  // NEW: Add floater with default
+                };
+            } else {
+                // FIXED: Ensure all action types are included with defaults
+                this.level.actionCounts = {
+                    [ActionType.BLOCKER]: 5,
+                    [ActionType.BASHER]: 5,
+                    [ActionType.DIGGER]: 5,
+                    [ActionType.BUILDER]: 5,
+                    [ActionType.CLIMBER]: 5,
+                    [ActionType.FLOATER]: 5  // NEW: Add floater default
                 };
             }
         } else {
-            // Fallback to defaults if levelSettings doesn't exist
+            // FIXED: Fallback to defaults if levelSettings doesn't exist - include floater
             this.level.totalLemmings = 20;
             this.level.requiredLemmings = 10;
             this.level.spawnRate = 2000;
+            this.level.actionCounts = {
+                [ActionType.BLOCKER]: 5,
+                [ActionType.BASHER]: 5,
+                [ActionType.DIGGER]: 5,
+                [ActionType.BUILDER]: 5,
+                [ActionType.CLIMBER]: 5,
+                [ActionType.FLOATER]: 5  // NEW: Add floater default
+            };
         }
 
         // Load terrain
@@ -362,16 +381,17 @@ class Game {
         }
 
         console.log('Level loaded. Total lemmings:', this.level.totalLemmings, 'Required:', this.level.requiredLemmings, 'Spawn rate:', this.level.spawnRate);
+        console.log('Action counts:', this.level.actionCounts); // DEBUG: Log action counts to verify floater is included
     }
 
     // NEW: Center camera on spawn point
     centerCameraOnSpawn() {
         const viewportWidth = this.canvas.width / this.zoom;
         const viewportHeight = this.canvas.height / this.zoom;
-        
+
         this.camera.x = this.level.spawnX - viewportWidth / 2;
         this.camera.y = this.level.spawnY - viewportHeight / 2;
-        
+
         this.clampCamera();
     }
 
@@ -379,7 +399,7 @@ class Game {
     clampCamera() {
         const viewportWidth = this.canvas.width / this.zoom;
         const viewportHeight = this.canvas.height / this.zoom;
-        
+
         this.camera.x = Math.max(0, Math.min(this.levelWidth - viewportWidth, this.camera.x));
         this.camera.y = Math.max(0, Math.min(this.levelHeight - viewportHeight, this.camera.y));
     }
@@ -400,12 +420,12 @@ class Game {
         const clickPadding = 10; // Extra pixels around lemming for easier clicking
         const lemming = this.lemmings.find(l => {
             if (l.state === LemmingState.DEAD || l.state === LemmingState.SAVED) return false;
-            
+
             const lemmingWidth = l.getWidth();
             const lemmingHeight = l.getHeight();
-            
+
             return Math.abs(l.x - worldX) < lemmingWidth + clickPadding &&
-                   Math.abs(l.y + lemmingHeight / 2 - worldY) < lemmingHeight / 2 + clickPadding;
+                Math.abs(l.y + lemmingHeight / 2 - worldY) < lemmingHeight / 2 + clickPadding;
         });
 
         if (lemming && this.level.actionCounts[this.selectedAction] > 0) {
@@ -430,12 +450,12 @@ class Game {
         const clickPadding = 10;
         const hoveredLemming = this.lemmings.find(l => {
             if (l.state === LemmingState.DEAD || l.state === LemmingState.SAVED) return false;
-            
+
             const lemmingWidth = l.getWidth();
             const lemmingHeight = l.getHeight();
-            
+
             return Math.abs(l.x - worldX) < lemmingWidth + clickPadding &&
-                   Math.abs(l.y + lemmingHeight / 2 - worldY) < lemmingHeight / 2 + clickPadding;
+                Math.abs(l.y + lemmingHeight / 2 - worldY) < lemmingHeight / 2 + clickPadding;
         });
 
         // Change cursor based on hover state and selected action
@@ -639,7 +659,7 @@ class Game {
         // Center camera on clicked position (accounting for current zoom)
         const viewportWidth = this.canvas.width / this.zoom;
         const viewportHeight = this.canvas.height / this.zoom;
-        
+
         this.camera.x = (x * scaleX) - (viewportWidth / 2);
         this.camera.y = (y * scaleY) - (viewportHeight / 2);
 

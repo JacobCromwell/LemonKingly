@@ -1,4 +1,4 @@
-// Updated lemming.js - Dynamic scaling based on zoom level
+// Updated lemming.js - Dynamic scaling based on zoom level with Floater ability
 class Lemming {
     constructor(x, y, zoom = 1.0) {
         this.x = x;
@@ -10,6 +10,7 @@ class Lemming {
         this.actionProgress = 0;
         this.buildTilesPlaced = 0;
         this.isClimber = false; // Permanent climber ability
+        this.isFloater = false; // Permanent floater ability - NEW
         this.originalDirection = 1; // Store original direction for climbing
         
         // Store zoom for dynamic sizing
@@ -189,11 +190,14 @@ class Lemming {
     fall(terrain) {
         const lemmingHeight = this.getHeight();
 
-        this.y += GRAVITY;
-        this.fallDistance += GRAVITY;
+        // Apply gravity - floaters fall slower
+        const fallSpeed = this.isFloater ? GRAVITY * 0.5 : GRAVITY;
+        this.y += fallSpeed;
+        this.fallDistance += fallSpeed;
 
         if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
-            if (this.fallDistance >= MAX_FALL_HEIGHT) {
+            // UPDATED: Floaters don't die from fall damage
+            if (this.fallDistance >= MAX_FALL_HEIGHT && !this.isFloater) {
                 this.state = LemmingState.DEAD;
                 audioManager.playSound('death');
                 // Create death particles
@@ -383,6 +387,10 @@ class Lemming {
                     this.isClimber = true;
                     audioManager.playSound('climber');
                     break;
+                case ActionType.FLOATER:  // NEW FLOATER ACTION
+                    this.isFloater = true;
+                    audioManager.playSound('floater');
+                    break;
             }
             this.action = action;
             return true;
@@ -421,6 +429,11 @@ class Lemming {
             ctx.fillRect(this.x - ropeWidth/2, this.y - ropeHeight/2, ropeWidth, ropeHeight);
         }
 
+        // NEW: Draw parachute for floaters when falling
+        if (this.isFloater && this.state === LemmingState.FALLING) {
+            this.drawParachute(ctx, lemmingWidth, lemmingHeight);
+        }
+
         // Draw lemming body - now uses dynamic size based on zoom
         ctx.fillRect(this.x - lemmingWidth / 2, this.y, lemmingWidth, lemmingHeight);
 
@@ -430,5 +443,73 @@ class Lemming {
         const eyeX = this.x + (this.direction * (lemmingWidth * 0.25));
         const eyeY = this.y + (lemmingHeight * 0.2);
         ctx.fillRect(eyeX - eyeSize/2, eyeY, eyeSize, eyeSize);
+
+        // NEW: Add visual indicator for floaters when not falling (small parachute icon)
+        if (this.isFloater && this.state !== LemmingState.FALLING) {
+            // Draw a small parachute icon above the lemming
+            ctx.fillStyle = '#FFD700'; // Gold color
+            const iconSize = Math.max(2, lemmingWidth * 0.4);
+            const iconX = this.x + (lemmingWidth * 0.3);
+            const iconY = this.y - (lemmingHeight * 0.3);
+            
+            // Small parachute shape
+            ctx.beginPath();
+            ctx.arc(iconX, iconY, iconSize/2, Math.PI, 0, false);
+            ctx.fill();
+            
+            // Parachute strings
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = Math.max(0.5, iconSize * 0.1);
+            ctx.beginPath();
+            ctx.moveTo(iconX - iconSize/2, iconY);
+            ctx.lineTo(this.x, this.y + lemmingHeight * 0.1);
+            ctx.moveTo(iconX + iconSize/2, iconY);
+            ctx.lineTo(this.x, this.y + lemmingHeight * 0.1);
+            ctx.stroke();
+        }
+    }
+
+    // NEW: Draw parachute when falling
+    drawParachute(ctx, lemmingWidth, lemmingHeight) {
+        const parachuteSize = lemmingWidth * 3; // Parachute is 3x lemming width
+        const parachuteY = this.y - lemmingHeight * 1.5; // Above the lemming
+
+        // Parachute canopy
+        ctx.fillStyle = '#FFD700'; // Gold color
+        ctx.beginPath();
+        ctx.arc(this.x, parachuteY, parachuteSize/2, Math.PI, 0, false);
+        ctx.fill();
+
+        // Parachute details (panels)
+        ctx.strokeStyle = '#FFA500'; // Orange lines
+        ctx.lineWidth = Math.max(0.5, lemmingWidth * 0.1);
+        for (let i = 1; i < 4; i++) {
+            const angle = Math.PI * (i / 4);
+            const startX = this.x + Math.cos(angle) * (parachuteSize/2);
+            const startY = parachuteY + Math.sin(angle) * (parachuteSize/2);
+            ctx.beginPath();
+            ctx.moveTo(this.x, parachuteY);
+            ctx.lineTo(startX, startY);
+            ctx.stroke();
+        }
+
+        // Parachute strings
+        ctx.strokeStyle = '#8B4513'; // Brown strings
+        ctx.lineWidth = Math.max(0.5, lemmingWidth * 0.08);
+        
+        // Multiple strings for realism
+        const stringPoints = [
+            { x: this.x - parachuteSize * 0.3, y: parachuteY },
+            { x: this.x - parachuteSize * 0.1, y: parachuteY },
+            { x: this.x + parachuteSize * 0.1, y: parachuteY },
+            { x: this.x + parachuteSize * 0.3, y: parachuteY }
+        ];
+
+        stringPoints.forEach(point => {
+            ctx.beginPath();
+            ctx.moveTo(point.x, point.y);
+            ctx.lineTo(this.x, this.y + lemmingHeight * 0.2);
+            ctx.stroke();
+        });
     }
 }

@@ -60,11 +60,12 @@ class EditorBase {
             spawnRate: 2000,
             musicFile: null,
             actionCounts: {
-                blocker: 5,
-                basher: 5,
-                digger: 5,
-                builder: 5,
-                climber: 5
+                blocker: 50,
+                basher: 50,
+                digger: 50,
+                builder: 50,
+                climber: 50,
+                floater: 50
             }
         };
         

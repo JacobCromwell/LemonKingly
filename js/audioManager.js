@@ -204,6 +204,45 @@ class AudioManager {
             osc.start();
             osc.stop(this.audioContext.currentTime + 0.15);
         });
+
+        this.sounds.floater = this.createSound(() => {
+            const osc = this.audioContext.createOscillator();
+            const noise = this.createNoise();
+            const filter = this.audioContext.createBiquadFilter();
+            const gain = this.audioContext.createGain();
+            const noiseGain = this.audioContext.createGain();
+            const masterGain = this.audioContext.createGain();
+            
+            // Wind-like sound with oscillator
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(200, this.audioContext.currentTime);
+            osc.frequency.linearRampToValueAtTime(150, this.audioContext.currentTime + 0.2);
+            
+            // Filtered noise for parachute rustling
+            filter.type = 'bandpass';
+            filter.frequency.value = 800;
+            filter.Q.value = 2;
+            
+            gain.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+            
+            noiseGain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+            
+            masterGain.gain.value = this.soundVolume / 100;
+            
+            osc.connect(gain);
+            noise.connect(filter);
+            filter.connect(noiseGain);
+            gain.connect(masterGain);
+            noiseGain.connect(masterGain);
+            masterGain.connect(this.audioContext.destination);
+            
+            osc.start();
+            noise.start();
+            osc.stop(this.audioContext.currentTime + 0.2);
+            noise.stop(this.audioContext.currentTime + 0.2);
+        });
     }
     
     createSound(generatorFunction) {
