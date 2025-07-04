@@ -49,7 +49,8 @@ const ActionType = {
     DIGGER: 'digger',
     BUILDER: 'builder',
     CLIMBER: 'climber',
-    FLOATER: 'floater'
+    FLOATER: 'floater',
+    EXPLODER: 'exploder'
 };
 
 // Lemming states
@@ -61,6 +62,7 @@ const LemmingState = {
     DIGGING: 'digging',
     BUILDING: 'building',
     CLIMBING: 'climbing',
+    EXPLODING: 'exploding',
     DEAD: 'dead',
     SAVED: 'saved'
 };

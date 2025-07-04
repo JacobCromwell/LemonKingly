@@ -65,7 +65,8 @@ class EditorBase {
                 digger: 50,
                 builder: 50,
                 climber: 50,
-                floater: 50
+                floater: 50,
+                 exploder: 50
             }
         };
         

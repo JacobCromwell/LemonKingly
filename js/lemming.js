@@ -10,9 +10,11 @@ class Lemming {
         this.actionProgress = 0;
         this.buildTilesPlaced = 0;
         this.isClimber = false; // Permanent climber ability
-        this.isFloater = false; // Permanent floater ability - NEW
+        this.isFloater = false; // Permanent floater ability
         this.originalDirection = 1; // Store original direction for climbing
-        
+        this.explosionTimer = -1; // -1 means no explosion scheduled
+        this.explosionParticles = []; // Store particles for this lemming
+
         // Store zoom for dynamic sizing
         this.zoom = zoom;
     }
@@ -54,6 +56,14 @@ class Lemming {
             return;
         }
 
+        if (this.explosionTimer > 0) {
+            this.explosionTimer -= 1 / 60; // Assuming 60 FPS
+            if (this.explosionTimer <= 0) {
+                this.explode(terrain);
+                return;
+            }
+        }
+
         // Check if lemming has fallen out of bounds
         if (this.y > terrain.height + 50) { // Give some buffer below canvas
             this.state = LemmingState.DEAD;
@@ -83,6 +93,13 @@ class Lemming {
             case LemmingState.CLIMBING:
                 this.climb(terrain);
                 break;
+            case LemmingState.EXPLODING:
+                // Continue normal movement while counting down
+                if (!terrain.hasGround(this.x, this.y + this.getHeight())) {
+                    this.fall(terrain);
+                } else {
+                    this.walk(terrain, lemmings);
+                }
         }
     }
 
@@ -387,15 +404,62 @@ class Lemming {
                     this.isClimber = true;
                     audioManager.playSound('climber');
                     break;
-                case ActionType.FLOATER:  // NEW FLOATER ACTION
+                case ActionType.FLOATER:
                     this.isFloater = true;
                     audioManager.playSound('floater');
                     break;
+                case ActionType.EXPLODER:
+                    this.explosionTimer = 5; // 5 seconds
+                    this.state = LemmingState.EXPLODING;
+                    audioManager.playSound('exploder'); // Click/beep sound
+                    return true;
             }
             this.action = action;
             return true;
         }
         return false;
+    }
+
+    explode(terrain) {
+        this.state = LemmingState.DEAD;
+        
+        // Play explosion sound
+        audioManager.playSound('explosion');
+        
+        // Remove terrain in circular area (10px radius)
+        const explosionRadius = 10;
+        const cx = this.x;
+        const cy = this.y + this.getHeight() / 2;
+        
+        // Remove terrain in a circle
+        for (let x = cx - explosionRadius; x <= cx + explosionRadius; x++) {
+            for (let y = cy - explosionRadius; y <= cy + explosionRadius; y++) {
+                const distance = Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+                if (distance <= explosionRadius) {
+                    terrain.removeTerrainPixel(Math.floor(x), Math.floor(y));
+                }
+            }
+        }
+        terrain.updateImageData();
+        
+        // Create explosion particles
+        if (window.game) {
+            // Create 12 particles with different colors
+            const colors = ['#00ff00', '#ff0000', '#ffffff', '#0000ff'];
+            for (let i = 0; i < 12; i++) {
+                const angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.5;
+                const speed = Math.random() * 3 + 2;
+                const color = colors[i % colors.length];
+                
+                window.game.addParticle(
+                    cx,
+                    cy,
+                    color,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed - 2 // Initial upward velocity
+                );
+            }
+        }
     }
 
     draw(ctx) {
@@ -426,7 +490,7 @@ class Lemming {
             ctx.fillStyle = '#8B4513'; // Brown rope color
             const ropeWidth = Math.max(1, lemmingWidth * 0.25);
             const ropeHeight = Math.max(2, lemmingHeight * 0.4);
-            ctx.fillRect(this.x - ropeWidth/2, this.y - ropeHeight/2, ropeWidth, ropeHeight);
+            ctx.fillRect(this.x - ropeWidth / 2, this.y - ropeHeight / 2, ropeWidth, ropeHeight);
         }
 
         // NEW: Draw parachute for floaters when falling
@@ -442,7 +506,7 @@ class Lemming {
         const eyeSize = Math.max(1, lemmingWidth * 0.25);
         const eyeX = this.x + (this.direction * (lemmingWidth * 0.25));
         const eyeY = this.y + (lemmingHeight * 0.2);
-        ctx.fillRect(eyeX - eyeSize/2, eyeY, eyeSize, eyeSize);
+        ctx.fillRect(eyeX - eyeSize / 2, eyeY, eyeSize, eyeSize);
 
         // NEW: Add visual indicator for floaters when not falling (small parachute icon)
         if (this.isFloater && this.state !== LemmingState.FALLING) {
@@ -451,21 +515,43 @@ class Lemming {
             const iconSize = Math.max(2, lemmingWidth * 0.4);
             const iconX = this.x + (lemmingWidth * 0.3);
             const iconY = this.y - (lemmingHeight * 0.3);
-            
+
             // Small parachute shape
             ctx.beginPath();
-            ctx.arc(iconX, iconY, iconSize/2, Math.PI, 0, false);
+            ctx.arc(iconX, iconY, iconSize / 2, Math.PI, 0, false);
             ctx.fill();
-            
+
             // Parachute strings
             ctx.strokeStyle = '#FFD700';
             ctx.lineWidth = Math.max(0.5, iconSize * 0.1);
             ctx.beginPath();
-            ctx.moveTo(iconX - iconSize/2, iconY);
+            ctx.moveTo(iconX - iconSize / 2, iconY);
             ctx.lineTo(this.x, this.y + lemmingHeight * 0.1);
-            ctx.moveTo(iconX + iconSize/2, iconY);
+            ctx.moveTo(iconX + iconSize / 2, iconY);
             ctx.lineTo(this.x, this.y + lemmingHeight * 0.1);
             ctx.stroke();
+        }
+
+        if (this.explosionTimer > 0) {
+            const seconds = Math.ceil(this.explosionTimer);
+            
+            // Draw countdown number above lemming
+            ctx.save();
+            ctx.font = `bold ${Math.max(10, this.getHeight())}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            
+            const textX = this.x;
+            const textY = this.y - 2; // 2px above lemming
+            
+            // Draw black outline
+            ctx.strokeText(seconds.toString(), textX, textY);
+            // Draw white text
+            ctx.fillText(seconds.toString(), textX, textY);
+            
+            ctx.restore();
         }
     }
 
@@ -477,7 +563,7 @@ class Lemming {
         // Parachute canopy
         ctx.fillStyle = '#FFD700'; // Gold color
         ctx.beginPath();
-        ctx.arc(this.x, parachuteY, parachuteSize/2, Math.PI, 0, false);
+        ctx.arc(this.x, parachuteY, parachuteSize / 2, Math.PI, 0, false);
         ctx.fill();
 
         // Parachute details (panels)
@@ -485,8 +571,8 @@ class Lemming {
         ctx.lineWidth = Math.max(0.5, lemmingWidth * 0.1);
         for (let i = 1; i < 4; i++) {
             const angle = Math.PI * (i / 4);
-            const startX = this.x + Math.cos(angle) * (parachuteSize/2);
-            const startY = parachuteY + Math.sin(angle) * (parachuteSize/2);
+            const startX = this.x + Math.cos(angle) * (parachuteSize / 2);
+            const startY = parachuteY + Math.sin(angle) * (parachuteSize / 2);
             ctx.beginPath();
             ctx.moveTo(this.x, parachuteY);
             ctx.lineTo(startX, startY);
@@ -496,7 +582,7 @@ class Lemming {
         // Parachute strings
         ctx.strokeStyle = '#8B4513'; // Brown strings
         ctx.lineWidth = Math.max(0.5, lemmingWidth * 0.08);
-        
+
         // Multiple strings for realism
         const stringPoints = [
             { x: this.x - parachuteSize * 0.3, y: parachuteY },
