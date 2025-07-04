@@ -1,0 +1,120 @@
+graph TB
+    %% User Interface Layer
+    subgraph UI["User Interface Layer"]
+        Menu["Main Menu<br/>- Play Level<br/>- Level Editor<br/>- Settings<br/>- Quit"]
+        GameUI["Game UI<br/>- Action Toolbar<br/>- Level Info<br/>- Minimap"]
+        EditorUI["Editor UI<br/>- Tool Selection<br/>- Entity Placement<br/>- Level Settings"]
+        Dialogs["Dialogs<br/>- Level Select<br/>- Audio Settings"]
+    end
+
+    %% Core Game Systems
+    subgraph GameCore["Core Game Systems"]
+        Game["Game Controller<br/>- Game Loop<br/>- State Management<br/>- Camera/Zoom"]
+        Level["Level<br/>- Spawn/Exit Points<br/>- Action Counts<br/>- Hazards<br/>- Win Conditions"]
+        Terrain["Terrain<br/>- Collision Detection<br/>- Terrain Modification<br/>- Rendering"]
+    end
+
+    %% Entity Systems
+    subgraph Entities["Entity Systems"]
+        Lemming["Lemming<br/>- Position/State<br/>- Actions<br/>- Abilities<br/>- Physics"]
+        Hazard["Hazard<br/>- Type/Position<br/>- Collision Check<br/>- Animation"]
+        Particle["Particle<br/>- Visual Effects<br/>- Death/Action FX"]
+    end
+
+    %% Editor Systems
+    subgraph Editor["Level Editor Systems"]
+        EditorBase["Editor Base<br/>- Canvas/Viewport<br/>- Zoom/Camera<br/>- Level Data"]
+        EditorHandlers["Handlers<br/>- Input Handler<br/>- Tools Handler<br/>- Image Handler<br/>- File Handler"]
+    end
+
+    %% Support Systems
+    subgraph Support["Support Systems"]
+        AudioManager["Audio Manager<br/>- Sound Effects<br/>- Music Playback<br/>- Volume Control"]
+        Constants["Constants<br/>- Game Rules<br/>- Physics Values<br/>- Action Types"]
+    end
+
+    %% Data Storage
+    subgraph Storage["Data Storage"]
+        SessionStorage["Session Storage<br/>- Test Levels"]
+        LocalStorage["Local Storage<br/>- Audio Settings"]
+        FileSystem["File System<br/>- Level Files (.json)<br/>- Images<br/>- Audio Files"]
+    end
+
+    %% User Interactions
+    User((User))
+    
+    %% Main Flow Connections
+    User -->|Interact| Menu
+    Menu -->|Start Game| Game
+    Menu -->|Open Editor| EditorUI
+    Menu -->|Settings| Dialogs
+    
+    %% Game Flow
+    Game -->|Initialize| Level
+    Game -->|Create| Terrain
+    Game -->|Spawn| Lemming
+    Game -->|Update| GameUI
+    Game -->|Check| Hazard
+    
+    Level -->|Configure| Game
+    Level -->|Define| Hazard
+    
+    %% Lemming Interactions
+    Lemming -->|Modify| Terrain
+    Lemming -->|Collide| Hazard
+    Lemming -->|Create| Particle
+    Lemming -->|Trigger| AudioManager
+    
+    GameUI -->|Select Action| Game
+    Game -->|Apply Action| Lemming
+    
+    %% Terrain System
+    Terrain -->|Collision Data| Lemming
+    Terrain -->|Visual Data| Game
+    
+    %% Editor Flow
+    EditorUI -->|Commands| EditorBase
+    EditorBase -->|Delegate| EditorHandlers
+    EditorHandlers -->|Save/Load| FileSystem
+    EditorHandlers -->|Test Level| SessionStorage
+    EditorHandlers -->|Create| Terrain
+    
+    %% Audio Flow
+    Game -->|Play Sounds| AudioManager
+    Lemming -->|Action Sounds| AudioManager
+    AudioManager -->|Settings| LocalStorage
+    
+    %% Data Persistence
+    SessionStorage -->|Test Data| Game
+    FileSystem -->|Level Data| Game
+    FileSystem -->|Level Data| EditorBase
+    
+    %% Constants Usage
+    Constants -->|Rules| Lemming
+    Constants -->|Rules| Game
+    Constants -->|Rules| Level
+    
+    %% Rendering Pipeline
+    Game -->|Draw| Terrain
+    Game -->|Draw| Lemming
+    Game -->|Draw| Hazard
+    Game -->|Draw| Particle
+    Game -->|Draw| GameUI
+    
+    EditorBase -->|Draw| Terrain
+    EditorBase -->|Draw Preview| EditorHandlers
+
+    %% Style definitions
+    classDef uiClass fill:#4a90e2,stroke:#2c5aa0,color:#fff
+    classDef gameClass fill:#50c878,stroke:#2d7a4e,color:#fff
+    classDef entityClass fill:#ff6b6b,stroke:#c92a2a,color:#fff
+    classDef editorClass fill:#845ef7,stroke:#5f3dc4,color:#fff
+    classDef supportClass fill:#fab005,stroke:#c76e00,color:#fff
+    classDef storageClass fill:#495057,stroke:#212529,color:#fff
+    
+    class Menu,GameUI,EditorUI,Dialogs uiClass
+    class Game,Level,Terrain gameClass
+    class Lemming,Hazard,Particle entityClass
+    class EditorBase,EditorHandlers editorClass
+    class AudioManager,Constants supportClass
+    class SessionStorage,LocalStorage,FileSystem storageClass

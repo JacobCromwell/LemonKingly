@@ -243,6 +243,73 @@ class AudioManager {
             osc.stop(this.audioContext.currentTime + 0.2);
             noise.stop(this.audioContext.currentTime + 0.2);
         });
+
+        this.sounds.exploder = this.createSound(() => {
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        const masterGain = this.audioContext.createGain();
+        
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, this.audioContext.currentTime);
+        osc.frequency.setValueAtTime(600, this.audioContext.currentTime + 0.05);
+        
+        gain.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+        
+        masterGain.gain.value = this.soundVolume / 100;
+        
+        osc.connect(gain);
+        gain.connect(masterGain);
+        masterGain.connect(this.audioContext.destination);
+        
+        osc.start();
+        osc.stop(this.audioContext.currentTime + 0.1);
+    });
+    
+    // Generate explosion sound (pop)
+    this.sounds.explosion = this.createSound(() => {
+        // Create noise burst for explosion
+        const noise = this.createNoise();
+        const filter = this.audioContext.createBiquadFilter();
+        const gain = this.audioContext.createGain();
+        const masterGain = this.audioContext.createGain();
+        
+        // Low-pass filter for "pop" effect
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2000, this.audioContext.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(200, this.audioContext.currentTime + 0.2);
+        
+        // Quick attack, slower decay
+        gain.gain.setValueAtTime(0.5, this.audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+        
+        masterGain.gain.value = this.soundVolume / 100;
+        
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(masterGain);
+        masterGain.connect(this.audioContext.destination);
+        
+        noise.start();
+        noise.stop(this.audioContext.currentTime + 0.3);
+        
+        // Add a bass thump
+        const bass = this.audioContext.createOscillator();
+        const bassGain = this.audioContext.createGain();
+        
+        bass.type = 'sine';
+        bass.frequency.setValueAtTime(100, this.audioContext.currentTime);
+        bass.frequency.exponentialRampToValueAtTime(30, this.audioContext.currentTime + 0.2);
+        
+        bassGain.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+        bassGain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+        
+        bass.connect(bassGain);
+        bassGain.connect(masterGain);
+        
+        bass.start();
+        bass.stop(this.audioContext.currentTime + 0.2);
+    });
     }
     
     createSound(generatorFunction) {
