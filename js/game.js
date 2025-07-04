@@ -339,7 +339,7 @@ class Game {
                 [ActionType.DIGGER]: 5,
                 [ActionType.BUILDER]: 5,
                 [ActionType.CLIMBER]: 5,
-                [ActionType.FLOATER]: 5  // NEW: Add floater default
+                [ActionType.FLOATER]: 5
             };
         }
 

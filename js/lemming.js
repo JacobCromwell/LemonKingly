@@ -1,4 +1,4 @@
-// Updated lemming.js - Dynamic scaling based on zoom level with Floater ability
+// Updated lemming.js - Dynamic scaling based on zoom level with Floater ability and parachute delay
 class Lemming {
     constructor(x, y, zoom = 1.0) {
         this.x = x;
@@ -10,8 +10,12 @@ class Lemming {
         this.actionProgress = 0;
         this.buildTilesPlaced = 0;
         this.isClimber = false; // Permanent climber ability
-        this.isFloater = false; // Permanent floater ability - NEW
+        this.isFloater = false; // Permanent floater ability
         this.originalDirection = 1; // Store original direction for climbing
+        
+        // NEW: Track fall time for parachute delay
+        this.fallTime = 0; // Time spent in falling state
+        this.parachuteDeployTime = 60; // Deploy parachute after 1 second (60 frames at 60fps)
         
         // Store zoom for dynamic sizing
         this.zoom = zoom;
@@ -93,6 +97,7 @@ class Lemming {
         if (!terrain.hasGround(this.x, this.y + lemmingHeight)) {
             this.state = LemmingState.FALLING;
             this.fallDistance = 0;
+            this.fallTime = 0; // NEW: Reset fall time when starting to fall
             return;
         }
 
@@ -152,6 +157,7 @@ class Lemming {
             // Hit overhead obstacle - fall and reverse direction
             this.state = LemmingState.FALLING;
             this.fallDistance = 0;
+            this.fallTime = 0; // NEW: Reset fall time
             this.direction = -this.originalDirection;
             return;
         }
@@ -190,6 +196,9 @@ class Lemming {
     fall(terrain) {
         const lemmingHeight = this.getHeight();
 
+        // NEW: Increment fall time
+        this.fallTime++;
+
         // Apply gravity - floaters fall slower
         const fallSpeed = this.isFloater ? GRAVITY * 0.5 : GRAVITY;
         this.y += fallSpeed;
@@ -217,6 +226,7 @@ class Lemming {
             } else {
                 this.state = LemmingState.WALKING;
                 this.fallDistance = 0;
+                this.fallTime = 0; // NEW: Reset fall time when landing
             }
         }
     }
@@ -319,6 +329,7 @@ class Lemming {
                 // No ground underneath, start falling
                 this.state = LemmingState.FALLING;
                 this.fallDistance = 0;
+                this.fallTime = 0; // NEW: Reset fall time
             }
         }
     }
@@ -429,8 +440,8 @@ class Lemming {
             ctx.fillRect(this.x - ropeWidth/2, this.y - ropeHeight/2, ropeWidth, ropeHeight);
         }
 
-        // NEW: Draw parachute for floaters when falling
-        if (this.isFloater && this.state === LemmingState.FALLING) {
+        // UPDATED: Draw parachute for floaters when falling AND fall time exceeds delay
+        if (this.isFloater && this.state === LemmingState.FALLING && this.fallTime >= this.parachuteDeployTime) {
             this.drawParachute(ctx, lemmingWidth, lemmingHeight);
         }
 
