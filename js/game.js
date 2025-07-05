@@ -406,7 +406,7 @@ class Game {
         this.camera.y = Math.max(0, Math.min(this.levelHeight - viewportHeight, this.camera.y));
     }
 
-    // UPDATED: Handle click with zoom transformation
+// UPDATED: Handle click with zoom transformation and smart selection
     handleClick(e) {
         const rect = this.canvas.getBoundingClientRect();
         const screenX = e.clientX - rect.left;
@@ -418,9 +418,11 @@ class Game {
 
         if (this.selectedAction === ActionType.NONE) return;
 
-        // Find clicked lemming with larger click area
-        const clickPadding = 10; // Extra pixels around lemming for easier clicking
-        const lemming = this.lemmings.find(l => {
+        // UPDATED: Increased click area for closely packed lemmings
+        const clickPadding = 15; // Increased from 10 to 15 pixels
+        
+        // Find all lemmings within click area
+        const candidateLemmings = this.lemmings.filter(l => {
             if (l.state === LemmingState.DEAD || l.state === LemmingState.SAVED) return false;
 
             const lemmingWidth = l.getWidth();
@@ -430,15 +432,49 @@ class Game {
                 Math.abs(l.y + lemmingHeight / 2 - worldY) < lemmingHeight / 2 + clickPadding;
         });
 
-        if (lemming && this.level.actionCounts[this.selectedAction] > 0) {
-            if (lemming.applyAction(this.selectedAction)) {
+        if (candidateLemmings.length === 0) return;
+
+        // NEW: Filter out lemmings that already have the selected ability
+        const validLemmings = candidateLemmings.filter(lemming => {
+            return !lemming.hasAbility(this.selectedAction);
+        });
+
+        // If no valid lemmings (all already have the ability), don't waste the action
+        if (validLemmings.length === 0) return;
+
+        // NEW: Find closest valid lemming to click point
+        let closestLemming = validLemmings[0];
+        let closestDistance = this.getDistanceToClick(closestLemming, worldX, worldY);
+
+        for (let i = 1; i < validLemmings.length; i++) {
+            const distance = this.getDistanceToClick(validLemmings[i], worldX, worldY);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestLemming = validLemmings[i];
+            }
+        }
+
+        // Apply action to closest valid lemming
+        if (this.level.actionCounts[this.selectedAction] > 0) {
+            if (closestLemming.applyAction(this.selectedAction)) {
                 this.level.actionCounts[this.selectedAction]--;
                 this.updateActionCounts();
             }
         }
     }
 
-    // UPDATED: Handle mouse move with zoom transformation
+    // Helper function to calculate distance from lemming to click point
+    getDistanceToClick(lemming, clickX, clickY) {
+        const lemmingCenterX = lemming.x;
+        const lemmingCenterY = lemming.y + lemming.getHeight() / 2;
+        
+        const dx = lemmingCenterX - clickX;
+        const dy = lemmingCenterY - clickY;
+        
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // Handle mouse move with zoom transformation
     handleMouseMove(e) {
         const rect = this.canvas.getBoundingClientRect();
         const screenX = e.clientX - rect.left;

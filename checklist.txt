@@ -1,0 +1,20 @@
+Outstanding items
+
+miner
+revise all 8 Abilities
+bug - no duplicate ability click
+bug - ease to click on other lemmings
+fall death
+mini map no dead space underneath
+decide on default level editor dimensions
+better lemming animations
+single direction bashing terrain
+metal terrain
+animated lava, water, acid etc.
+
+AWS setup - put in S3 make reachable
+Re-create the campaign level-by-level
+
+Patreon or something like it for donations
+
+estimate: 30 days un-interupted work

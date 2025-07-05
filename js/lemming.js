@@ -1,4 +1,4 @@
-// Updated lemming.js - Dynamic scaling based on zoom level with Floater ability
+// Updated lemming.js - Add method to check if lemming already has an ability
 class Lemming {
     constructor(x, y, zoom = 1.0) {
         this.x = x;
@@ -17,6 +17,28 @@ class Lemming {
 
         // Store zoom for dynamic sizing
         this.zoom = zoom;
+    }
+
+    // NEW: Check if lemming already has the specified ability
+    hasAbility(action) {
+        switch (action) {
+            case ActionType.CLIMBER:
+                return this.isClimber;
+            case ActionType.FLOATER:
+                return this.isFloater;
+            case ActionType.BLOCKER:
+                return this.state === LemmingState.BLOCKING;
+            case ActionType.BASHER:
+                return this.state === LemmingState.BASHING;
+            case ActionType.DIGGER:
+                return this.state === LemmingState.DIGGING;
+            case ActionType.BUILDER:
+                return false; // Always allow builder (can reset)
+            case ActionType.EXPLODER:
+                return this.state === LemmingState.EXPLODING;
+            default:
+                return false;
+        }
     }
 
     // Get current lemming dimensions based on zoom
