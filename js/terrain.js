@@ -125,6 +125,7 @@ class Terrain {
     }
 
     addTerrain(x, y, width, height) {
+        console.log(`x: ${x}, y: ${y}`);
         this.ctx.fillStyle = '#8B4513';
         this.ctx.fillRect(x, y, width, height);
         this.updateImageData();

@@ -39,7 +39,7 @@ const GRAVITY = 2;
 const WALK_SPEED = 1;
 const BUILD_TILE_WIDTH = 4;
 const BUILD_TILE_HEIGHT = 2;
-const MAX_BUILD_TILES = 20;
+const MAX_BUILD_TILES = 12;
 
 // Action types
 const ActionType = {

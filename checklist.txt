@@ -1,16 +1,29 @@
 Outstanding items
 
-miner
-revise all 8 Abilities
-bug - no duplicate ability click
-bug - ease to click on other lemmings
+Abilities
+    miner
+    revise all 8 Abilities
+        Can EXPLODE blockers
+        better bashing detection (multi-direction), slower, stops after getting through a wall
+        builder should have 12 tiles, tiles need to be correct size, change direction on hitting wall
+    [x] bug - no duplicate ability click
+    [x] bug - ease to click on other lemmings
+    builder calculation needs a tweak when building to the left
 fall death
 mini map no dead space underneath
-decide on default level editor dimensions
 better lemming animations
 single direction bashing terrain
 metal terrain
 animated lava, water, acid etc.
+finalize folder locations (S3 & users other than myself)
+
+Update to ES6 style module instead of old school style
+
+Editor
+    Undo button in editor
+    decide on default level editor dimensions
+    UI needed to set # of lemming Abilities per level
+    Fix music per level
 
 AWS setup - put in S3 make reachable
 Re-create the campaign level-by-level
