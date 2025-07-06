@@ -69,17 +69,32 @@ class EditorImageHandler {
                 
                 this.editor.draw();
                 
-                // Prompt for transparent color
-                setTimeout(() => {
-                    if (confirm('Would you like to set a transparent color? Click OK to select a color that will become non-terrain, or Cancel to use the image as-is.')) {
-                        alert('Click on a color in the image to set it as transparent (non-terrain)');
-                        this.editor.pickingTransparentColor = true;
-                    }
-                }, 100);
+                // CHANGED: Automatically set transparent color to black (0,0,0) instead of prompting
+                this.editor.transparentColor = {
+                    r: 0,
+                    g: 0,
+                    b: 0,
+                    a: 255
+                };
+                
+                this.processForegroundImage();
+                
+                console.log('Transparent color automatically set to black RGB(0, 0, 0)');
             };
             img.src = event.target.result;
         };
         reader.readAsDataURL(file);
+    }
+    
+    // NEW: Method to trigger background color selection manually
+    selectBackgroundColor() {
+        if (!this.editor.foregroundImage) {
+            alert('Please load a terrain image first before selecting a background color.');
+            return;
+        }
+        
+        alert('Click on a color in the terrain image to set it as transparent (non-terrain)');
+        this.editor.pickingTransparentColor = true;
     }
     
     pickTransparentColor(x, y) {

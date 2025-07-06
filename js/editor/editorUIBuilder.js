@@ -122,6 +122,14 @@ class EditorUIBuilder {
                                 <span class="toolIcon">🏔️</span> Terrain
                                 <input type="file" id="foregroundInput" accept="image/*" style="display: none;">
                             </label>
+                            
+                            <div class="separator"></div>
+                            <h4>Background Color</h4>
+                            <button class="toolButton" onclick="editor.imageHandler.selectBackgroundColor()" title="Select Background Color">
+                                <span class="toolIcon">🎨</span>
+                                <span class="toolLabel">Pick Color</span>
+                            </button>
+                            <p class="settingNote">Click to select a custom transparent color from the terrain image. Default is black (0,0,0).</p>
                         </div>
                         
                         <!-- Level Settings Submenu -->
@@ -314,6 +322,18 @@ class EditorUIBuilder {
                 font-size: 12px;
                 text-align: center;
                 margin: 10px 0;
+            }
+            
+            /* NEW: Setting note styling */
+            .settingNote {
+                color: #888;
+                font-size: 11px;
+                line-height: 1.3;
+                margin: 8px 0;
+                padding: 8px;
+                background-color: #333;
+                border-radius: 4px;
+                border-left: 3px solid #666;
             }
             
             /* Tool button styling */
