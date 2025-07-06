@@ -372,8 +372,8 @@ class Lemming {
 
         // Build a staircase pattern that lemmings can walk up
         // Each step is 6 pixels wide and 4 pixels tall for a climbable slope
-        const stepWidth = 8;
-        const stepHeight = 3;
+        const stepWidth = 6;
+        const stepHeight = 2;
 
         // Calculate position for this building step
         const tileX = this.x + (this.direction * stepWidth - 2);
@@ -386,7 +386,13 @@ class Lemming {
         }
 
         // Add the building tile
-        terrain.addTerrain(tileX - stepWidth / 2, tileY, stepWidth, stepHeight + 2);
+        if(this.direction === -1){
+            //addTerrain(x, y, width, height) {
+            // 336, 328, 320
+            terrain.addTerrain((tileX - stepWidth * 2) + 2, tileY, stepWidth, stepHeight + 1);
+        } else {
+            terrain.addTerrain(tileX - stepWidth / 2, tileY, stepWidth, stepHeight + 1);
+        }
 
         this.buildTilesPlaced++;
 

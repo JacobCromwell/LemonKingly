@@ -190,6 +190,10 @@ class Game {
             'js/editor/EditorToolsHandler.js',
             'js/editor/EditorImageHandler.js',
             'js/editor/EditorFileHandler.js',
+            'js/terrain/PolygonUtils.js',
+            'js/terrain/IndestructibleTerrain.js',
+            'js/editor/ShapeDrawer.js',
+            'js/editor/terrainMenu.js',
             'js/editor/LevelEditor.js'
         ];
 
@@ -331,7 +335,7 @@ class Game {
                 };
             }
         } else {
-            // FIXED: Fallback to defaults if levelSettings doesn't exist - include floater
+            // FIXED: Fallback to defaults if levelSettings doesn't exist
             this.level.totalLemmings = 20;
             this.level.requiredLemmings = 10;
             this.level.spawnRate = 2000;
@@ -341,7 +345,8 @@ class Game {
                 [ActionType.DIGGER]: 5,
                 [ActionType.BUILDER]: 5,
                 [ActionType.CLIMBER]: 5,
-                [ActionType.FLOATER]: 5  // NEW: Add floater default
+                [ActionType.FLOATER]: 5,
+                [ActionType.EXPLODER]: 5
             };
         }
 
