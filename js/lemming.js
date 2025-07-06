@@ -1,4 +1,4 @@
-// Updated lemming.js - Add method to check if lemming already has an ability
+// Updated lemming.js - Add ability to apply EXPLODER to blocking lemmings
 class Lemming {
     constructor(x, y, zoom = 1.0) {
         this.x = x;
@@ -19,7 +19,7 @@ class Lemming {
         this.zoom = zoom;
     }
 
-    // NEW: Check if lemming already has the specified ability
+    // UPDATED: Check if lemming already has the specified ability
     hasAbility(action) {
         switch (action) {
             case ActionType.CLIMBER:
@@ -35,7 +35,7 @@ class Lemming {
             case ActionType.BUILDER:
                 return false; // Always allow builder (can reset)
             case ActionType.EXPLODER:
-                return this.state === LemmingState.EXPLODING;
+                return this.explosionTimer > 0; // UPDATED: Check explosion timer instead of state
             default:
                 return false;
         }
@@ -78,6 +78,7 @@ class Lemming {
             return;
         }
 
+        // UPDATED: Handle explosion timer for all states (including blockers)
         if (this.explosionTimer > 0) {
             this.explosionTimer -= 1 / 60; // Assuming 60 FPS
             if (this.explosionTimer <= 0) {
@@ -101,7 +102,8 @@ class Lemming {
                 this.fall(terrain);
                 break;
             case LemmingState.BLOCKING:
-                // Blockers don't move
+                // UPDATED: Blockers don't move but still countdown explosion timer
+                // The explosion timer is handled above
                 break;
             case LemmingState.BASHING:
                 this.bash(terrain);
@@ -406,7 +408,24 @@ class Lemming {
         }
     }
 
+    // UPDATED: Allow EXPLODER to be applied to blocking lemmings
     applyAction(action) {
+        // UPDATED: Special case for EXPLODER - can be applied to any lemming except dead/saved
+        if (action === ActionType.EXPLODER) {
+            if (this.state !== LemmingState.DEAD && this.state !== LemmingState.SAVED && this.explosionTimer <= 0) {
+                this.explosionTimer = 5; // 5 seconds
+                // Don't change state for blockers - they remain blocking until explosion
+                if (this.state !== LemmingState.BLOCKING) {
+                    this.state = LemmingState.EXPLODING;
+                }
+                this.action = action;
+                audioManager.playSound('exploder'); // Click/beep sound
+                return true;
+            }
+            return false;
+        }
+
+        // For all other actions, only allow on walking or falling lemmings
         if (this.state === LemmingState.WALKING || this.state === LemmingState.FALLING) {
             switch (action) {
                 case ActionType.BLOCKER:
@@ -436,11 +455,6 @@ class Lemming {
                     this.isFloater = true;
                     audioManager.playSound('floater');
                     break;
-                case ActionType.EXPLODER:
-                    this.explosionTimer = 5; // 5 seconds
-                    this.state = LemmingState.EXPLODING;
-                    audioManager.playSound('exploder'); // Click/beep sound
-                    return true;
             }
             this.action = action;
             return true;
@@ -499,7 +513,12 @@ class Lemming {
         } else if (this.state === LemmingState.SAVED) {
             return; // Don't draw saved lemmings
         } else if (this.state === LemmingState.BLOCKING) {
-            ctx.fillStyle = '#ff6600';
+            // UPDATED: Show different color for blocking exploder
+            if (this.explosionTimer > 0) {
+                ctx.fillStyle = '#ff8800'; // Orange for blocking exploder
+            } else {
+                ctx.fillStyle = '#ff6600'; // Regular orange for blocker
+            }
         } else if (this.state === LemmingState.BASHING) {
             ctx.fillStyle = '#ffff00';
         } else if (this.state === LemmingState.DIGGING) {
@@ -560,6 +579,7 @@ class Lemming {
             ctx.stroke();
         }
 
+        // UPDATED: Draw countdown for any lemming with explosion timer (including blockers)
         if (this.explosionTimer > 0) {
             const seconds = Math.ceil(this.explosionTimer);
             
