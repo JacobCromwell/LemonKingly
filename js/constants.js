@@ -41,6 +41,11 @@ const BUILD_TILE_WIDTH = 4;
 const BUILD_TILE_HEIGHT = 2;
 const MAX_BUILD_TILES = 12;
 
+// Miner constants
+const MINER_SWING_DURATION = 60; // 1 second at 60 FPS
+const MINER_ANGLE = 35; // degrees (gentler than 45 for better gameplay)
+const MINER_PROGRESS_PER_SWING = 2; // pixels to move forward/down per swing - reduced for gradual progress
+
 // Action types
 const ActionType = {
     NONE: 'none',
@@ -50,7 +55,8 @@ const ActionType = {
     BUILDER: 'builder',
     CLIMBER: 'climber',
     FLOATER: 'floater',
-    EXPLODER: 'exploder'
+    EXPLODER: 'exploder',
+    MINER: 'miner'
 };
 
 // Lemming states
@@ -63,6 +69,7 @@ const LemmingState = {
     BUILDING: 'building',
     CLIMBING: 'climbing',
     EXPLODING: 'exploding',
+    MINING: 'mining',
     DEAD: 'dead',
     SAVED: 'saved'
 };
