@@ -9,6 +9,7 @@ Abilities
     [x] bug - no duplicate ability click
     [x] bug - ease to click on other lemmings
     builder calculation needs a tweak when building to the left
+    [x] fix climber
 [x] fall death
 mini map no dead space underneath
 better lemming animations
@@ -26,6 +27,7 @@ Editor
     decide on default level editor dimensions
     [x] UI needed to set # of lemming Abilities per level
     Fix music per level
+    resize spawn and exit
 
 Cleanup
     console.logs convert some to log_level debug vs error etc.
