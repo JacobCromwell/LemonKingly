@@ -1,4 +1,4 @@
-// Updated lemming.js - Add ability to apply EXPLODER to blocking lemmings
+// Updated lemming.js - Fixed climber ability
 class Lemming {
     constructor(x, y, zoom = 1.0) {
         this.x = x;
@@ -35,7 +35,7 @@ class Lemming {
             case ActionType.BUILDER:
                 return false; // Always allow builder (can reset)
             case ActionType.EXPLODER:
-                return this.explosionTimer > 0; // UPDATED: Check explosion timer instead of state
+                return this.explosionTimer > 0;
             default:
                 return false;
         }
@@ -43,12 +43,10 @@ class Lemming {
 
     // Get current lemming dimensions based on zoom
     getWidth() {
-        // Try multiple ways to access the function
         const func = window.getLemmingWidth || getLemmingWidth;
         if (func) {
             return func(this.zoom);
         } else {
-            // Fallback calculation
             const baseZoom = window.LEMMING_BASE_ZOOM || 1.26;
             const baseWidth = window.LEMMING_BASE_WIDTH || 8;
             return (baseWidth * this.zoom) / baseZoom;
@@ -56,19 +54,16 @@ class Lemming {
     }
 
     getHeight() {
-        // Try multiple ways to access the function
         const func = window.getLemmingHeight || getLemmingHeight;
         if (func) {
             return func(this.zoom);
         } else {
-            // Fallback calculation
             const baseZoom = window.LEMMING_BASE_ZOOM || 1.26;
             const baseHeight = window.LEMMING_BASE_HEIGHT || 10;
             return (baseHeight * this.zoom) / baseZoom;
         }
     }
 
-    // Update zoom level (called when zoom changes)
     updateZoom(zoom) {
         this.zoom = zoom;
     }
@@ -78,7 +73,7 @@ class Lemming {
             return;
         }
 
-        // UPDATED: Handle explosion timer for all states (including blockers)
+        // Handle explosion timer for all states (including blockers)
         if (this.explosionTimer > 0) {
             this.explosionTimer -= 1 / 60; // Assuming 60 FPS
             if (this.explosionTimer <= 0) {
@@ -88,7 +83,7 @@ class Lemming {
         }
 
         // Check if lemming has fallen out of bounds
-        if (this.y > terrain.height + 50) { // Give some buffer below canvas
+        if (this.y > terrain.height + 50) {
             this.state = LemmingState.DEAD;
             audioManager.playSound('death');
             return;
@@ -102,8 +97,7 @@ class Lemming {
                 this.fall(terrain);
                 break;
             case LemmingState.BLOCKING:
-                // UPDATED: Blockers don't move but still countdown explosion timer
-                // The explosion timer is handled above
+                // Blockers don't move but still countdown explosion timer
                 break;
             case LemmingState.BASHING:
                 this.bash(terrain);
@@ -140,12 +134,11 @@ class Lemming {
         const nextX = this.x + this.direction * WALK_SPEED;
         let blocker = null;
 
-        // Only check lemmings that are blockers and nearby
+        // Check for blocking lemmings
         for (let i = 0; i < lemmings.length; i++) {
             const l = lemmings[i];
             if (l === this || l.state !== LemmingState.BLOCKING) continue;
 
-            // Early exit if lemming is too far away - use scaled width
             const xDist = Math.abs(l.x - nextX);
             if (xDist >= lemmingWidth) continue;
 
@@ -165,66 +158,74 @@ class Lemming {
         const obstacleHeight = terrain.getObstacleHeight(nextX, this.y);
         if (obstacleHeight > CLIMB_HEIGHT) {
             if (this.isClimber) {
-                // Start climbing
+                // FIXED: Start climbing - store direction and transition to climbing state
                 this.originalDirection = this.direction;
                 this.state = LemmingState.CLIMBING;
+                return;
             } else {
                 this.direction *= -1;
             }
         } else if (obstacleHeight > 0) {
-            // Climb
+            // Small obstacle - climb over it
             this.y -= obstacleHeight;
             this.x = nextX;
         } else {
+            // Normal walking
             this.x = nextX;
         }
     }
 
+    // COMPLETELY REWRITTEN: Simplified climbing logic with top-clearing boost
     climb(terrain) {
         const lemmingWidth = this.getWidth();
         const lemmingHeight = this.getHeight();
-
-        // Move up along the wall
-        this.y -= 1;
-
-        // Check for overhead obstacle
-        const checkX = this.x + (this.originalDirection * (lemmingWidth / 2 + 1));
-        if (terrain.hasGround(checkX, this.y - 1)) {
-            // Hit overhead obstacle - fall and reverse direction
+        
+        // Check for ceiling collision (terrain above lemming's head)
+        const headY = this.y - 2; // Check 2 pixels above the lemming
+        if (terrain.hasGround(this.x, headY)) {
+            // Hit ceiling - fall and reverse direction
             this.state = LemmingState.FALLING;
             this.fallDistance = 0;
             this.direction = -this.originalDirection;
             return;
         }
 
-        // Check if we've cleared the obstacle (can walk on top)
-        const clearanceWidth = lemmingWidth * 2; // Double the lemming's width
-        let canWalkOnTop = true;
+        // Move up vertically
+        this.y -= WALK_SPEED;
 
-        // Check for ground to stand on
-        if (!terrain.hasGround(this.x, this.y + lemmingHeight)) {
-            canWalkOnTop = false;
-        }
-
-        // Check for obstacles in the walking path ahead
-        for (let checkOffset = 1; checkOffset <= clearanceWidth; checkOffset++) {
-            const checkX = this.x + (this.originalDirection * checkOffset);
-
-            // Check if there's an obstacle blocking the path at walking height
-            for (let checkY = this.y; checkY < this.y + lemmingHeight; checkY++) {
-                if (terrain.hasGround(checkX, checkY)) {
-                    canWalkOnTop = false;
-                    break;
-                }
+        // Check if still in contact with wall
+        const wallCheckX = this.x + (this.originalDirection * (lemmingWidth / 2 + 1));
+        
+        // Check multiple points along the lemming's height to ensure wall contact
+        let stillInContactWithWall = false;
+        for (let checkY = this.y; checkY < this.y + lemmingHeight; checkY += 2) {
+            if (terrain.hasGround(wallCheckX, checkY)) {
+                stillInContactWithWall = true;
+                break;
             }
-
-            if (!canWalkOnTop) break;
         }
 
-        if (canWalkOnTop) {
-            // We've cleared the obstacle, resume walking in original direction
-            this.state = LemmingState.WALKING;
-            this.direction = this.originalDirection;
+        // If no longer in contact with wall, we've reached the top
+        if (!stillInContactWithWall) {
+            // Apply boost to clear the wall top
+            const heightBoost = 5;  // 5px upward boost
+            const forwardBoost = 5; // 5px forward boost
+            
+            // Apply the boosts
+            this.y -= heightBoost;
+            this.x += this.originalDirection * forwardBoost;
+            
+            // Check if there's ground to stand on after the boost
+            if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
+                // Resume walking in original direction
+                this.state = LemmingState.WALKING;
+                this.direction = this.originalDirection;
+            } else {
+                // No ground to stand on - start falling (but with the boost applied)
+                this.state = LemmingState.FALLING;
+                this.fallDistance = 0;
+                this.direction = this.originalDirection;
+            }
         }
     }
 
@@ -237,7 +238,7 @@ class Lemming {
         this.fallDistance += fallSpeed;
 
         if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
-            // UPDATED: Floaters don't die from fall damage
+            // Floaters don't die from fall damage
             if (this.fallDistance >= MAX_FALL_HEIGHT && !this.isFloater) {
                 this.state = LemmingState.DEAD;
                 audioManager.playSound('death');
@@ -320,7 +321,7 @@ class Lemming {
 
         // Dig vertically
         const digY = this.y + lemmingHeight;
-        const digWidth = lemmingWidth + 4; // Slightly wider than lemming
+        const digWidth = lemmingWidth + 4;
         const digHeight = 4;
 
         let foundGround = false;
@@ -352,12 +353,10 @@ class Lemming {
 
             this.y += 2;
         } else {
-            // No more ground to dig - check if we're standing on solid ground
+            // No more ground to dig
             if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
-                // There's ground underneath, return to walking
                 this.state = LemmingState.WALKING;
             } else {
-                // No ground underneath, start falling
                 this.state = LemmingState.FALLING;
                 this.fallDistance = 0;
             }
@@ -372,12 +371,9 @@ class Lemming {
             return;
         }
 
-        // Build a staircase pattern that lemmings can walk up
-        // Each step is 6 pixels wide and 4 pixels tall for a climbable slope
         const stepWidth = 6;
         const stepHeight = 2;
 
-        // Calculate position for this building step
         const tileX = this.x + (this.direction * stepWidth - 2);
         let tileY = 0;
 
@@ -387,10 +383,7 @@ class Lemming {
             tileY = this.y + lemmingHeight - stepHeight - 2;
         }
 
-        // Add the building tile
         if(this.direction === -1){
-            //addTerrain(x, y, width, height) {
-            // 336, 328, 320
             terrain.addTerrain((tileX - stepWidth * 2) + 2, tileY, stepWidth, stepHeight + 1);
         } else {
             terrain.addTerrain(tileX - stepWidth / 2, tileY, stepWidth, stepHeight + 1);
@@ -398,19 +391,17 @@ class Lemming {
 
         this.buildTilesPlaced++;
 
-        // Move lemming to stand on the new tile
         this.x = tileX;
         this.y = tileY - lemmingHeight;
 
-        // Add a small delay effect (handled by game loop timing)
         if (this.buildTilesPlaced >= MAX_BUILD_TILES) {
             this.state = LemmingState.WALKING;
         }
     }
 
-    // UPDATED: Allow EXPLODER to be applied to blocking lemmings
+    // Allow EXPLODER to be applied to blocking lemmings
     applyAction(action) {
-        // UPDATED: Special case for EXPLODER - can be applied to any lemming except dead/saved
+        // Special case for EXPLODER - can be applied to any lemming except dead/saved
         if (action === ActionType.EXPLODER) {
             if (this.state !== LemmingState.DEAD && this.state !== LemmingState.SAVED && this.explosionTimer <= 0) {
                 this.explosionTimer = 5; // 5 seconds
@@ -419,7 +410,7 @@ class Lemming {
                     this.state = LemmingState.EXPLODING;
                 }
                 this.action = action;
-                audioManager.playSound('exploder'); // Click/beep sound
+                audioManager.playSound('exploder');
                 return true;
             }
             return false;
@@ -465,10 +456,8 @@ class Lemming {
     explode(terrain) {
         this.state = LemmingState.DEAD;
         
-        // Play explosion sound
         audioManager.playSound('explosion');
         
-        // Remove terrain in circular area (10px radius)
         const explosionRadius = 10;
         const cx = this.x;
         const cy = this.y + this.getHeight() / 2;
@@ -486,7 +475,6 @@ class Lemming {
         
         // Create explosion particles
         if (window.game) {
-            // Create 12 particles with different colors
             const colors = ['#00ff00', '#ff0000', '#ffffff', '#0000ff'];
             for (let i = 0; i < 12; i++) {
                 const angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.5;
@@ -498,7 +486,7 @@ class Lemming {
                     cy,
                     color,
                     Math.cos(angle) * speed,
-                    Math.sin(angle) * speed - 2 // Initial upward velocity
+                    Math.sin(angle) * speed - 2
                 );
             }
         }
@@ -511,13 +499,12 @@ class Lemming {
         if (this.state === LemmingState.DEAD) {
             ctx.fillStyle = '#ff0000';
         } else if (this.state === LemmingState.SAVED) {
-            return; // Don't draw saved lemmings
+            return;
         } else if (this.state === LemmingState.BLOCKING) {
-            // UPDATED: Show different color for blocking exploder
             if (this.explosionTimer > 0) {
-                ctx.fillStyle = '#ff8800'; // Orange for blocking exploder
+                ctx.fillStyle = '#ff8800';
             } else {
-                ctx.fillStyle = '#ff6600'; // Regular orange for blocker
+                ctx.fillStyle = '#ff6600';
             }
         } else if (this.state === LemmingState.BASHING) {
             ctx.fillStyle = '#ffff00';
@@ -526,49 +513,45 @@ class Lemming {
         } else if (this.state === LemmingState.BUILDING) {
             ctx.fillStyle = '#ff00ff';
         } else if (this.state === LemmingState.CLIMBING) {
-            ctx.fillStyle = '#ffaa00'; // Orange for climbing
+            ctx.fillStyle = '#ffaa00';
         } else {
             ctx.fillStyle = '#00ff00';
         }
 
         // Add visual indicator for climbers
         if (this.isClimber && this.state !== LemmingState.CLIMBING) {
-            // Draw a small climbing indicator (rope/hook) - scaled
-            ctx.fillStyle = '#8B4513'; // Brown rope color
+            ctx.fillStyle = '#8B4513';
             const ropeWidth = Math.max(1, lemmingWidth * 0.25);
             const ropeHeight = Math.max(2, lemmingHeight * 0.4);
             ctx.fillRect(this.x - ropeWidth / 2, this.y - ropeHeight / 2, ropeWidth, ropeHeight);
         }
 
-        // NEW: Draw parachute for floaters when falling
+        // Draw parachute for floaters when falling
         if (this.isFloater && this.state === LemmingState.FALLING) {
             this.drawParachute(ctx, lemmingWidth, lemmingHeight);
         }
 
-        // Draw lemming body - now uses dynamic size based on zoom
+        // Draw lemming body
         ctx.fillRect(this.x - lemmingWidth / 2, this.y, lemmingWidth, lemmingHeight);
 
-        // Draw direction indicator - scaled
+        // Draw direction indicator
         ctx.fillStyle = 'white';
         const eyeSize = Math.max(1, lemmingWidth * 0.25);
         const eyeX = this.x + (this.direction * (lemmingWidth * 0.25));
         const eyeY = this.y + (lemmingHeight * 0.2);
         ctx.fillRect(eyeX - eyeSize / 2, eyeY, eyeSize, eyeSize);
 
-        // NEW: Add visual indicator for floaters when not falling (small parachute icon)
+        // Add visual indicator for floaters when not falling
         if (this.isFloater && this.state !== LemmingState.FALLING) {
-            // Draw a small parachute icon above the lemming
-            ctx.fillStyle = '#FFD700'; // Gold color
+            ctx.fillStyle = '#FFD700';
             const iconSize = Math.max(2, lemmingWidth * 0.4);
             const iconX = this.x + (lemmingWidth * 0.3);
             const iconY = this.y - (lemmingHeight * 0.3);
 
-            // Small parachute shape
             ctx.beginPath();
             ctx.arc(iconX, iconY, iconSize / 2, Math.PI, 0, false);
             ctx.fill();
 
-            // Parachute strings
             ctx.strokeStyle = '#FFD700';
             ctx.lineWidth = Math.max(0.5, iconSize * 0.1);
             ctx.beginPath();
@@ -579,11 +562,10 @@ class Lemming {
             ctx.stroke();
         }
 
-        // UPDATED: Draw countdown for any lemming with explosion timer (including blockers)
+        // Draw countdown for explosion timer
         if (this.explosionTimer > 0) {
             const seconds = Math.ceil(this.explosionTimer);
             
-            // Draw countdown number above lemming
             ctx.save();
             ctx.font = `bold ${Math.max(10, this.getHeight())}px Arial`;
             ctx.textAlign = 'center';
@@ -592,30 +574,28 @@ class Lemming {
             ctx.lineWidth = 2;
             
             const textX = this.x;
-            const textY = this.y - 2; // 2px above lemming
+            const textY = this.y - 2;
             
-            // Draw black outline
             ctx.strokeText(seconds.toString(), textX, textY);
-            // Draw white text
             ctx.fillText(seconds.toString(), textX, textY);
             
             ctx.restore();
         }
     }
 
-    // NEW: Draw parachute when falling
+    // Draw parachute when falling
     drawParachute(ctx, lemmingWidth, lemmingHeight) {
-        const parachuteSize = lemmingWidth * 3; // Parachute is 3x lemming width
-        const parachuteY = this.y - lemmingHeight * 1.5; // Above the lemming
+        const parachuteSize = lemmingWidth * 3;
+        const parachuteY = this.y - lemmingHeight * 1.5;
 
         // Parachute canopy
-        ctx.fillStyle = '#FFD700'; // Gold color
+        ctx.fillStyle = '#FFD700';
         ctx.beginPath();
         ctx.arc(this.x, parachuteY, parachuteSize / 2, Math.PI, 0, false);
         ctx.fill();
 
         // Parachute details (panels)
-        ctx.strokeStyle = '#FFA500'; // Orange lines
+        ctx.strokeStyle = '#FFA500';
         ctx.lineWidth = Math.max(0.5, lemmingWidth * 0.1);
         for (let i = 1; i < 4; i++) {
             const angle = Math.PI * (i / 4);
@@ -628,10 +608,9 @@ class Lemming {
         }
 
         // Parachute strings
-        ctx.strokeStyle = '#8B4513'; // Brown strings
+        ctx.strokeStyle = '#8B4513';
         ctx.lineWidth = Math.max(0.5, lemmingWidth * 0.08);
 
-        // Multiple strings for realism
         const stringPoints = [
             { x: this.x - parachuteSize * 0.3, y: parachuteY },
             { x: this.x - parachuteSize * 0.1, y: parachuteY },
