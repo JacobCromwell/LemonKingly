@@ -14,6 +14,10 @@ class Lemming {
         this.originalDirection = 1; // Store original direction for climbing
         this.explosionTimer = -1; // -1 means no explosion scheduled
         this.explosionParticles = []; // Store particles for this lemming
+        
+        // Miner specific properties
+        this.miningSwingTimer = 0; // Timer for pick swing animation
+        this.miningProgress = 0; // How far along the tunnel
 
         // Store zoom for dynamic sizing
         this.zoom = zoom;
@@ -36,6 +40,8 @@ class Lemming {
                 return false; // Always allow builder (can reset)
             case ActionType.EXPLODER:
                 return this.explosionTimer > 0;
+            case ActionType.MINER:
+                return this.state === LemmingState.MINING;
             default:
                 return false;
         }
@@ -110,6 +116,9 @@ class Lemming {
                 break;
             case LemmingState.CLIMBING:
                 this.climb(terrain);
+                break;
+            case LemmingState.MINING:
+                this.mine(terrain);
                 break;
             case LemmingState.EXPLODING:
                 // Continue normal movement while counting down
@@ -399,6 +408,127 @@ class Lemming {
         }
     }
 
+    mine(terrain) {
+        console.log('JRC 3')
+        const lemmingWidth = this.getWidth();
+        const lemmingHeight = this.getHeight();
+        
+        // Increment swing timer
+        this.miningSwingTimer++;
+        
+        // Check if it's time for a swing
+        if (this.miningSwingTimer >= MINER_SWING_DURATION) {
+            this.miningSwingTimer = 0;
+            
+            // Calculate mining position (ahead and below at angle)
+            const angleRad = (MINER_ANGLE * Math.PI) / 180;
+            const tunnelRadius = lemmingHeight * 0.4; // Much smaller radius for gradual digging
+            
+            // Position for this swing - closer to the lemming
+            const swingX = this.x + (this.direction * tunnelRadius * 1.5 * Math.cos(angleRad));
+            const swingY = this.y + lemmingHeight + (tunnelRadius * Math.sin(angleRad));
+            
+            // Check if there's still terrain to mine at the swing position
+            let foundTerrain = false;
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.5) {
+                const checkX = swingX + Math.cos(angle) * tunnelRadius;
+                const checkY = swingY + Math.sin(angle) * tunnelRadius;
+                if (terrain.hasGround(checkX, checkY)) {
+                    foundTerrain = true;
+                    break;
+                }
+            }
+            
+            if (!foundTerrain) {
+                // No more terrain to mine
+                this.state = LemmingState.WALKING;
+                this.miningProgress = 0;
+                return;
+            }
+            
+            // Check for level boundaries
+            if (swingX < tunnelRadius || swingX > terrain.width - tunnelRadius ||
+                swingY < 0 || swingY > terrain.height - tunnelRadius) {
+                this.state = LemmingState.WALKING;
+                this.miningProgress = 0;
+                return;
+            }
+            
+            // Check for indestructible terrain if editor is available
+            if (window.editor && window.editor.terrainManager) {
+                const checkBounds = {
+                    x: swingX - tunnelRadius,
+                    y: swingY - tunnelRadius,
+                    width: tunnelRadius * 2,
+                    height: tunnelRadius * 2
+                };
+                
+                if (window.editor.checkIndestructibleCollision(checkBounds)) {
+                    // Hit indestructible terrain, stop mining
+                    this.state = LemmingState.WALKING;
+                    this.miningProgress = 0;
+                    audioManager.playSound('miner'); // Play clunk sound
+                    return;
+                }
+            }
+            
+            // Remove terrain in circular area
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+                for (let r = 0; r < tunnelRadius; r += 1) {
+                    const removeX = swingX + Math.cos(angle) * r;
+                    const removeY = swingY + Math.sin(angle) * r;
+                    terrain.removeTerrainPixel(Math.floor(removeX), Math.floor(removeY));
+                }
+            }
+            terrain.updateImageData();
+            
+            // Get terrain color for particles
+            const imageData = terrain.ctx.getImageData(swingX, swingY, 1, 1);
+            const color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
+            
+            // Create particles for removed terrain
+            if (window.game && window.game.particles) {
+                for (let i = 0; i < 12; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * tunnelRadius;
+                    const particleX = swingX + Math.cos(angle) * distance;
+                    const particleY = swingY + Math.sin(angle) * distance;
+                    
+                    window.game.particles.push(new Particle(
+                        particleX,
+                        particleY,
+                        color,
+                        Math.cos(angle) * (Math.random() * 2 + 1),
+                        Math.sin(angle) * (Math.random() * 2 + 1) - 1
+                    ));
+                }
+            }
+            
+            // Move lemming to the bottom edge of the hole
+            // The lemming should be at the edge of the circle, not the center
+            if (this.direction === 1) {
+                // Moving right: position at right bottom edge of hole
+                this.x = swingX + tunnelRadius - lemmingWidth / 2;
+            } else {
+                // Moving left: position at left bottom edge of hole
+                this.x = swingX - tunnelRadius + lemmingWidth / 2;
+            }
+            // Position at bottom of hole
+            this.y = swingY + tunnelRadius - lemmingHeight;
+            
+            // After moving, check if there's ground beneath the lemming's new position
+            if (!terrain.hasGround(this.x, this.y + lemmingHeight)) {
+                // No ground beneath after moving
+                this.state = LemmingState.WALKING;
+                this.miningProgress = 0;
+                return;
+            }
+            
+            // Play mining sound
+            audioManager.playSound('miner');
+        }
+    }
+
     // Allow EXPLODER to be applied to blocking lemmings
     applyAction(action) {
         // Special case for EXPLODER - can be applied to any lemming except dead/saved
@@ -445,6 +575,14 @@ class Lemming {
                 case ActionType.FLOATER:
                     this.isFloater = true;
                     audioManager.playSound('floater');
+                    break;
+                case ActionType.MINER:
+                    if (this.state === LemmingState.WALKING) {
+                        this.state = LemmingState.MINING;
+                        this.miningSwingTimer = 0;
+                        this.miningProgress = 0;
+                        audioManager.playSound('miner');
+                    }
                     break;
             }
             this.action = action;
@@ -514,6 +652,8 @@ class Lemming {
             ctx.fillStyle = '#ff00ff';
         } else if (this.state === LemmingState.CLIMBING) {
             ctx.fillStyle = '#ffaa00';
+        } else if (this.state === LemmingState.MINING) {
+            ctx.fillStyle = '#8B4513'; // Brown color for miners
         } else {
             ctx.fillStyle = '#00ff00';
         }

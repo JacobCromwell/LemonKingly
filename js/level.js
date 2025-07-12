@@ -16,7 +16,8 @@ class Level {
             [ActionType.BUILDER]: 50,
             [ActionType.CLIMBER]: 50,
             [ActionType.FLOATER]: 50,
-            [ActionType.EXPLODER]: 50
+            [ActionType.EXPLODER]: 50,
+            [ActionType.MINER]: 50
         };
         this.hazards = [];
         this.initializeHazards();

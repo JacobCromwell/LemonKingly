@@ -324,7 +324,8 @@ class Game {
                     [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 5,
                     [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 5,
                     [ActionType.FLOATER]: levelData.levelSettings.actionCounts.floater || 5,
-                    [ActionType.EXPLODER]: levelData.levelSettings.actionCounts.exploder || 50
+                    [ActionType.EXPLODER]: levelData.levelSettings.actionCounts.exploder || 50,
+                    [ActionType.MINER]: levelData.levelSettings.actionCounts.miner || 50
                 };
             } else {
                 // Ensure all action types are included with defaults
@@ -335,7 +336,8 @@ class Game {
                     [ActionType.BUILDER]: 5,
                     [ActionType.CLIMBER]: 5,
                     [ActionType.FLOATER]: 5,
-                    [ActionType.EXPLODER]: 5
+                    [ActionType.EXPLODER]: 5,
+                    [ActionType.MINER]: 5
                 };
             }
         } else {
