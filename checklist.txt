@@ -24,8 +24,14 @@ Editor
     [x] default background color is black (0,0,0)
     Undo button in editor
     decide on default level editor dimensions
-    UI needed to set # of lemming Abilities per level
+    [x] UI needed to set # of lemming Abilities per level
     Fix music per level
+
+Cleanup
+    console.logs convert some to log_level debug vs error etc.
+    remove AI notes like NEW: and UPDATED: and // Add this line
+    check for unused / dead code / Not violating DRY
+    check performance
 
 AWS setup - put in S3 make reachable
 Re-create the campaign level-by-level
@@ -33,3 +39,4 @@ Re-create the campaign level-by-level
 Patreon or something like it for donations
 
 estimate: 30 days un-interupted work
+total time so far: 2 days

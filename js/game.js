@@ -301,17 +301,21 @@ class Game {
             this.centerCameraOnSpawn();
         }
 
+        // FIXED: Properly load totalLemmings from levelSettings
         if (levelData.levelSettings) {
-            this.level.totalLemmings = levelData.levelSettings.totalLemmings;
-            this.level.requiredLemmings = levelData.levelSettings.requiredLemmings;
-            this.level.spawnRate = levelData.levelSettings.spawnRate;
+            // Use the totalLemmings from the level editor, with validation
+            const totalLemmings = levelData.levelSettings.totalLemmings;
+            if (totalLemmings >= 1 && totalLemmings <= 100) {
+                this.level.totalLemmings = totalLemmings;
+            } else {
+                console.warn('Invalid totalLemmings value:', totalLemmings, 'using default of 20');
+                this.level.totalLemmings = 20;
+            }
 
-            // Use default values if properties are missing or null
-            this.level.totalLemmings = levelData.levelSettings.totalLemmings || 20;
             this.level.requiredLemmings = levelData.levelSettings.requiredLemmings || 10;
             this.level.spawnRate = levelData.levelSettings.spawnRate || 2000;
 
-            // FIXED: Convert action counts to proper format with backward compatibility
+            // Convert action counts to proper format with backward compatibility
             if (levelData.levelSettings.actionCounts) {
                 this.level.actionCounts = {
                     [ActionType.BLOCKER]: levelData.levelSettings.actionCounts.blocker || 5,
@@ -320,10 +324,10 @@ class Game {
                     [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 5,
                     [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 5,
                     [ActionType.FLOATER]: levelData.levelSettings.actionCounts.floater || 5,
-                    [ActionType.EXPLODER]: levelData.levelSettings.actionCounts.exploder || 50 
+                    [ActionType.EXPLODER]: levelData.levelSettings.actionCounts.exploder || 50
                 };
             } else {
-                // FIXED: Ensure all action types are included with defaults
+                // Ensure all action types are included with defaults
                 this.level.actionCounts = {
                     [ActionType.BLOCKER]: 5,
                     [ActionType.BASHER]: 5,
@@ -335,7 +339,7 @@ class Game {
                 };
             }
         } else {
-            // FIXED: Fallback to defaults if levelSettings doesn't exist
+            // Fallback to defaults if levelSettings doesn't exist
             this.level.totalLemmings = 20;
             this.level.requiredLemmings = 10;
             this.level.spawnRate = 2000;
@@ -388,7 +392,7 @@ class Game {
         }
 
         console.log('Level loaded. Total lemmings:', this.level.totalLemmings, 'Required:', this.level.requiredLemmings, 'Spawn rate:', this.level.spawnRate);
-        console.log('Action counts:', this.level.actionCounts); // DEBUG: Log action counts to verify floater is included
+        console.log('Action counts:', this.level.actionCounts);
     }
 
     // NEW: Center camera on spawn point
@@ -411,7 +415,7 @@ class Game {
         this.camera.y = Math.max(0, Math.min(this.levelHeight - viewportHeight, this.camera.y));
     }
 
-// UPDATED: Handle click with zoom transformation and smart selection
+    // UPDATED: Handle click with zoom transformation and smart selection
     handleClick(e) {
         const rect = this.canvas.getBoundingClientRect();
         const screenX = e.clientX - rect.left;
@@ -425,7 +429,7 @@ class Game {
 
         // UPDATED: Increased click area for closely packed lemmings
         const clickPadding = 15; // Increased from 10 to 15 pixels
-        
+
         // Find all lemmings within click area
         const candidateLemmings = this.lemmings.filter(l => {
             if (l.state === LemmingState.DEAD || l.state === LemmingState.SAVED) return false;
@@ -472,10 +476,10 @@ class Game {
     getDistanceToClick(lemming, clickX, clickY) {
         const lemmingCenterX = lemming.x;
         const lemmingCenterY = lemming.y + lemming.getHeight() / 2;
-        
+
         const dx = lemmingCenterX - clickX;
         const dy = lemmingCenterY - clickY;
-        
+
         return Math.sqrt(dx * dx + dy * dy);
     }
 
