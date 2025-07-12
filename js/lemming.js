@@ -1,4 +1,4 @@
-// Updated lemming.js - Fixed climber ability
+// Updated lemming.js - Fixed climber ability + NEW MINER ABILITY
 class Lemming {
     constructor(x, y, zoom = 1.0) {
         this.x = x;
@@ -14,6 +14,10 @@ class Lemming {
         this.originalDirection = 1; // Store original direction for climbing
         this.explosionTimer = -1; // -1 means no explosion scheduled
         this.explosionParticles = []; // Store particles for this lemming
+
+        // NEW: Mining properties
+        this.miningTimer = 0;
+        this.miningSwingCount = 0;
 
         // Store zoom for dynamic sizing
         this.zoom = zoom;
@@ -36,6 +40,8 @@ class Lemming {
                 return false; // Always allow builder (can reset)
             case ActionType.EXPLODER:
                 return this.explosionTimer > 0;
+            case ActionType.MINER:
+                return this.state === LemmingState.MINING;
             default:
                 return false;
         }
@@ -118,6 +124,214 @@ class Lemming {
                 } else {
                     this.walk(terrain, lemmings);
                 }
+                break;
+            case LemmingState.MINING:
+                this.mine(terrain);
+                break;
+        }
+    }
+
+    // UPDATED: Improved Miner Logic for Walkable 45° Tunnel
+    // Replace the mine() and performMiningSwing() methods in lemming.js
+
+    // FIXED: Conservative Miner Logic - Prevents Falling
+    // Replace the mine() and performMiningSwing() methods in lemming.js
+
+    mine(terrain) {
+        const lemmingHeight = this.getHeight();
+
+        // Check if there's still ground directly below the lemming's feet
+        if (!terrain.hasGround(this.x, this.y + lemmingHeight + 1)) {
+            // No ground below - stop mining and fall/walk
+            this.state = LemmingState.FALLING;
+            this.fallDistance = 0;
+            return;
+        }
+
+        // Increment mining timer (60 FPS = 60 frames per second)
+        this.miningTimer++;
+
+        // Swing pickaxe every 60 frames (1 second)
+        if (this.miningTimer >= 60) {
+            this.miningTimer = 0;
+            this.miningSwingCount++;
+
+            this.performMiningSwing(terrain);
+        }
+    }
+
+    // SHALLOW SLOPE + SURFACE MINING: Miner walks on ramp they create
+    // Replace the performMiningSwing() method in lemming.js
+
+    performMiningSwing(terrain) {
+        const lemmingHeight = this.getHeight();
+        const lemmingWidth = this.getWidth();
+
+        // SURFACE MINING: Create a sloped ramp by carving the surface ahead
+        // The lemming will walk DOWN this ramp they're creating
+
+        // Calculate the target slope position for this swing
+        const slopeStartX = this.x + (this.direction * 2); // Start slope just ahead
+        const slopeStartY = this.y + lemmingHeight; // Start at current ground level
+
+        // Create a gentle slope segment - very shallow per swing
+        const rampSegmentWidth = 8; // Width of each ramp segment
+        const rampDepth = 2; // Only 2px deep per swing - very shallow!
+        const rampLength = 6; // Length of the ramp segment
+
+        // STEP 1: Create the main ramp segment
+        for (let i = 0; i < rampLength; i++) {
+            const segmentX = slopeStartX + (this.direction * i);
+            const segmentDepth = Math.floor((i / rampLength) * rampDepth) + 1; // Gradual depth increase
+
+            // Remove terrain to create sloped surface
+            const removeX = segmentX - rampSegmentWidth / 2;
+            const removeY = slopeStartY + segmentDepth;
+            const removeHeight = Math.max(1, segmentDepth + 2); // Ensure enough clearance
+
+            terrain.removeTerrain(removeX, removeY, rampSegmentWidth, removeHeight);
+        }
+
+        // STEP 2: Clear headroom above the ramp
+        const headroomX = slopeStartX - rampSegmentWidth / 2;
+        const headroomY = slopeStartY - lemmingHeight - 2; // Above the ramp
+        const headroomWidth = rampLength + rampSegmentWidth;
+        const headroomHeight = lemmingHeight + 4; // Generous headroom
+
+        terrain.removeTerrain(headroomX, headroomY, headroomWidth, headroomHeight);
+
+        // STEP 3: Smooth connection to previous ramp segment
+        if (this.miningSwingCount > 1) {
+            // Connect current ramp to previous ramp smoothly
+            const prevRampX = this.x - (this.direction * 4); // Where previous ramp was
+            const prevRampY = this.y + lemmingHeight - 1; // Previous ground level
+
+            // Create smooth transition
+            const transitionWidth = rampSegmentWidth;
+            const transitionLength = 4;
+
+            for (let i = 0; i < transitionLength; i++) {
+                const transX = prevRampX + (this.direction * i);
+                const transDepth = Math.floor((i / transitionLength) * 1.5); // Very gentle transition
+
+                terrain.removeTerrain(
+                    transX - transitionWidth / 2,
+                    prevRampY + transDepth,
+                    transitionWidth,
+                    2
+                );
+            }
+        }
+
+        // STEP 4: Move the miner lemming down the ramp they just created
+        // Move forward and down very gradually to stay on the ramp surface
+        const moveForward = this.direction * 2; // 2px forward
+        const moveDown = 1; // Only 1px down - very gentle descent!
+
+        const newX = this.x + moveForward;
+        const newY = this.y + moveDown;
+
+        // Safety check: ensure new position has ground (the ramp we just created)
+        if (terrain.hasGround(newX, newY + lemmingHeight)) {
+            // Good! There's solid ground (our ramp) beneath the new position
+            this.x = newX;
+            this.y = newY;
+        } else {
+            // If somehow there's no ground, create a small platform
+            terrain.addTerrain(
+                newX - lemmingWidth,
+                newY + lemmingHeight,
+                lemmingWidth * 2,
+                2
+            );
+            this.x = newX;
+            this.y = newY;
+        }
+
+        // STEP 5: Create particles from the surface mining
+        this.createSurfaceMiningParticles(slopeStartX, slopeStartY);
+
+        // Play mining sound
+        audioManager.playSound('miner');
+    }
+
+    // NEW: Surface mining particle system
+    createSurfaceMiningParticles(centerX, centerY) {
+        if (window.game && window.game.particles) {
+            // Create dirt and debris particles from surface excavation
+            for (let i = 0; i < 8; i++) {
+                const angle = Math.random() * Math.PI + Math.PI; // Upward arc
+                const speed = Math.random() * 2 + 0.5;
+
+                // Surface mining creates more dirt/soil particles
+                let particleColor;
+                if (i < 3) {
+                    particleColor = '#8B4513'; // Brown dirt
+                } else if (i < 6) {
+                    particleColor = '#A0522D'; // Lighter soil
+                } else {
+                    particleColor = '#666666'; // Small rocks
+                }
+
+                window.game.particles.push(new Particle(
+                    centerX + Math.random() * 6 - 3,
+                    centerY + Math.random() * 2,
+                    particleColor,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed
+                ));
+            }
+
+            // Add some dust from surface work
+            for (let i = 0; i < 4; i++) {
+                window.game.particles.push(new Particle(
+                    centerX + Math.random() * 8 - 4,
+                    centerY - Math.random() * 2,
+                    '#D2B48C', // Tan dust
+                    Math.random() * 0.5 - 0.25,
+                    -Math.random() * 1 - 0.5
+                ));
+            }
+        }
+    }
+
+    // UPDATED: Reduced particle system for smaller excavation
+    createMiningParticles(centerX, centerY, terrainColor) {
+        if (window.game && window.game.particles) {
+            // Fewer particles for smaller excavation (10 instead of 20)
+            for (let i = 0; i < 10; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 2.5 + 0.5;
+
+                // Mix of terrain color, brown dirt, and gray rock
+                let particleColor;
+                if (i < 3) {
+                    particleColor = terrainColor;
+                } else if (i < 7) {
+                    particleColor = '#8B4513'; // Brown dirt
+                } else {
+                    particleColor = '#666666'; // Gray rock
+                }
+
+                window.game.particles.push(new Particle(
+                    centerX + Math.random() * 8 - 4, // Smaller spread
+                    centerY + Math.random() * 6 - 3, // Smaller area
+                    particleColor,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed - 1 // Moderate upward trajectory
+                ));
+            }
+
+            // Fewer dust particles
+            for (let i = 0; i < 3; i++) {
+                window.game.particles.push(new Particle(
+                    centerX + Math.random() * 10 - 5,
+                    centerY + Math.random() * 4 - 2,
+                    '#D2B48C', // Tan dust color
+                    Math.random() * 0.5 - 0.25, // Gentle horizontal drift
+                    -Math.random() * 1.5 - 0.5   // Gentle upward movement
+                ));
+            }
         }
     }
 
@@ -179,7 +393,7 @@ class Lemming {
     climb(terrain) {
         const lemmingWidth = this.getWidth();
         const lemmingHeight = this.getHeight();
-        
+
         // Check for ceiling collision (terrain above lemming's head)
         const headY = this.y - 2; // Check 2 pixels above the lemming
         if (terrain.hasGround(this.x, headY)) {
@@ -195,7 +409,7 @@ class Lemming {
 
         // Check if still in contact with wall
         const wallCheckX = this.x + (this.originalDirection * (lemmingWidth / 2 + 1));
-        
+
         // Check multiple points along the lemming's height to ensure wall contact
         let stillInContactWithWall = false;
         for (let checkY = this.y; checkY < this.y + lemmingHeight; checkY += 2) {
@@ -210,11 +424,11 @@ class Lemming {
             // Apply boost to clear the wall top
             const heightBoost = 5;  // 5px upward boost
             const forwardBoost = 5; // 5px forward boost
-            
+
             // Apply the boosts
             this.y -= heightBoost;
             this.x += this.originalDirection * forwardBoost;
-            
+
             // Check if there's ground to stand on after the boost
             if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
                 // Resume walking in original direction
@@ -383,7 +597,7 @@ class Lemming {
             tileY = this.y + lemmingHeight - stepHeight - 2;
         }
 
-        if(this.direction === -1){
+        if (this.direction === -1) {
             terrain.addTerrain((tileX - stepWidth * 2) + 2, tileY, stepWidth, stepHeight + 1);
         } else {
             terrain.addTerrain(tileX - stepWidth / 2, tileY, stepWidth, stepHeight + 1);
@@ -446,6 +660,14 @@ class Lemming {
                     this.isFloater = true;
                     audioManager.playSound('floater');
                     break;
+                case ActionType.MINER:
+                    if (this.state === LemmingState.WALKING) {
+                        this.state = LemmingState.MINING;
+                        this.miningTimer = 0;
+                        this.miningSwingCount = 0;
+                        audioManager.playSound('miner');
+                    }
+                    break;
             }
             this.action = action;
             return true;
@@ -455,13 +677,13 @@ class Lemming {
 
     explode(terrain) {
         this.state = LemmingState.DEAD;
-        
+
         audioManager.playSound('explosion');
-        
+
         const explosionRadius = 10;
         const cx = this.x;
         const cy = this.y + this.getHeight() / 2;
-        
+
         // Remove terrain in a circle
         for (let x = cx - explosionRadius; x <= cx + explosionRadius; x++) {
             for (let y = cy - explosionRadius; y <= cy + explosionRadius; y++) {
@@ -472,7 +694,7 @@ class Lemming {
             }
         }
         terrain.updateImageData();
-        
+
         // Create explosion particles
         if (window.game) {
             const colors = ['#00ff00', '#ff0000', '#ffffff', '#0000ff'];
@@ -480,7 +702,7 @@ class Lemming {
                 const angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.5;
                 const speed = Math.random() * 3 + 2;
                 const color = colors[i % colors.length];
-                
+
                 window.game.addParticle(
                     cx,
                     cy,
@@ -490,6 +712,37 @@ class Lemming {
                 );
             }
         }
+    }
+
+    // NEW: Draw pickaxe for miners
+    drawPickaxe(ctx, lemmingWidth, lemmingHeight) {
+        ctx.save();
+
+        // Pickaxe handle (brown)
+        ctx.fillStyle = '#8B4513';
+        const handleLength = lemmingHeight * 0.8;
+        const handleX = this.x + (this.direction * lemmingWidth * 0.4);
+        const handleY = this.y + lemmingHeight * 0.2;
+
+        // Animate pickaxe swing
+        const swingProgress = (this.miningTimer / 60) * Math.PI; // 0 to π over 1 second
+        const swingAngle = Math.sin(swingProgress) * 0.5; // Swing animation
+
+        ctx.translate(handleX, handleY);
+        ctx.rotate((this.direction > 0 ? 0.7 : -0.7) + swingAngle); // 45° angle + swing
+
+        // Draw handle
+        ctx.fillRect(-1, 0, 2, handleLength);
+
+        // Pickaxe head (gray metal)
+        ctx.fillStyle = '#666666';
+        ctx.fillRect(-3, -4, 6, 4);
+
+        // Pickaxe point (lighter gray)
+        ctx.fillStyle = '#999999';
+        ctx.fillRect(-4, -2, 2, 2);
+
+        ctx.restore();
     }
 
     draw(ctx) {
@@ -514,6 +767,8 @@ class Lemming {
             ctx.fillStyle = '#ff00ff';
         } else if (this.state === LemmingState.CLIMBING) {
             ctx.fillStyle = '#ffaa00';
+        } else if (this.state === LemmingState.MINING) {
+            ctx.fillStyle = '#8B4513'; // Brown for miners
         } else {
             ctx.fillStyle = '#00ff00';
         }
@@ -533,6 +788,11 @@ class Lemming {
 
         // Draw lemming body
         ctx.fillRect(this.x - lemmingWidth / 2, this.y, lemmingWidth, lemmingHeight);
+
+        // Add pickaxe visual for miners
+        if (this.state === LemmingState.MINING) {
+            this.drawPickaxe(ctx, lemmingWidth, lemmingHeight);
+        }
 
         // Draw direction indicator
         ctx.fillStyle = 'white';
@@ -565,20 +825,20 @@ class Lemming {
         // Draw countdown for explosion timer
         if (this.explosionTimer > 0) {
             const seconds = Math.ceil(this.explosionTimer);
-            
+
             ctx.save();
             ctx.font = `bold ${Math.max(10, this.getHeight())}px Arial`;
             ctx.textAlign = 'center';
             ctx.fillStyle = 'white';
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 2;
-            
+
             const textX = this.x;
             const textY = this.y - 2;
-            
+
             ctx.strokeText(seconds.toString(), textX, textY);
             ctx.fillText(seconds.toString(), textX, textY);
-            
+
             ctx.restore();
         }
     }

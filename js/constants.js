@@ -50,7 +50,8 @@ const ActionType = {
     BUILDER: 'builder',
     CLIMBER: 'climber',
     FLOATER: 'floater',
-    EXPLODER: 'exploder'
+    EXPLODER: 'exploder',
+    MINER: 'miner'
 };
 
 // Lemming states
@@ -64,7 +65,8 @@ const LemmingState = {
     CLIMBING: 'climbing',
     EXPLODING: 'exploding',
     DEAD: 'dead',
-    SAVED: 'saved'
+    SAVED: 'saved',
+    MINING: 'mining'
 };
 
 // Make MAX_FALL_HEIGHT available globally for editor

@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lemmings Clone</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div id="gameContainer">
         <div id="menu">
@@ -15,15 +17,15 @@
             <button class="menuButton" onclick="game.showSettings()">Settings</button>
             <button class="menuButton" onclick="game.quit()">Quit</button>
         </div>
-        
+
         <div id="levelInfo" class="hidden">
             <div>Lemmings Out: <span id="lemmingsOut">0</span>/<span id="totalLemmings">20</span></div>
             <div>Saved: <span id="lemmingsSaved">0</span>/<span id="requiredLemmings">10</span></div>
             <div>Alive: <span id="lemmingsAlive">0</span></div>
         </div>
-        
+
         <canvas id="gameCanvas" class="hidden"></canvas>
-        
+
         <div id="gameUI" class="hidden">
             <div id="toolbar">
                 <button class="actionButton" data-action="blocker" onclick="game.selectAction('blocker')">
@@ -50,42 +52,47 @@
                     <span class="actionCount">5</span>
                     <div style="font-size: 12px; margin-top: 5px;">FLOAT</div>
                 </button>
+                <button class="actionButton" data-action="miner" onclick="game.selectAction('miner')">
+                    <span class="actionCount">5</span>
+                    <div style="font-size: 12px; margin-top: 5px;">MINE</div>
+                </button>
                 <button class="actionButton" data-action="exploder" onclick="game.selectAction('exploder')">
                     <span class="actionCount">50</span>
                     <div style="font-size: 12px; margin-top: 5px;">BOMB</div>
                 </button>
-                
+
                 <div class="speedControl">
                     <span>Speed:</span>
                     <button class="speedButton" onclick="game.decreaseSpawnRate()">-</button>
                     <span id="spawnRate">2.0s</span>
                     <button class="speedButton" onclick="game.increaseSpawnRate()">+</button>
                 </div>
-                
+
                 <button class="endLevelButton" onclick="game.endLevel()">
                     End Level
                 </button>
             </div>
-            
+
             <div id="minimapContainer">
                 <canvas id="minimapCanvas" width="200" height="100"></canvas>
             </div>
         </div>
-        
+
         <div id="levelEditor" class="hidden">
             <!-- Editor UI will be dynamically created here -->
         </div>
-        
+
         <div id="levelSelectDialog" class="hidden">
             <div class="dialogContent">
                 <h2>Select Level</h2>
                 <button class="dialogButton" onclick="game.playDefaultLevel()">Play Default Level</button>
-                <label class="fileLabel dialogButton">Load Custom Level<input type="file" accept=".json" onchange="game.loadAndPlayLevel(this.files[0])" style="display: none;">
+                <label class="fileLabel dialogButton">Load Custom Level<input type="file" accept=".json"
+                        onchange="game.loadAndPlayLevel(this.files[0])" style="display: none;">
                 </label>
                 <button class="dialogButton cancel" onclick="game.closeLevelSelect()">Cancel</button>
             </div>
         </div>
-        
+
         <div id="settingsDialog" class="hidden">
             <div class="dialogContent">
                 <h2>Settings</h2>
@@ -93,23 +100,24 @@
                 <button class="dialogButton cancel" onclick="game.closeSettings()">Back</button>
             </div>
         </div>
-        
+
         <div id="audioSettingsDialog" class="hidden">
             <div class="dialogContent">
                 <h2>Audio Settings</h2>
                 <div class="sliderContainer">
                     <label>Sound Effects: <span id="soundVolumeLabel">50</span>%</label>
-                    <input type="range" id="soundVolumeSlider" min="0" max="100" value="50" 
-                           oninput="game.updateSoundVolume(this.value)">
+                    <input type="range" id="soundVolumeSlider" min="0" max="100" value="50"
+                        oninput="game.updateSoundVolume(this.value)">
                 </div>
                 <div class="sliderContainer">
                     <label>Music: <span id="musicVolumeLabel">50</span>%</label>
                     <input type="range" id="musicVolumeSlider" min="0" max="100" value="50"
-                           oninput="game.updateMusicVolume(this.value)">
+                        oninput="game.updateMusicVolume(this.value)">
                 </div>
                 <label class="fileLabel dialogButton">
                     Load Music File
-                    <input type="file" accept="audio/*" onchange="game.loadMusicFile(this.files[0])" style="display: none;">
+                    <input type="file" accept="audio/*" onchange="game.loadMusicFile(this.files[0])"
+                        style="display: none;">
                 </label>
                 <button class="dialogButton cancel" onclick="game.closeAudioSettings()">Back</button>
             </div>
@@ -127,4 +135,5 @@
     <script src="js/game.js"></script>
     <script src="js/main.js"></script>
 </body>
+
 </html>
