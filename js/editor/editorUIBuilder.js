@@ -3,10 +3,10 @@ class EditorUIBuilder {
     constructor() {
         this.activeSubmenu = null;
     }
-    
+
     createEditorUI() {
         const editorContainer = document.getElementById('levelEditor');
-        
+
         editorContainer.innerHTML = `
             <div class="editorLayout">
                 <div id="editorToolbar" class="editorToolbar">
@@ -139,7 +139,7 @@ class EditorUIBuilder {
                                 <label>Name: <input type="text" id="levelName" value="untitled"></label>
                                 <label>Width: <input type="number" id="levelWidth" value="1200" min="1200" max="6000" step="100"></label>
                                 <label>Height: <input type="number" id="levelHeight" value="600" min="400" max="1200" step="100"></label>
-                                <label>Total Lemmings: <input type="number" id="totalLemmings" value="20" min="1" max="100"></label>
+                                <label>Total Lemmings: <input type="number" id="totalLemmingsInput" value="20" min="1" max="100"></label>
                                 <label>Required to Save: <input type="number" id="requiredLemmings" value="10" min="1" max="100"></label>
                                 <label>Spawn Rate: <input type="number" id="spawnRate" value="2000" min="250" max="5000" step="250">ms</label>
                             </div>
@@ -178,33 +178,33 @@ class EditorUIBuilder {
                 </div>
             </div>
         `;
-        
+
         this.addStyles();
     }
-    
+
     toggleSubmenu(submenuName) {
         const submenuId = submenuName + 'Submenu';
         const submenu = document.getElementById(submenuId);
         const allSubmenus = document.querySelectorAll('.submenu');
-        
+
         // Hide all submenus
         allSubmenus.forEach(menu => {
             if (menu.id !== submenuId) {
                 menu.classList.add('hidden');
             }
         });
-        
+
         // Toggle the selected submenu
         submenu.classList.toggle('hidden');
-        
+
         // Update active submenu
         this.activeSubmenu = submenu.classList.contains('hidden') ? null : submenuName;
-        
+
         // Update button states
         document.querySelectorAll('.menuButtonLarge').forEach(btn => {
             btn.classList.remove('active');
         });
-        
+
         if (!submenu.classList.contains('hidden')) {
             const activeButton = document.querySelector(`[onclick*="${submenuName}"]`);
             if (activeButton) {
@@ -212,7 +212,7 @@ class EditorUIBuilder {
             }
         }
     }
-    
+
     addStyles() {
         const style = document.createElement('style');
         style.textContent = `
@@ -495,6 +495,30 @@ class EditorUIBuilder {
             }
         `;
         document.head.appendChild(style);
+    }
+
+    setupLemmingInputValidation() {
+        const totalLemmingsInput = document.getElementById('totalLemmingsInput');
+        if (totalLemmingsInput) {
+            totalLemmingsInput.addEventListener('input', function () {
+                const value = parseInt(this.value);
+                if (value < 1 || value > 100 || isNaN(value)) {
+                    this.style.color = 'red';
+                } else {
+                    this.style.color = '';
+                }
+            });
+
+            // Also validate on blur (when user leaves the field)
+            totalLemmingsInput.addEventListener('blur', function () {
+                const value = parseInt(this.value);
+                if (value < 1 || value > 101 || isNaN(value)) {
+                    this.style.color = 'red';
+                    alert('Total Lemmings must be between 1 and 100');
+                    this.focus(); // Keep focus on invalid field
+                }
+            });
+        }
     }
 }
 

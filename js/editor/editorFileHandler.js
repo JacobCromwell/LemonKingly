@@ -5,11 +5,23 @@ class EditorFileHandler {
     }
 
     saveLevel() {
-        // Update level settings from UI
+        // Update level settings from UI with validation
+        const totalLemmingsInput = document.getElementById('totalLemmingsInput');
+        const totalLemmingsValue = parseInt(totalLemmingsInput.value);
+
+        // Validate total lemmings range (1-100)
+        if (totalLemmingsValue < 1 || totalLemmingsValue > 100 || isNaN(totalLemmingsValue)) {
+            totalLemmingsInput.style.color = 'red';
+            alert('Total Lemmings must be between 1 and 101');
+            return; // Don't save if invalid
+        } else {
+            totalLemmingsInput.style.color = ''; // Reset color if valid
+        }
+
         this.editor.levelName = document.getElementById('levelName').value;
         this.editor.levelWidth = parseInt(document.getElementById('levelWidth').value);
         this.editor.levelHeight = parseInt(document.getElementById('levelHeight').value);
-        this.editor.levelData.totalLemmings = parseInt(document.getElementById('totalLemmings').value);
+        this.editor.levelData.totalLemmings = totalLemmingsValue; // Use validated value
         this.editor.levelData.requiredLemmings = parseInt(document.getElementById('requiredLemmings').value);
         this.editor.levelData.spawnRate = parseInt(document.getElementById('spawnRate').value);
 
@@ -19,7 +31,7 @@ class EditorFileHandler {
             height: this.editor.levelHeight,
             spawn: this.editor.spawnPoint,
             exit: this.editor.exitPoint,
-            levelSettings: this.editor.levelData,
+            levelSettings: this.editor.levelData, // This contains totalLemmings
             hazards: this.editor.hazards.map(h => ({
                 x: h.x,
                 y: h.y,
@@ -29,7 +41,6 @@ class EditorFileHandler {
             })),
             terrain: this.editor.terrain.canvas.toDataURL(),
             background: this.editor.backgroundImage ? this.editor.backgroundImage.src : null,
-            // NEW: Save zoom and camera position
             zoom: this.editor.zoom,
             camera: {
                 x: this.editor.camera.x,
@@ -123,51 +134,37 @@ class EditorFileHandler {
 
         // Update UI inputs
         document.getElementById('levelName').value = this.editor.levelName;
-        document.getElementById('totalLemmings').value = this.editor.levelData.totalLemmings;
+        document.getElementById('totalLemmingsInput').value = this.editor.levelData.totalLemmings;
         document.getElementById('requiredLemmings').value = this.editor.levelData.requiredLemmings;
         document.getElementById('spawnRate').value = this.editor.levelData.spawnRate;
     }
 
     testLevel() {
-        // Update level data from inputs
-        this.editor.levelName = document.getElementById('levelName').value;
-        this.editor.levelData.totalLemmings = parseInt(document.getElementById('totalLemmings').value);
-        this.editor.levelData.requiredLemmings = parseInt(document.getElementById('requiredLemmings').value);
-        this.editor.levelData.spawnRate = parseInt(document.getElementById('spawnRate').value);
 
-        // Create a test lemming to show in editor with current zoom
-        if (!this.editor.testLemmings) {
-            this.editor.testLemmings = [];
+        // Check if editor UI is actually visible
+        const levelEditor = document.getElementById('levelEditor');
+
+        // Let's try to find the input by different methods
+        const totalLemmingsInput = document.getElementById('totalLemmingsInput');
+
+        if (totalLemmingsInput) {
+            console.log('Input value:', totalLemmingsInput.value);
+            console.log('Input type:', totalLemmingsInput.type);
+            console.log('Input name:', totalLemmingsInput.name);
+        } else {
+            // If not found, let's see what inputs DO exist
+            const allInputs = document.querySelectorAll('input[type="number"]');
+            allInputs.forEach((input, index) => {
+                console.log(`Input ${index}:`, {
+                    id: input.id,
+                    value: input.value,
+                    name: input.name
+                });
+            });
         }
-        
-        // Clear existing test lemmings
-        this.editor.testLemmings = [];
-        
-        // Add a test lemming at spawn point with current editor zoom
-        this.editor.testLemmings.push(new Lemming(this.editor.spawnPoint.x, this.editor.spawnPoint.y, this.editor.zoom));
 
-        // Save current level to temporary storage
-        const levelData = {
-            spawn: this.editor.spawnPoint,
-            exit: this.editor.exitPoint,
-            hazards: this.editor.hazards,
-            terrain: this.editor.terrain.canvas.toDataURL(),
-            background: this.editor.backgroundImage ? this.editor.backgroundImage.src : null,
-            levelSettings: this.editor.levelData,
-            width: this.editor.levelWidth,
-            height: this.editor.levelHeight,
-            // NEW: Include zoom and camera for test level
-            zoom: this.editor.zoom,
-            camera: {
-                x: this.editor.camera.x,
-                y: this.editor.camera.y
-            }
-        };
+        // Continue with rest of method using fallback...
+        const totalLemmingsValue = totalLemmingsInput ? parseInt(totalLemmingsInput.value) || 20 : 20;
 
-        // Store in sessionStorage for game to load
-        sessionStorage.setItem('testLevel', JSON.stringify(levelData));
-
-        // Switch to game mode
-        window.game.testLevelFromEditor();
     }
 }

@@ -84,7 +84,7 @@ function createEditorUI() {
                     <h4>Level Settings</h4>
                     <div class="levelSettings">
                         <label>Name: <input type="text" id="levelName" value="untitled"></label>
-                        <label>Lemmings: <input type="number" id="totalLemmings" value="20" min="1" max="100"></label>
+                        <label>Lemmings: <input type="number" id="totalLemmingsInput" value="20" min="1" max="100"></label>
                         <label>Required: <input type="number" id="requiredLemmings" value="10" min="1" max="100"></label>
                         <label>Spawn Rate: <input type="number" id="spawnRate" value="2000" min="250" max="5000" step="250">ms</label>
                     </div>
