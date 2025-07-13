@@ -1,7 +1,7 @@
 Outstanding items
 
 Abilities
-    miner
+    [x] miner
     revise all 8 Abilities
         [x] Can EXPLODE blockers
         better bashing detection (multi-direction), slower, stops after getting through a wall
@@ -28,6 +28,7 @@ Editor
     [x] UI needed to set # of lemming Abilities per level
     Fix music per level
     resize spawn and exit
+    fix spawn / exit ghost image
 
 Cleanup
     console.logs convert some to log_level debug vs error etc.

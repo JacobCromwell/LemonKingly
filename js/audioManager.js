@@ -361,6 +361,70 @@ class AudioManager {
             osc2.stop(this.audioContext.currentTime + 0.15);
             noise.stop(this.audioContext.currentTime + 0.1);
         });
+
+        // Generate nuke sound ("Oh no!" exclamation)
+        this.sounds.nuke = this.createSound(() => {
+            // Create a dramatic, urgent sound that suggests "Oh no!"
+            const osc1 = this.audioContext.createOscillator();
+            const osc2 = this.audioContext.createOscillator();
+            const osc3 = this.audioContext.createOscillator();
+            const gain1 = this.audioContext.createGain();
+            const gain2 = this.audioContext.createGain();
+            const gain3 = this.audioContext.createGain();
+            const masterGain = this.audioContext.createGain();
+            const filter = this.audioContext.createBiquadFilter();
+
+            // First part: "Oh" - lower pitch, worried tone
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(220, this.audioContext.currentTime); // A3
+            osc1.frequency.linearRampToValueAtTime(196, this.audioContext.currentTime + 0.2); // G3
+
+            gain1.gain.setValueAtTime(0.4, this.audioContext.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+
+            // Second part: "no" - higher pitch, more alarmed
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(330, this.audioContext.currentTime + 0.15); // E4
+            osc2.frequency.linearRampToValueAtTime(294, this.audioContext.currentTime + 0.4); // D4
+
+            gain2.gain.setValueAtTime(0, this.audioContext.currentTime);
+            gain2.gain.setValueAtTime(0.5, this.audioContext.currentTime + 0.15);
+            gain2.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.4);
+
+            // Add harmonic for richness
+            osc3.type = 'triangle';
+            osc3.frequency.setValueAtTime(440, this.audioContext.currentTime); // A4
+            osc3.frequency.linearRampToValueAtTime(392, this.audioContext.currentTime + 0.4); // G4
+
+            gain3.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+            gain3.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.4);
+
+            // Add filter for voice-like quality
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(800, this.audioContext.currentTime);
+            filter.Q.value = 2;
+
+            masterGain.gain.value = this.soundVolume / 100;
+
+            // Connect audio graph
+            osc1.connect(gain1);
+            osc2.connect(gain2);
+            osc3.connect(gain3);
+            gain1.connect(filter);
+            gain2.connect(filter);
+            gain3.connect(filter);
+            filter.connect(masterGain);
+            masterGain.connect(this.audioContext.destination);
+
+            // Start and stop oscillators
+            osc1.start();
+            osc2.start(this.audioContext.currentTime + 0.15);
+            osc3.start();
+            
+            osc1.stop(this.audioContext.currentTime + 0.2);
+            osc2.stop(this.audioContext.currentTime + 0.4);
+            osc3.stop(this.audioContext.currentTime + 0.4);
+        });
     }
 
     createSound(generatorFunction) {

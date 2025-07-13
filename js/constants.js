@@ -56,7 +56,8 @@ const ActionType = {
     CLIMBER: 'climber',
     FLOATER: 'floater',
     EXPLODER: 'exploder',
-    MINER: 'miner'
+    MINER: 'miner',
+    NUKE: 'nuke'
 };
 
 // Lemming states
