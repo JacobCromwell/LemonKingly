@@ -515,6 +515,28 @@ class Game {
         }
     }
 
+    // NEW: Apply nuke action to all active lemmings
+    applyNuke() {
+        if (!this.gameRunning) return;
+
+        // Play nuke sound effect
+        audioManager.playSound('nuke');
+
+        let lemmingsNuked = 0;
+
+        // Apply EXPLODER action to all lemmings that are not saved
+        this.lemmings.forEach(lemming => {
+            if (lemming.state !== LemmingState.SAVED) {
+                // Apply exploder without checking action counts
+                if (lemming.applyAction(ActionType.EXPLODER)) {
+                    lemmingsNuked++;
+                }
+            }
+        });
+
+        console.log(`Nuke activated! ${lemmingsNuked} lemmings set to explode.`);
+    }
+
     // UPDATED: Game loop with zoom support
     gameLoop() {
         if (!this.gameRunning) return;
@@ -741,7 +763,7 @@ class Game {
         this.selectedAction = action;
 
         // Update UI
-        document.querySelectorAll('.actionButton').forEach(btn => {
+        document.querySelectorAll('.actionButton:not(.nuke)').forEach(btn => {
             btn.classList.remove('selected');
         });
         document.querySelector(`[data-action="${action}"]`).classList.add('selected');

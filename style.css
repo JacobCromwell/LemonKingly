@@ -116,6 +116,30 @@ body {
     border-color: #6FCF70;
 }
 
+/* Nuke button special styling */
+.actionButton.nuke {
+    background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+    border-color: #ff6666;
+    box-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
+    animation: nukeGlow 2s ease-in-out infinite alternate;
+}
+
+.actionButton.nuke:hover {
+    background: linear-gradient(135deg, #ff6666 0%, #ff0000 100%);
+    border-color: #ff8888;
+    box-shadow: 0 0 15px rgba(255, 68, 68, 0.5);
+    transform: scale(1.05);
+}
+
+@keyframes nukeGlow {
+    from {
+        box-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
+    }
+    to {
+        box-shadow: 0 0 20px rgba(255, 68, 68, 0.6);
+    }
+}
+
 .actionCount {
     position: absolute;
     top: -8px;
