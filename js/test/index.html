@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemmings Clone - Test Suite</title>
+    
+    <!-- Mocha CSS -->
+    <link href="https://unpkg.com/mocha@10.2.0/mocha.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .test-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-controls h1 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .test-controls p {
+            margin: 0 0 15px 0;
+            color: #666;
+        }
+        
+        .run-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        
+        .run-button:hover {
+            background: #45a049;
+        }
+        
+        .run-button.secondary {
+            background: #2196F3;
+        }
+        
+        .run-button.secondary:hover {
+            background: #1976D2;
+        }
+        
+        #mocha {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: #333;
+        }
+        
+        /* Fix Mocha text visibility */
+        #mocha .stats {
+            color: #333 !important;
+        }
+        
+        #mocha .stats em {
+            color: #666 !important;
+        }
+        
+        #mocha .suite .suite-title {
+            color: #333 !important;
+        }
+        
+        #mocha .test.pass::before {
+            color: #00d6b2 !important;
+        }
+        
+        #mocha .test.fail::before {
+            color: #c00 !important;
+        }
+        
+        #mocha .test pre {
+            color: #333 !important;
+            background: #f8f8f8 !important;
+        }
+        
+        #mocha .test h2 {
+            color: #333 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-controls">
+        <h1>🎮 Lemmings Clone Test Suite</h1>
+        <p>Comprehensive testing for game mechanics, terrain system, lemming AI, and level editor.</p>
+        <button class="run-button" onclick="runAllTests()">Run All Tests</button>
+        <button class="run-button secondary" onclick="runSpecificSuite()">Run Specific Suite</button>
+        <button class="run-button secondary" onclick="location.reload()">Reset</button>
+    </div>
+
+    <!-- Test Results Container -->
+    <div id="mocha"></div>
+
+    <!-- Load Mocha and Chai -->
+    <script src="https://unpkg.com/mocha@10.2.0/mocha.js"></script>
+    <script src="https://unpkg.com/chai@4.3.10/chai.js"></script>
+    
+    <!-- Setup Mocha -->
+    <script>
+        mocha.setup('bdd'); // Use BDD interface (describe, it, etc.)
+        const expect = chai.expect;
+        
+        // Mock canvas for testing
+        function createMockCanvas(width = 800, height = 600) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            return canvas;
+        }
+        
+        // Mock game environment
+        window.mockGameEnvironment = function() {
+            // Create mock DOM elements that the game expects
+            if (!document.getElementById('gameCanvas')) {
+                const canvas = createMockCanvas();
+                canvas.id = 'gameCanvas';
+                document.body.appendChild(canvas);
+            }
+            
+            // Mock audio manager if not present
+            if (!window.audioManager) {
+                window.audioManager = {
+                    playSound: () => {},
+                    setSoundVolume: () => {},
+                    setMusicVolume: () => {},
+                    loadMusic: () => {},
+                    playMusic: () => {},
+                    pauseMusic: () => {}
+                };
+            }
+        };
+        
+        function runAllTests() {
+            window.mockGameEnvironment();
+            mocha.run();
+        }
+        
+        function runSpecificSuite() {
+            const suite = prompt('Enter test suite name (terrain, lemming, constants, collision, level):');
+            if (suite) {
+                window.mockGameEnvironment();
+                mocha.grep(suite).run();
+            }
+        }
+    </script>
+
+    <!-- Load game source files in correct dependency order -->
+    <script src="../constants.js"></script>
+    <script src="../audioManager.js"></script>
+    <script src="../particle.js"></script>
+    <script src="../hazard.js"></script>
+    <script src="../terrain.js"></script>
+    <script src="../lemming.js"></script>
+    <script src="../level.js"></script>
+    <script src="../terrain/PolygonUtils.js"></script>
+    <script src="../terrain/IndestructibleTerrain.js"></script>
+
+    <!-- Load test files -->
+    <script src="constants.test.js"></script>
+    <script src="terrain.test.js"></script>
+    <script src="lemming.test.js"></script>
+    <script src="collision.test.js"></script>
+    <script src="level.test.js"></script>
+    <script src="indestructibleTerrain.test.js"></script>
+
+    <script>
+        // Auto-run tests when page loads (optional)
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Test suite loaded. Click "Run All Tests" to begin testing.');
+            
+            // Debug: Check if classes are available
+            console.log('Available classes:');
+            console.log('- Terrain:', typeof Terrain);
+            console.log('- Lemming:', typeof Lemming);
+            console.log('- Level:', typeof Level);
+            console.log('- Hazard:', typeof Hazard);
+            console.log('- Particle:', typeof Particle);
+            console.log('- IndestructibleTerrain:', typeof IndestructibleTerrain);
+            console.log('- PolygonUtils:', typeof PolygonUtils);
+            
+            // Check constants
+            console.log('- ActionType:', typeof ActionType);
+            console.log('- LemmingState:', typeof LemmingState);
+            console.log('- MAX_FALL_HEIGHT:', typeof MAX_FALL_HEIGHT, MAX_FALL_HEIGHT);
+            
+            if (typeof Lemming === 'undefined') {
+                console.error('❌ Lemming class not loaded! Check lemming.js path and syntax.');
+            } else {
+                console.log('✅ All classes loaded successfully!');
+            }
+        });
+    </script>
+</body>
+</html>

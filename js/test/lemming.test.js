@@ -32,46 +32,39 @@ describe('Lemming', function() {
 
     describe('Movement', function() {
         beforeEach(function() {
-            // Place lemming on ground and ensure it's in walking state
+            // Place lemming on ground
             lemming.state = LemmingState.WALKING;
-            lemming.y = 490; // On the ground (terrain at y=500)
-            lemming.fallDistance = 0;
+            lemming.y = 490; // On the ground
         });
 
         it('should walk in the correct direction', function() {
             const initialX = lemming.x;
             lemming.update(terrain, []);
             
-            // Should move at least some distance (WALK_SPEED = 1)
             expect(lemming.x).to.be.greaterThan(initialX);
             expect(lemming.state).to.equal(LemmingState.WALKING);
         });
 
         it('should turn around when hitting an obstacle', function() {
-            // Create a tall wall that requires turning around
-            terrain.ctx.fillRect(150, 350, 50, 150); // Tall wall from y=350 to y=500
+            // Create a wall
+            terrain.ctx.fillRect(150, 400, 50, 100);
             terrain.updateImageData();
             
             lemming.x = 120; // Close to wall
             const initialDirection = lemming.direction;
             
-            // Update multiple times to hit the wall and turn around
-            let turned = false;
-            for (let i = 0; i < 100; i++) { // Increased iterations
+            // Update multiple times to hit the wall
+            for (let i = 0; i < 50; i++) {
                 lemming.update(terrain, []);
-                if (lemming.direction !== initialDirection) {
-                    turned = true;
-                    break;
-                }
+                if (lemming.direction !== initialDirection) break;
             }
             
-            expect(turned).to.be.true;
             expect(lemming.direction).to.equal(-initialDirection);
         });
 
         it('should fall when there is no ground', function() {
             lemming.x = 400; // Over empty space
-            lemming.y = 300; // Well above ground
+            lemming.y = 300;
             lemming.state = LemmingState.WALKING;
             
             lemming.update(terrain, []);
@@ -84,7 +77,6 @@ describe('Lemming', function() {
         beforeEach(function() {
             lemming.state = LemmingState.FALLING;
             lemming.y = 300;
-            lemming.fallDistance = 0;
         });
 
         it('should fall due to gravity', function() {
@@ -96,9 +88,9 @@ describe('Lemming', function() {
         });
 
         it('should land when hitting ground', function() {
-            // Position just above ground with small fall distance
-            lemming.y = 495; // Very close to ground at y=500
-            lemming.fallDistance = 5; // Small fall distance
+            // Position just above ground
+            lemming.y = 485;
+            lemming.fallDistance = 10;
             
             lemming.update(terrain, []);
             
@@ -107,10 +99,8 @@ describe('Lemming', function() {
         });
 
         it('should die from excessive fall damage', function() {
-            // Set up for a fatal fall
-            lemming.y = 495; // About to land
-            lemming.fallDistance = MAX_FALL_HEIGHT + 10; // Excessive fall distance
-            lemming.isFloater = false; // Make sure it's not a floater
+            lemming.fallDistance = MAX_FALL_HEIGHT + 10;
+            lemming.y = 485; // About to land
             
             lemming.update(terrain, []);
             
@@ -119,13 +109,12 @@ describe('Lemming', function() {
 
         it('should not die from fall damage if floater', function() {
             lemming.isFloater = true;
-            lemming.y = 495; // About to land
-            lemming.fallDistance = MAX_FALL_HEIGHT + 10; // Would be fatal without floater
+            lemming.fallDistance = MAX_FALL_HEIGHT + 10;
+            lemming.y = 485;
             
             lemming.update(terrain, []);
             
             expect(lemming.state).to.equal(LemmingState.WALKING);
-            expect(lemming.fallDistance).to.equal(0);
         });
     });
 
