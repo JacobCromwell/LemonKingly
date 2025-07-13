@@ -311,7 +311,7 @@ class Lemming {
                 }
             }
 
-            this.x += this.direction * 2;
+            this.x += this.direction * 0.5;
         } else {
             // Check if we can walk forward (no obstacle)
             if (!terrain.hasGround(this.x + this.direction * WALK_SPEED, this.y + lemmingHeight / 2)) {
@@ -319,7 +319,7 @@ class Lemming {
                 this.state = LemmingState.WALKING;
             } else {
                 // Move forward slowly while bashing
-                this.x += this.direction * 0.5;
+                this.x += this.direction * 0.125;
             }
         }
     }
@@ -360,7 +360,7 @@ class Lemming {
                 }
             }
 
-            this.y += 2;
+            this.y += 0.5;
         } else {
             // No more ground to dig
             if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
