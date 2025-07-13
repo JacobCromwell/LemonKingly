@@ -117,67 +117,60 @@ class EditorToolsHandler {
     }
     
     drawDeathHeight(ctx) {
-        const screenPos = this.editor.levelToScreen(this.editor.mouseX, this.editor.mouseY);
-        const deathDistance = MAX_FALL_HEIGHT / 10;
+        // Death height is drawn in world space, not screen space
+        const deathDistance = MAX_FALL_HEIGHT;
         
         ctx.save();
         
         ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 / this.editor.zoom;
         ctx.setLineDash([5, 5]);
         
         ctx.beginPath();
-        ctx.moveTo(screenPos.x, screenPos.y);
-        ctx.lineTo(screenPos.x, screenPos.y + deathDistance * this.editor.zoom);
+        ctx.moveTo(this.editor.mouseX, this.editor.mouseY);
+        ctx.lineTo(this.editor.mouseX, this.editor.mouseY + deathDistance);
         ctx.stroke();
         
         ctx.setLineDash([]);
         
         // Draw skull icon
-        ctx.font = '20px Arial';
+        ctx.font = `${20 / this.editor.zoom}px Arial`;
         ctx.fillStyle = 'red';
-        ctx.fillText('💀', screenPos.x - 10, screenPos.y + deathDistance * this.editor.zoom + 5);
+        ctx.fillText('💀', this.editor.mouseX - 10 / this.editor.zoom, this.editor.mouseY + deathDistance + 5 / this.editor.zoom);
         
         ctx.restore();
     }
     
     drawToolPreview(ctx) {
-        ctx.save();
-        
-        const screenPos = this.editor.levelToScreen(this.editor.mouseX, this.editor.mouseY);
+        // Don't save/restore context here since we're already in transformed space
         ctx.globalAlpha = 0.5;
         
         const size = this.getHazardSize();
-        const screenWidth = size.width * this.editor.zoom;
-        const screenHeight = size.height * this.editor.zoom;
         
         switch (this.editor.selectedTool) {
             case 'lava':
                 ctx.fillStyle = '#ff3300';
-                ctx.fillRect(screenPos.x - screenWidth/2, screenPos.y - screenHeight/2, screenWidth, screenHeight);
+                ctx.fillRect(this.editor.mouseX - size.width/2, this.editor.mouseY - size.height/2, size.width, size.height);
                 break;
             case 'bearTrap':
                 ctx.fillStyle = '#666666';
-                ctx.fillRect(screenPos.x - screenWidth/2, screenPos.y - screenHeight/2, screenWidth, screenHeight);
+                ctx.fillRect(this.editor.mouseX - size.width/2, this.editor.mouseY - size.height/2, size.width, size.height);
                 break;
             case 'spikes':
                 ctx.fillStyle = '#999999';
-                ctx.fillRect(screenPos.x - screenWidth/2, screenPos.y - screenHeight/2, screenWidth, screenHeight);
+                ctx.fillRect(this.editor.mouseX - size.width/2, this.editor.mouseY - size.height/2, size.width, size.height);
                 break;
             case 'spawn':
                 ctx.fillStyle = '#2196F3';
-                ctx.fillRect(screenPos.x - 20 * this.editor.zoom, screenPos.y - 30 * this.editor.zoom, 
-                           40 * this.editor.zoom, 30 * this.editor.zoom);
+                ctx.fillRect(this.editor.mouseX - 20, this.editor.mouseY - 30, 40, 30);
                 break;
             case 'exit':
                 ctx.fillStyle = '#4CAF50';
-                ctx.fillRect(screenPos.x - 30 * this.editor.zoom, screenPos.y - 25 * this.editor.zoom, 
-                           60 * this.editor.zoom, 50 * this.editor.zoom);
+                ctx.fillRect(this.editor.mouseX - 30, this.editor.mouseY - 25, 60, 50);
                 break;
         }
         
         ctx.globalAlpha = 1.0;
-        ctx.restore();
     }
 }
 
