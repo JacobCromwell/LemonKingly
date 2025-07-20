@@ -10,7 +10,7 @@
     <div id="gameContainer">
         <div id="menu">
             <h1>Lemmings Clone</h1>
-            <label class="menuButton fileLabel">Play Level<input type="file" accept=".json" onchange="game.loadAndPlayLevel(this.files[0])" style="display: none;">
+            <label class="menuButton fileLabel">Load Custom Level<input type="file" accept=".json" onchange="game.loadAndPlayLevel(this.files[0])" style="display: none;">
             </label>
             <button class="menuButton" onclick="game.openLevelEditor()">Level Editor</button>
             <button class="menuButton" onclick="game.showSettings()">Settings</button>
@@ -124,6 +124,7 @@
     <script src="js/lemming.js"></script>
     <script src="js/terrain.js"></script>
     <script src="js/level.js"></script>
+    <script src="js/levelManager.js"></script>
     <script src="js/game.js"></script>
     <script src="js/main.js"></script>
 </body>
