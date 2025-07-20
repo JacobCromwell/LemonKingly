@@ -17,25 +17,10 @@ class Terrain {
         this.updateImageData();
     }
 
-    loadLevel(levelData) {
-        // Draw initial terrain
-        this.ctx.fillStyle = '#8B4513';
-
-        // Ground
-        this.ctx.fillRect(0, 400, this.width, 200);
-
-
-        // Some obstacles
-        this.ctx.fillRect(200, 350, 100, 50);
-        this.ctx.fillRect(400, 300, 150, 100);
-        this.ctx.fillRect(600, 320, 80, 80);
-
-        this.updateImageData();
-    }
-
     updateImageData() {
         try {
             this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+            this.updateCollisionCache();
         } catch (error) {
             console.error('Error updating image data:', error);
             // Create empty image data as fallback
@@ -73,10 +58,11 @@ class Terrain {
         }
     }
 
-    updateImageData() {
-        this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
-        this.updateCollisionCache();
-    }
+    // JRC is this needed
+    // updateImageData() {
+    //     this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+    //     this.updateCollisionCache();
+    // }
 
     // OPTIMIZE hasGround() with fast path:
     hasGround(x, y) {

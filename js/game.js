@@ -10,8 +10,8 @@ class Game {
         this.levelInfo = document.getElementById('levelInfo');
         this.levelEditor = document.getElementById('levelEditor');
 
-        this.terrain = new Terrain(1200, 600);
-        this.level = new Level();
+        this.terrain = null; // Will be created when level is loaded
+        this.level = null;   // Will be created when level is loaded
         this.lemmings = [];
         this.particles = [];
         this.particlePool = [];
@@ -42,8 +42,6 @@ class Game {
 
         // Add ESC key handler
         document.addEventListener('keydown', this.handleKeyDown.bind(this));
-
-        this.updateActionCounts();
     }
 
     showSettings() {
@@ -88,29 +86,22 @@ class Game {
         audioManager.playMusic();
     }
 
-    showLevelSelect() {
-        document.getElementById('levelSelectDialog').classList.remove('hidden');
-    }
-
-    closeLevelSelect() {
-        document.getElementById('levelSelectDialog').classList.add('hidden');
-    }
-
-    playDefaultLevel() {
-        this.closeLevelSelect();
-        // Clear any test level data to ensure we load default
-        sessionStorage.removeItem('testLevel');
-        this.startLevel();
-    }
-
     loadAndPlayLevel(file) {
-        if (!file) return;
+        if (!file) {
+            alert('Please select a level file to load.');
+            return;
+        }
 
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const levelData = JSON.parse(e.target.result);
-                this.closeLevelSelect();
+                
+                // Validate that this is a proper level file
+                if (!this.validateLevelData(levelData)) {
+                    alert('Invalid level file format. Please select a valid .json level file.');
+                    return;
+                }
 
                 // Store as test level temporarily
                 sessionStorage.setItem('testLevel', JSON.stringify(levelData));
@@ -124,7 +115,40 @@ class Game {
         reader.readAsText(file);
     }
 
+    validateLevelData(levelData) {
+        // Check for required properties
+        const requiredFields = ['name', 'width', 'height', 'spawn', 'exit'];
+        
+        for (const field of requiredFields) {
+            if (!levelData.hasOwnProperty(field)) {
+                console.error(`Missing required field: ${field}`);
+                return false;
+            }
+        }
+
+        // Validate spawn and exit points
+        if (!levelData.spawn || typeof levelData.spawn.x !== 'number' || typeof levelData.spawn.y !== 'number') {
+            console.error('Invalid spawn point');
+            return false;
+        }
+
+        if (!levelData.exit || typeof levelData.exit.x !== 'number' || typeof levelData.exit.y !== 'number' || 
+            typeof levelData.exit.width !== 'number' || typeof levelData.exit.height !== 'number') {
+            console.error('Invalid exit point');
+            return false;
+        }
+
+        return true;
+    }
+
     startLevel() {
+        // Check if this is a custom level test
+        const testLevelData = sessionStorage.getItem('testLevel');
+        if (!testLevelData) {
+            alert('No level data found. Please load a custom level file.');
+            return;
+        }
+
         this.menu.classList.add('hidden');
         this.canvas.classList.remove('hidden');
         this.gameUI.classList.remove('hidden');
@@ -142,20 +166,8 @@ class Game {
         this.gameRunning = true;
         this.levelComplete = false;
 
-        // Check if this is a custom level test
-        const testLevelData = sessionStorage.getItem('testLevel');
-        if (testLevelData) {
-            // Load custom level
-            this.loadCustomLevel(JSON.parse(testLevelData));
-        } else {
-            // Reset to default level
-            this.terrain = new Terrain(1200, 600);
-            this.terrain.loadLevel();
-            this.level = new Level();
-            this.customBackground = null;
-            this.zoom = 1.0; // Default zoom for built-in levels
-            this.camera = { x: 0, y: 0 };
-        }
+        // Load custom level
+        this.loadCustomLevel(JSON.parse(testLevelData));
 
         // Set spawn timing - allow first lemming to spawn immediately
         this.lastSpawnTime = Date.now() - this.level.spawnRate;
@@ -268,6 +280,9 @@ class Game {
     loadCustomLevel(levelData) {
         console.log('Loading custom level:', levelData);
 
+        // Create new level instance
+        this.level = new Level();
+
         // Update level settings
         this.level.spawnX = levelData.spawn.x;
         this.level.spawnY = levelData.spawn.y;
@@ -301,7 +316,7 @@ class Game {
             this.centerCameraOnSpawn();
         }
 
-        // FIXED: Properly load totalLemmings from levelSettings
+        // Load level settings with validation
         if (levelData.levelSettings) {
             // Use the totalLemmings from the level editor, with validation
             const totalLemmings = levelData.levelSettings.totalLemmings;
@@ -352,7 +367,8 @@ class Game {
                 [ActionType.BUILDER]: 5,
                 [ActionType.CLIMBER]: 5,
                 [ActionType.FLOATER]: 5,
-                [ActionType.EXPLODER]: 5
+                [ActionType.EXPLODER]: 5,
+                [ActionType.MINER]: 5
             };
         }
 
