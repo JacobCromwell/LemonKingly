@@ -37,6 +37,9 @@ class Game {
         // Minimap interaction
         this.isDraggingMinimap = false;
 
+        // Initialize indestructible terrain manager for gameplay
+        this.indestructibleTerrain = new IndestructibleTerrain();
+
         this.canvas.addEventListener('click', this.handleClick.bind(this));
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
 

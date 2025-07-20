@@ -4,7 +4,7 @@ Abilities
     [x] miner
     revise all 8 Abilities
         [x] Can EXPLODE blockers
-        better bashing detection (multi-direction), slower, stops after getting through a wall
+        [x] better bashing detection (multi-direction), slower, stops after getting through a wall
         builder should have 12 tiles, tiles need to be correct size, change direction on hitting wall
     [x] bug - no duplicate ability click
     [x] bug - ease to click on other lemmings

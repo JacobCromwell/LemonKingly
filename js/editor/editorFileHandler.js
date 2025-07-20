@@ -45,7 +45,9 @@ class EditorFileHandler {
             camera: {
                 x: this.editor.camera.x,
                 y: this.editor.camera.y
-            }
+            },
+            // Include indestructible terrain data
+            indestructibleTerrain: this.editor.terrainManager ? this.editor.terrainManager.serialize() : null
         };
 
         const dataStr = JSON.stringify(levelData, null, 2);

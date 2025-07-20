@@ -1,7 +1,7 @@
 // In js/terrain.js - Add collision cache system
 
 class Terrain {
-    constructor(width, height) {
+    constructor(width, height, indestructibleTerrain = null) {
         this.width = width;
         this.height = height;
         this.canvas = document.createElement('canvas');
@@ -9,6 +9,7 @@ class Terrain {
         this.canvas.height = height;
         this.ctx = this.canvas.getContext('2d');
         this.imageData = null;
+        this.indestructibleTerrain = indestructibleTerrain;
 
         // Add collision cache
         this.collisionGrid = null;

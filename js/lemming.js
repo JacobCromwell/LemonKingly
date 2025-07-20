@@ -409,7 +409,6 @@ class Lemming {
     }
 
     mine(terrain) {
-        console.log('JRC 3')
         const lemmingWidth = this.getWidth();
         const lemmingHeight = this.getHeight();
         
@@ -427,6 +426,24 @@ class Lemming {
             // Position for this swing - closer to the lemming
             const swingX = this.x + (this.direction * tunnelRadius * 1.5 * Math.cos(angleRad));
             const swingY = this.y + lemmingHeight + (tunnelRadius * Math.sin(angleRad));
+
+            // Check for indestructible terrain if available
+            if (window.game && window.game.indestructibleTerrain) {
+                const checkBounds = {
+                    x: swingX - tunnelRadius,
+                    y: swingY - tunnelRadius,
+                    width: tunnelRadius * 2,
+                    height: tunnelRadius * 2
+                };
+                
+                if (window.game.indestructibleTerrain.checkCollision(checkBounds)) {
+                    // Hit indestructible terrain, stop mining
+                    this.state = LemmingState.WALKING;
+                    this.miningProgress = 0;
+                    audioManager.playSound('miner'); // Play clunk sound
+                    return;
+                }
+            }
             
             // Check if there's still terrain to mine at the swing position
             let foundTerrain = false;
