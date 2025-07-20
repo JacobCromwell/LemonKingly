@@ -39,10 +39,22 @@ body {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s;
+    display: block;
+    text-align: center;
 }
 
 .menuButton:hover {
     background-color: #45a049;
+}
+
+/* File input styling for menu */
+.fileLabel.menuButton {
+    display: block;
+    text-align: center;
+    padding: 15px 30px;
+    margin: 10px;
+    width: 200px;
+    box-sizing: border-box;
 }
 
 #gameCanvas {
@@ -216,7 +228,6 @@ body {
     display: none !important;
 }
 
-#levelSelectDialog,
 #settingsDialog,
 #audioSettingsDialog {
     position: fixed;

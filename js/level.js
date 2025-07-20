@@ -1,11 +1,12 @@
 class Level {
     constructor() {
+        // Default spawn/exit positions - will be overridden when loading custom level
         this.spawnX = 100;
         this.spawnY = 100;
         this.exitX = 700;
         this.exitY = 350;
-        this.exitWidth = 30; // Reduced from 60
-        this.exitHeight = 25; // Reduced from 50
+        this.exitWidth = 30;
+        this.exitHeight = 25;
         this.totalLemmings = 20;
         this.requiredLemmings = 10;
         this.spawnRate = 2000; // milliseconds
@@ -20,18 +21,7 @@ class Level {
             [ActionType.MINER]: 50
         };
         this.hazards = [];
-        this.initializeHazards();
-    }
-    
-    initializeHazards() {
-        // Add a lava pit
-        this.hazards.push(new Hazard(50, 410, 60, 30, 'lava'));
-        
-        // Add a bear trap
-        this.hazards.push(new Hazard(383, 400, 40, 20, 'bearTrap'));
-        
-        // Add a spike pit
-        this.hazards.push(new Hazard(575, 385, 50, 30, 'spikes'));
+        // Note: Default hazards removed - will be loaded from custom level data
     }
     
     updateHazards() {
@@ -74,7 +64,7 @@ class Level {
         ctx.textAlign = 'start'; // Reset text alignment
     }
     
-    // UPDATED: Draw spawner - will be scaled by game's zoom level
+    // Draw spawner - will be scaled by game's zoom level
     drawSpawner(ctx) {
         const spawnerWidth = 20;
         const spawnerHeight = 15;
