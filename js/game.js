@@ -184,17 +184,17 @@ class Game {
     loadEditorScripts() {
         // Scripts to load in order
         const editorScripts = [
-            'js/editor/EditorUIBuilder.js',
-            'js/editor/EditorBase.js',
-            'js/editor/EditorInputHandler.js',
-            'js/editor/EditorToolsHandler.js',
-            'js/editor/EditorImageHandler.js',
-            'js/editor/EditorFileHandler.js',
-            'js/terrain/PolygonUtils.js',
-            'js/terrain/IndestructibleTerrain.js',
-            'js/editor/ShapeDrawer.js',
+            'js/editor/editorUIBuilder.js',
+            'js/editor/editorBase.js', 
+            'js/editor/editorInputHandler.js',
+            'js/editor/editorToolsHandler.js',
+            'js/editor/editorImageHandler.js',
+            'js/editor/editorFileHandler.js',
+            'js/terrain/polygonUtils.js',
+            'js/terrain/indestructibleTerrain.js',
+            'js/editor/shapeDrawer.js',
             'js/editor/terrainMenu.js',
-            'js/editor/LevelEditor.js'
+            'js/editor/levelEditor.js'
         ];
 
         let loadIndex = 0;
