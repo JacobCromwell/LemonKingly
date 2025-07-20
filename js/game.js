@@ -29,7 +29,7 @@ class Game {
         this.levelWidth = 1200;
         this.levelHeight = 600;
 
-        // NEW: Add zoom support for game mode
+        // Add zoom support for game mode
         this.zoom = 1.0;
         this.minZoom = 0.2;
         this.maxZoom = 8.0;
@@ -182,19 +182,19 @@ class Game {
     }
 
     loadEditorScripts() {
-        // Scripts to load in order
+        // Scripts to load in order - ALL PATHS ARE RELATIVE
         const editorScripts = [
-            'js/editor/EditorUIBuilder.js',
-            'js/editor/EditorBase.js',
-            'js/editor/EditorInputHandler.js',
-            'js/editor/EditorToolsHandler.js',
-            'js/editor/EditorImageHandler.js',
-            'js/editor/EditorFileHandler.js',
-            'js/terrain/PolygonUtils.js',
-            'js/terrain/IndestructibleTerrain.js',
-            'js/editor/ShapeDrawer.js',
+            'js/editor/editorUIBuilder.js',
+            'js/editor/editorBase.js',
+            'js/editor/editorInputHandler.js',
+            'js/editor/editorToolsHandler.js',
+            'js/editor/editorImageHandler.js',
+            'js/editor/editorFileHandler.js',
+            'js/terrain/polygonUtils.js',
+            'js/terrain/indestructibleTerrain.js',
+            'js/editor/shapeDrawer.js',
             'js/editor/terrainMenu.js',
-            'js/editor/LevelEditor.js'
+            'js/editor/levelEditor.js'
         ];
 
         let loadIndex = 0;
@@ -397,7 +397,7 @@ class Game {
         console.log('Action counts:', this.level.actionCounts);
     }
 
-    // NEW: Center camera on spawn point
+    // Center camera on spawn point
     centerCameraOnSpawn() {
         const viewportWidth = this.canvas.width / this.zoom;
         const viewportHeight = this.canvas.height / this.zoom;
@@ -408,7 +408,7 @@ class Game {
         this.clampCamera();
     }
 
-    // NEW: Clamp camera to level bounds
+    // Clamp camera to level bounds
     clampCamera() {
         const viewportWidth = this.canvas.width / this.zoom;
         const viewportHeight = this.canvas.height / this.zoom;
@@ -417,19 +417,19 @@ class Game {
         this.camera.y = Math.max(0, Math.min(this.levelHeight - viewportHeight, this.camera.y));
     }
 
-    // UPDATED: Handle click with zoom transformation and smart selection
+    // Handle click with zoom transformation and smart selection
     handleClick(e) {
         const rect = this.canvas.getBoundingClientRect();
         const screenX = e.clientX - rect.left;
         const screenY = e.clientY - rect.top;
 
-        // NEW: Transform screen coordinates to world coordinates
+        // Transform screen coordinates to world coordinates
         const worldX = (screenX / this.zoom) + this.camera.x;
         const worldY = (screenY / this.zoom) + this.camera.y;
 
         if (this.selectedAction === ActionType.NONE) return;
 
-        // UPDATED: Increased click area for closely packed lemmings
+        // Increased click area for closely packed lemmings
         const clickPadding = 15; // Increased from 10 to 15 pixels
 
         // Find all lemmings within click area
@@ -445,7 +445,7 @@ class Game {
 
         if (candidateLemmings.length === 0) return;
 
-        // NEW: Filter out lemmings that already have the selected ability
+        // Filter out lemmings that already have the selected ability
         const validLemmings = candidateLemmings.filter(lemming => {
             return !lemming.hasAbility(this.selectedAction);
         });
@@ -453,7 +453,7 @@ class Game {
         // If no valid lemmings (all already have the ability), don't waste the action
         if (validLemmings.length === 0) return;
 
-        // NEW: Find closest valid lemming to click point
+        // Find closest valid lemming to click point
         let closestLemming = validLemmings[0];
         let closestDistance = this.getDistanceToClick(closestLemming, worldX, worldY);
 
@@ -491,7 +491,7 @@ class Game {
         const screenX = e.clientX - rect.left;
         const screenY = e.clientY - rect.top;
 
-        // NEW: Transform screen coordinates to world coordinates
+        // Transform screen coordinates to world coordinates
         const worldX = (screenX / this.zoom) + this.camera.x;
         const worldY = (screenY / this.zoom) + this.camera.y;
 
@@ -515,7 +515,7 @@ class Game {
         }
     }
 
-    // NEW: Apply nuke action to all active lemmings
+    // Apply nuke action to all active lemmings
     applyNuke() {
         if (!this.gameRunning) return;
 
@@ -524,10 +524,9 @@ class Game {
 
         let lemmingsNuked = 0;
 
-        // Apply EXPLODER action to all lemmings that are not saved
+        // Apply exploder without checking action counts
         this.lemmings.forEach(lemming => {
             if (lemming.state !== LemmingState.SAVED) {
-                // Apply exploder without checking action counts
                 if (lemming.applyAction(ActionType.EXPLODER)) {
                     lemmingsNuked++;
                 }
@@ -537,14 +536,14 @@ class Game {
         console.log(`Nuke activated! ${lemmingsNuked} lemmings set to explode.`);
     }
 
-    // UPDATED: Game loop with zoom support
+    // Game loop with zoom support
     gameLoop() {
         if (!this.gameRunning) return;
 
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // NEW: Apply zoom and camera transformation
+        // Apply zoom and camera transformation
         this.ctx.save();
         this.ctx.scale(this.zoom, this.zoom);
         this.ctx.translate(-this.camera.x, -this.camera.y);
@@ -613,7 +612,7 @@ class Game {
             }
         }
 
-        // NEW: Restore context (end zoom transformation)
+        // Restore context (end zoom transformation)
         this.ctx.restore();
 
         // Draw UI elements at normal scale (minimap, etc.)
@@ -629,7 +628,7 @@ class Game {
         requestAnimationFrame(() => this.gameLoop());
     }
 
-    // UPDATED: Minimap drawing with proper world coordinates
+    // Minimap drawing with proper world coordinates
     drawMinimap() {
         if (!this.minimapCanvas || !this.minimapCtx) return;
 
@@ -704,7 +703,7 @@ class Game {
             }
         });
 
-        // NEW: Draw viewport rectangle (white) - shows current zoomed view
+        // Draw viewport rectangle (white) - shows current zoomed view
         this.minimapCtx.strokeStyle = '#ffffff';
         this.minimapCtx.lineWidth = 2;
         const viewportWidth = this.canvas.width / this.zoom;
@@ -717,7 +716,7 @@ class Game {
         );
     }
 
-    // NEW: Updated minimap click to work with zoom
+    // Updated minimap click to work with zoom
     handleMinimapClick(e) {
         const rect = this.minimapCanvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
