@@ -44,7 +44,8 @@ class Hazard {
             return;
         }
         
-        lemming.state = LemmingState.DEAD;
+        // UPDATED: Use setDead() method instead of directly setting state
+        lemming.setDead();
         audioManager.playSound('death');
         
         // Create death particles based on hazard type

@@ -1,4 +1,4 @@
-// Updated lemming.js - Fixed climber ability
+// Updated lemming.js - Added death fade-out effect
 class Lemming {
     constructor(x, y, zoom = 1.0) {
         this.x = x;
@@ -14,6 +14,11 @@ class Lemming {
         this.originalDirection = 1; // Store original direction for climbing
         this.explosionTimer = -1; // -1 means no explosion scheduled
         this.explosionParticles = []; // Store particles for this lemming
+        
+        // Death fade effect properties
+        this.deathTime = 0; // Time when lemming died
+        this.deathFadeDuration = 5000; // 5 seconds in milliseconds
+        this.isFullyDead = false; // True when fade is complete and should not render
         
         // Miner specific properties
         this.miningSwingTimer = 0; // Timer for pick swing animation
@@ -74,8 +79,51 @@ class Lemming {
         this.zoom = zoom;
     }
 
+    // NEW: Set lemming as dead and start fade timer
+    setDead() {
+        if (this.state !== LemmingState.DEAD) {
+            this.state = LemmingState.DEAD;
+            this.deathTime = Date.now();
+            this.isFullyDead = false;
+            audioManager.playSound('death');
+        }
+    }
+
+    // NEW: Check if lemming should still be rendered
+    shouldRender() {
+        if (this.state === LemmingState.SAVED) {
+            return false;
+        }
+        
+        if (this.state === LemmingState.DEAD) {
+            const timeSinceDeath = Date.now() - this.deathTime;
+            if (timeSinceDeath >= this.deathFadeDuration) {
+                this.isFullyDead = true;
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    // NEW: Get current opacity based on death fade
+    getOpacity() {
+        if (this.state !== LemmingState.DEAD) {
+            return 1.0;
+        }
+        
+        const timeSinceDeath = Date.now() - this.deathTime;
+        if (timeSinceDeath >= this.deathFadeDuration) {
+            return 0;
+        }
+        
+        // Linear fade from 1.0 to 0 over deathFadeDuration
+        const fadeProgress = timeSinceDeath / this.deathFadeDuration;
+        return Math.max(0, 1.0 - fadeProgress);
+    }
+
     update(terrain, lemmings) {
-        if (this.state === LemmingState.DEAD || this.state === LemmingState.SAVED) {
+        if (this.state === LemmingState.SAVED || this.isFullyDead) {
             return;
         }
 
@@ -88,10 +136,28 @@ class Lemming {
             }
         }
 
+        // Skip updates for dead lemmings
+        if (this.state === LemmingState.DEAD) {
+            return;
+        }
+
         // Check if lemming has fallen out of bounds
         if (this.y > terrain.height + 50) {
-            this.state = LemmingState.DEAD;
-            audioManager.playSound('death');
+            this.setDead();
+            // Create death particles
+            if (window.game && window.game.particles) {
+                for (let i = 0; i < 20; i++) {
+                    const angle = (Math.PI * 2 * i) / 20;
+                    const speed = Math.random() * 3 + 1;
+                    window.game.particles.push(new Particle(
+                        this.x,
+                        this.y + this.getHeight() / 2,
+                        '#ff0000',
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed - 2
+                    ));
+                }
+            }
             return;
         }
 
@@ -249,8 +315,7 @@ class Lemming {
         if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
             // Floaters don't die from fall damage
             if (this.fallDistance >= MAX_FALL_HEIGHT && !this.isFloater) {
-                this.state = LemmingState.DEAD;
-                audioManager.playSound('death');
+                this.setDead();
                 // Create death particles
                 if (window.game && window.game.particles) {
                     for (let i = 0; i < 20; i++) {
@@ -592,7 +657,7 @@ class Lemming {
     }
 
     explode(terrain) {
-        this.state = LemmingState.DEAD;
+        this.setDead();
         
         audioManager.playSound('explosion');
         
@@ -631,12 +696,29 @@ class Lemming {
     }
 
     draw(ctx) {
+        // Don't render if lemming shouldn't be shown
+        if (!this.shouldRender()) {
+            return;
+        }
+
         const lemmingWidth = this.getWidth();
         const lemmingHeight = this.getHeight();
+
+        // Apply opacity for death fade effect
+        const opacity = this.getOpacity();
+        if (opacity <= 0) {
+            return;
+        }
+
+        // Set opacity
+        ctx.save();
+        ctx.globalAlpha = opacity;
 
         if (this.state === LemmingState.DEAD) {
             ctx.fillStyle = '#ff0000';
         } else if (this.state === LemmingState.SAVED) {
+            // This shouldn't render due to shouldRender() check above
+            ctx.restore();
             return;
         } else if (this.state === LemmingState.BLOCKING) {
             if (this.explosionTimer > 0) {
@@ -706,7 +788,6 @@ class Lemming {
         if (this.explosionTimer > 0) {
             const seconds = Math.ceil(this.explosionTimer);
             
-            ctx.save();
             ctx.font = `bold ${Math.max(10, this.getHeight())}px Arial`;
             ctx.textAlign = 'center';
             ctx.fillStyle = 'white';
@@ -718,9 +799,10 @@ class Lemming {
             
             ctx.strokeText(seconds.toString(), textX, textY);
             ctx.fillText(seconds.toString(), textX, textY);
-            
-            ctx.restore();
         }
+
+        // Restore context (removes opacity)
+        ctx.restore();
     }
 
     // Draw parachute when falling

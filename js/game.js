@@ -96,7 +96,7 @@ class Game {
         reader.onload = (e) => {
             try {
                 const levelData = JSON.parse(e.target.result);
-                
+
                 // Validate that this is a proper level file
                 if (!this.validateLevelData(levelData)) {
                     alert('Invalid level file format. Please select a valid .json level file.');
@@ -118,7 +118,7 @@ class Game {
     validateLevelData(levelData) {
         // Check for required properties
         const requiredFields = ['name', 'width', 'height', 'spawn', 'exit'];
-        
+
         for (const field of requiredFields) {
             if (!levelData.hasOwnProperty(field)) {
                 console.error(`Missing required field: ${field}`);
@@ -132,7 +132,7 @@ class Game {
             return false;
         }
 
-        if (!levelData.exit || typeof levelData.exit.x !== 'number' || typeof levelData.exit.y !== 'number' || 
+        if (!levelData.exit || typeof levelData.exit.x !== 'number' || typeof levelData.exit.y !== 'number' ||
             typeof levelData.exit.width !== 'number' || typeof levelData.exit.height !== 'number') {
             console.error('Invalid exit point');
             return false;
@@ -450,7 +450,11 @@ class Game {
 
         // Find all lemmings within click area
         const candidateLemmings = this.lemmings.filter(l => {
-            if (l.state === LemmingState.DEAD || l.state === LemmingState.SAVED) return false;
+            // Exclude saved lemmings and fully dead lemmings
+            if (l.state === LemmingState.SAVED || l.isFullyDead) return false;
+
+            // Exclude dead lemmings that are fading (can't apply actions to fading lemmings)
+            if (l.state === LemmingState.DEAD) return false;
 
             const lemmingWidth = l.getWidth();
             const lemmingHeight = l.getHeight();
@@ -626,6 +630,16 @@ class Game {
             } else {
                 particle.draw(this.ctx);
             }
+        }
+
+        // Clean up fully faded lemmings every 5 seconds (300 frames at 60fps)
+        if (this.gameLoopCounter === undefined) {
+            this.gameLoopCounter = 0;
+        }
+
+        this.gameLoopCounter++;
+        if (this.gameLoopCounter % 300 === 0) {
+            this.cleanupDeadLemmings();
         }
 
         // Restore context (end zoom transformation)
@@ -849,8 +863,10 @@ class Game {
         document.getElementById('lemmingsSaved').textContent = this.lemmingsSaved;
         document.getElementById('requiredLemmings').textContent = this.level.requiredLemmings;
 
+        // Count alive lemmings (not dead, not saved, and not fully faded)
         const alive = this.lemmings.filter(l =>
-            l.state !== LemmingState.DEAD && l.state !== LemmingState.SAVED
+            l.state !== LemmingState.SAVED &&
+            (l.state !== LemmingState.DEAD || !l.isFullyDead)
         ).length;
         document.getElementById('lemmingsAlive').textContent = alive;
 
@@ -860,8 +876,10 @@ class Game {
 
     checkLevelComplete() {
         const allSpawned = this.lemmingsSpawned >= this.level.totalLemmings;
+
+        // Check if all lemmings are either saved or fully dead (completely faded)
         const noActiveLemmings = this.lemmings.every(l =>
-            l.state === LemmingState.DEAD || l.state === LemmingState.SAVED
+            l.state === LemmingState.SAVED || l.isFullyDead
         );
 
         if (allSpawned && noActiveLemmings && !this.levelComplete) {
@@ -927,4 +945,12 @@ class Game {
             this.minimapCanvas.addEventListener('click', this.handleMinimapClick.bind(this));
         }
     }
+
+    // NEW: Method to clean up fully faded lemmings from the array (optional optimization)
+    cleanupDeadLemmings() {
+        // Remove fully faded lemmings to prevent memory buildup
+        // This is called periodically to keep the lemmings array from growing too large
+        this.lemmings = this.lemmings.filter(lemming => !lemming.isFullyDead);
+    }
+
 }

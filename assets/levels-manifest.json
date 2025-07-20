@@ -4,6 +4,39 @@
   "description": "Manifest file listing all available levels in the assets folder",
   "levels": [
     {
+      "id": "01JustDig",
+      "name": "Just Dig",
+      "filename": "01JustDig.json",
+      "difficulty": "Easy",
+      "description": "Use diggers",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "02Floaters",
+      "name": "Fun Level 2",
+      "filename": "02Floaters.json",
+      "difficulty": "Easy",
+      "description": "Watch that last step!",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "03Blockers",
+      "name": "Fun Level 3",
+      "filename": "03Blockers.json",
+      "difficulty": "Easy",
+      "description": "Sometimes blocking is the best way forward",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
       "id": "04Fun",
       "name": "Fun Level 4",
       "filename": "04Fun.json",
