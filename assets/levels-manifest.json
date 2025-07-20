@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "updated": "2024-12-19",
+  "description": "Manifest file listing all available levels in the assets folder",
+  "levels": [
+    {
+      "id": "04Fun",
+      "name": "Fun Level 4",
+      "filename": "04Fun.json",
+      "difficulty": "Easy",
+      "description": "A fun introductory level with basic challenges",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    }
+  ]
+}
