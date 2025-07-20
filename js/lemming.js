@@ -361,7 +361,7 @@ class Lemming {
 
         if (foundObstacle) {
             // Remove terrain in front and get color
-            const color = terrain.removeTerrain(bashX - bashWidth / 2, this.y, bashWidth * 2, bashHeight);
+            const color = terrain.removeTerrain((bashX - 1) - bashWidth / 2, this.y, bashWidth * 2, bashHeight);
 
             // Create particles
             if (window.game && window.game.particles) {
@@ -376,7 +376,7 @@ class Lemming {
                 }
             }
 
-            this.x += this.direction * 0.5;
+            this.x += this.direction * 0.25;
         } else {
             // Check if we can walk forward (no obstacle)
             if (!terrain.hasGround(this.x + this.direction * WALK_SPEED, this.y + lemmingHeight / 2)) {
@@ -410,7 +410,7 @@ class Lemming {
 
         if (foundGround) {
             // Remove terrain below and get color
-            const color = terrain.removeTerrain(this.x - digWidth / 2, digY, digWidth, digHeight);
+            const color = terrain.removeTerrain(this.x - digWidth / 2, (digY - 1), digWidth, digHeight);
 
             // Create particles
             if (window.game && window.game.particles) {
