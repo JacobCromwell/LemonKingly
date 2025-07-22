@@ -57,14 +57,14 @@ class EditorFileHandler {
             // Use environment-aware file saving
             const filename = `${this.editor.levelName}.json`;
             this.fileAPI.saveFile(levelData, filename, 'application/json');
-            
+
             this.envManager.devLog('Level saved successfully:', filename);
-            
+
             // Show success message
             if (this.envManager.isProduction()) {
                 this.showNotification('Level saved successfully!', 'success');
             }
-            
+
         } catch (error) {
             this.envManager.handleError(error, 'level saving');
         }
@@ -81,11 +81,11 @@ class EditorFileHandler {
             // Use environment-aware file reading
             const fileContent = await this.fileAPI.readFile(file, { encoding: 'utf8' });
             const levelData = JSON.parse(fileContent);
-            
+
             await this.loadLevelData(levelData);
-            
+
             this.envManager.devLog('Level loaded successfully');
-            
+
         } catch (error) {
             this.envManager.handleError(error, 'level loading');
         }
@@ -104,6 +104,15 @@ class EditorFileHandler {
             this.editor.spawnPoint = data.spawn;
             this.editor.exitPoint = data.exit;
             this.editor.levelData = data.levelSettings;
+
+            // Update music display if music file is set
+            if (data.levelSettings && data.levelSettings.musicFile) {
+                const selectedMusicDiv = document.getElementById('selectedMusic');
+                if (selectedMusicDiv) {
+                    const filename = data.levelSettings.musicFile.split('/').pop();
+                    selectedMusicDiv.innerHTML = `<span>🎵 ${filename}</span>`;
+                }
+            }
 
             // Load zoom and camera position if available
             if (data.zoom !== undefined) {
@@ -137,9 +146,9 @@ class EditorFileHandler {
 
             // Update UI inputs
             this.updateUIFromLevelData();
-            
+
             this.envManager.devLog('Level data loaded and applied');
-            
+
         } catch (error) {
             this.envManager.handleError(error, 'level data loading');
         }
@@ -154,7 +163,7 @@ class EditorFileHandler {
     loadImageFromDataURL(dataURL, type) {
         return new Promise((resolve, reject) => {
             const img = new Image();
-            
+
             img.onload = () => {
                 if (type === 'background') {
                     this.editor.backgroundImage = img;
@@ -173,17 +182,17 @@ class EditorFileHandler {
                         this.editor.centerCamera();
                     }
                 }
-                
+
                 this.editor.draw();
                 resolve();
             };
-            
+
             img.onerror = () => {
                 const errorMsg = `Failed to load ${type} image`;
                 this.envManager.errorLog(errorMsg);
                 reject(new Error(errorMsg));
             };
-            
+
             img.src = dataURL;
         });
     }
@@ -195,7 +204,7 @@ class EditorFileHandler {
      */
     validateLevelData(data) {
         const requiredFields = ['name', 'width', 'height', 'spawn', 'exit'];
-        
+
         for (const field of requiredFields) {
             if (!data.hasOwnProperty(field)) {
                 this.envManager.errorLog(`Missing required field: ${field}`);
@@ -271,7 +280,7 @@ class EditorFileHandler {
     async testLevel() {
         try {
             this.envManager.devLog('Testing level...');
-            
+
             // Prepare test level data
             const testLevelData = {
                 name: this.editor.levelName || 'Test Level',
@@ -308,7 +317,7 @@ class EditorFileHandler {
             } else {
                 throw new Error('Game instance not available');
             }
-            
+
         } catch (error) {
             this.envManager.handleError(error, 'level testing');
         }

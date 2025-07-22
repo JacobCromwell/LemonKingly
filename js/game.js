@@ -409,8 +409,36 @@ class Game {
             bgImg.src = levelData.background;
         }
 
+        if (levelData.levelSettings && levelData.levelSettings.musicFile) {
+            this.loadLevelMusic(levelData.levelSettings.musicFile);
+        } else {
+            console.log('No music specified for this level');
+        }
+
         console.log('Level loaded. Total lemmings:', this.level.totalLemmings, 'Required:', this.level.requiredLemmings, 'Spawn rate:', this.level.spawnRate);
         console.log('Action counts:', this.level.actionCounts);
+    }
+
+    async loadLevelMusic(musicPath) {
+        try {
+            // Load music manager if not already loaded
+            if (!window.musicManager) {
+                const script = document.createElement('script');
+                script.src = 'js/musicManager.js';
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+
+            // Play the track with fade in
+            await window.musicManager.playTrack(musicPath, 2000);
+
+        } catch (error) {
+            console.error('Failed to load level music:', musicPath, error);
+            // Continue without music
+        }
     }
 
     // Center camera on spawn point
@@ -780,6 +808,11 @@ class Game {
 
         // Pause music when returning to menu
         audioManager.pauseMusic();
+
+        // Stop music when returning to menu
+        if (window.musicManager) {
+            window.musicManager.stopMusic();
+        }
     }
 
     quit() {

@@ -146,11 +146,27 @@ class EditorUIBuilder {
                             
                             <div class="separator"></div>
                             <h4>Music</h4>
-                            <label class="fileLabel">
-                                <span class="toolIcon">🎵</span> Select Music
-                                <input type="file" id="levelMusic" accept="audio/*" style="display: none;">
-                            </label>
-                            <p class="comingSoon">Custom music support coming soon</p>
+                            <button class="toolButton" onclick="editorUI.showMusicSelector()">
+                                <span class="toolIcon">🎵</span>
+                                <span class="toolLabel">Select Music</span>
+                            </button>
+                            <div id="selectedMusic" class="selectedMusic">
+                                <span>No music selected</span>
+                            </div>
+
+                            <!-- Music selection dialog (hidden by default) -->
+                            <div id="musicSelectorDialog" class="musicSelector hidden">
+                                <div class="musicSelectorContent">
+                                    <h4>Choose Background Music</h4>
+                                    <div id="musicList" class="musicList">
+                                        <div class="loading">Loading available music...</div>
+                                    </div>
+                                    <div class="musicSelectorButtons">
+                                        <button class="toolButton small" onclick="editorUI.selectMusic(null)">No Music</button>
+                                        <button class="toolButton small" onclick="editorUI.closeMusicSelector()">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Actions Submenu -->
@@ -213,10 +229,233 @@ class EditorUIBuilder {
         }
     }
 
+    /**
+     * Show music selector dialog
+     */
+    async showMusicSelector() {
+        const dialog = document.getElementById('musicSelectorDialog');
+        if (!dialog) return;
+
+        dialog.classList.remove('hidden');
+
+        // Load available music
+        const musicList = document.getElementById('musicList');
+        musicList.innerHTML = '<div class="loading">Loading available music...</div>';
+
+        try {
+            // Load music manager if not already loaded
+            if (!window.musicManager) {
+                const script = document.createElement('script');
+                script.src = 'js/musicManager.js';
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+
+            const tracks = await window.musicManager.loadAvailableMusic();
+
+            if (tracks.length === 0) {
+                musicList.innerHTML = '<div class="no-music">No music files found in assets/music/</div>';
+            } else {
+                musicList.innerHTML = tracks.map(track => {
+                    if (track.isLocalOption) {
+                        // Special handling for local file browse option
+                        return `
+                            <label class="musicItem localBrowse">
+                                <input type="file" accept="audio/*" onchange="editorUI.handleLocalMusicFile(this.files[0])" style="display: none;">
+                                <span class="musicIcon">📁</span>
+                                <span class="musicName">${track.name}</span>
+                            </label>
+                        `;
+                    } else {
+                        return `
+                            <div class="musicItem" onclick="editorUI.selectMusic('${track.path}')">
+                                <span class="musicIcon">🎵</span>
+                                <span class="musicName">${track.name}</span>
+                            </div>
+                        `;
+                    }
+                }).join('');
+            }
+        } catch (error) {
+            console.error('Error loading music:', error);
+            musicList.innerHTML = '<div class="error">Error loading music files</div>';
+        }
+    }
+
+    /**
+     * Handle local music file selection
+     */
+    async handleLocalMusicFile(file) {
+        if (!file) return;
+
+        try {
+            const localTrack = await window.musicManager.handleLocalFileSelect(file);
+            if (localTrack) {
+                this.selectMusic(localTrack.path);
+            }
+        } catch (error) {
+            console.error('Error handling local file:', error);
+            alert('Error loading local music file');
+        }
+    }
+
+    /**
+     * Close music selector dialog
+     */
+    closeMusicSelector() {
+        const dialog = document.getElementById('musicSelectorDialog');
+        if (dialog) {
+            dialog.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Select a music track
+     */
+    selectMusic(musicPath) {
+        // Update the editor's level data
+        if (window.editor) {
+            window.editor.levelData.musicFile = musicPath;
+        }
+
+        // Update the display
+        const selectedMusicDiv = document.getElementById('selectedMusic');
+        if (selectedMusicDiv) {
+            if (musicPath) {
+                const filename = musicPath.split('/').pop();
+                selectedMusicDiv.innerHTML = `<span>🎵 ${filename}</span>`;
+            } else {
+                selectedMusicDiv.innerHTML = '<span>No music selected</span>';
+            }
+        }
+
+        // Close the dialog
+        this.closeMusicSelector();
+    }
+
     addStyles() {
         const style = document.createElement('style');
         style.textContent = `
-            /* Previous styles remain the same */
+            .localBrowse {
+                display: flex;
+                align-items: center;
+                padding: 10px;
+                margin: 5px 0;
+                background-color: #4a4a4a;
+                border: 2px dashed #666;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .localBrowse:hover {
+                background-color: #5a5a5a;
+                border-color: #888;
+                transform: translateX(5px);
+            }
+
+            .selectedMusic {
+                margin-top: 10px;
+                padding: 10px;
+                background-color: #3a3a3a;
+                border-radius: 4px;
+                font-size: 13px;
+                color: #ccc;
+                text-align: center;
+            }
+
+            .musicSelector {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 2000;
+            }
+
+            .musicSelectorContent {
+                background-color: #2a2a2a;
+                padding: 20px;
+                border-radius: 8px;
+                border: 2px solid #444;
+                max-width: 400px;
+                max-height: 60vh;
+                width: 90%;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .musicSelectorContent h4 {
+                margin-top: 0;
+                margin-bottom: 15px;
+                text-align: center;
+            }
+
+            .musicList {
+                flex: 1;
+                overflow-y: auto;
+                margin-bottom: 15px;
+                max-height: 300px;
+            }
+
+            .musicItem {
+                display: flex;
+                align-items: center;
+                padding: 10px;
+                margin: 5px 0;
+                background-color: #3a3a3a;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .musicItem:hover {
+                background-color: #4a4a4a;
+                transform: translateX(5px);
+            }
+
+            .musicIcon {
+                font-size: 20px;
+                margin-right: 10px;
+            }
+
+            .musicName {
+                flex: 1;
+                font-size: 14px;
+            }
+
+            .musicSelectorButtons {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+            }
+
+            .no-music {
+                text-align: center;
+                color: #888;
+                font-style: italic;
+                padding: 20px;
+            }
+
+            .loading {
+                text-align: center;
+                color: #ccc;
+                padding: 20px;
+            }
+
+            .error {
+                text-align: center;
+                color: #f44336;
+                padding: 20px;
+            }
+                
             .editorLayout {
                 display: flex;
                 height: 100vh;
