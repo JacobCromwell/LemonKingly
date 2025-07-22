@@ -17,7 +17,7 @@ class Lemming {
         
         // Death fade effect properties
         this.deathTime = 0; // Time when lemming died
-        this.deathFadeDuration = 5000; // 5 seconds in milliseconds
+        this.deathFadeDuration = 2000; // 2 seconds in milliseconds
         this.isFullyDead = false; // True when fade is complete and should not render
         
         // Miner specific properties
