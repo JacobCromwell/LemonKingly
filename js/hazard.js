@@ -1,3 +1,4 @@
+// Simplified Hazard class using ParticleManager
 class Hazard {
     constructor(x, y, width, height, type) {
         this.x = x;
@@ -16,17 +17,11 @@ class Hazard {
         
         // Update specific hazard animations
         switch(this.type) {
-            case 'lava':
-                // Lava bubbles continuously
-                break;
             case 'bearTrap':
                 // Bear trap snaps shut when triggered
                 if (this.triggered && this.triggerTime < 10) {
                     this.triggerTime++;
                 }
-                break;
-            case 'spikes':
-                // Spikes animate slightly up/down
                 break;
         }
     }
@@ -35,7 +30,7 @@ class Hazard {
         // Check if lemming is within hazard bounds
         return lemming.x > this.x - this.width/2 && 
                lemming.x < this.x + this.width/2 &&
-               lemming.y + LEMMING_HEIGHT > this.y - this.height/2 && 
+               lemming.y + lemming.getHeight() > this.y - this.height/2 && 
                lemming.y < this.y + this.height/2;
     }
     
@@ -44,58 +39,23 @@ class Hazard {
             return;
         }
         
-        // UPDATED: Use setDead() method instead of directly setting state
         lemming.setDead();
-        audioManager.playSound('death');
         
         // Create death particles based on hazard type
-        if (window.game && window.game.particles) {
+        if (window.particleManager) {
             switch(this.type) {
                 case 'lava':
-                    // Fire/ash particles
-                    for (let i = 0; i < 25; i++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const speed = Math.random() * 4 + 1;
-                        window.game.particles.push(new Particle(
-                            lemming.x,
-                            lemming.y + LEMMING_HEIGHT/2,
-                            i < 15 ? '#ff6600' : '#333333', // Orange fire and grey ash
-                            Math.cos(angle) * speed * 0.5,
-                            -Math.abs(Math.sin(angle) * speed) - 2 // Upward motion
-                        ));
-                    }
+                    window.particleManager.createLavaParticles(lemming.x, lemming.y + lemming.getHeight()/2);
                     break;
                     
                 case 'bearTrap':
-                    // Blood splatter
                     this.triggered = true;
                     this.triggerTime = 0;
-                    for (let i = 0; i < 15; i++) {
-                        const angle = Math.random() * Math.PI - Math.PI/2; // Upward arc
-                        const speed = Math.random() * 3 + 2;
-                        window.game.particles.push(new Particle(
-                            lemming.x,
-                            lemming.y + LEMMING_HEIGHT/2,
-                            '#cc0000',
-                            Math.cos(angle) * speed,
-                            Math.sin(angle) * speed
-                        ));
-                    }
+                    window.particleManager.createTrapParticles(lemming.x, lemming.y + lemming.getHeight()/2);
                     break;
                     
                 case 'spikes':
-                    // Blood drops
-                    for (let i = 0; i < 20; i++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const speed = Math.random() * 2 + 1;
-                        window.game.particles.push(new Particle(
-                            lemming.x,
-                            lemming.y + LEMMING_HEIGHT,
-                            '#990000',
-                            Math.cos(angle) * speed * 0.3,
-                            Math.abs(Math.sin(angle) * speed)
-                        ));
-                    }
+                    window.particleManager.createSpikeParticles(lemming.x, lemming.y + lemming.getHeight());
                     break;
             }
         }
@@ -125,7 +85,6 @@ class Hazard {
         ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
         
         // Draw lava surface with bubbles
-        const bubbleY = Math.sin(this.animationFrame) * 2;
         ctx.fillStyle = '#ff6600';
         
         // Animated bubbles

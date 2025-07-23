@@ -84,48 +84,29 @@
         <div id="levelEditor" class="hidden">
             <!-- Editor UI will be dynamically created here -->
         </div>
-        
-        <div id="settingsDialog" class="hidden">
-            <div class="dialogContent">
-                <h2>Settings</h2>
-                <button class="dialogButton" onclick="game.showAudioSettings()">Audio</button>
-                <button class="dialogButton cancel" onclick="game.closeSettings()">Back</button>
-            </div>
-        </div>
-        
-        <div id="audioSettingsDialog" class="hidden">
-            <div class="dialogContent">
-                <h2>Audio Settings</h2>
-                <div class="sliderContainer">
-                    <label>Sound Effects: <span id="soundVolumeLabel">50</span>%</label>
-                    <input type="range" id="soundVolumeSlider" min="0" max="100" value="50" 
-                           oninput="game.updateSoundVolume(this.value)">
-                </div>
-                <div class="sliderContainer">
-                    <label>Music: <span id="musicVolumeLabel">50</span>%</label>
-                    <input type="range" id="musicVolumeSlider" min="0" max="100" value="50"
-                           oninput="game.updateMusicVolume(this.value)">
-                </div>
-                <label class="fileLabel dialogButton">
-                    Load Music File
-                    <input type="file" accept="audio/*" onchange="game.loadMusicFile(this.files[0])" style="display: none;">
-                </label>
-                <button class="dialogButton cancel" onclick="game.closeAudioSettings()">Back</button>
-            </div>
-        </div>
     </div>
 
-    <!-- Load all JavaScript files in correct order -->
+    <!-- Load utility files first -->
     <script src="js/environmentManager.js"></script>
     <script src="js/constants.js"></script>
+    <script src="js/validationUtils.js"></script>
+    <script src="js/cameraBase.js"></script>
+    <script src="js/dialogManager.js"></script>
+    
+    <!-- Core systems -->
     <script src="js/audioManager.js"></script>
     <script src="js/musicManager.js"></script>
     <script src="js/particle.js"></script>
+    <script src="js/particleManager.js"></script>
+    
+    <!-- Game objects -->
     <script src="js/hazard.js"></script>
     <script src="js/lemming.js"></script>
     <script src="js/terrain.js"></script>
     <script src="js/level.js"></script>
     <script src="js/levelManager.js"></script>
+    
+    <!-- Main game -->
     <script src="js/game.js"></script>
     <script src="js/main.js"></script>
 </body>
