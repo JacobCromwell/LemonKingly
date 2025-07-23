@@ -10,12 +10,12 @@ class Lemming {
         this.isClimber = false; // Permanent climber ability
         this.isFloater = false; // Permanent floater ability
         this.explosionTimer = -1; // -1 means no explosion scheduled
-        
+
         // Death fade effect properties
         this.deathTime = 0;
         this.deathFadeDuration = 2000; // 2 seconds
         this.isFullyDead = false;
-        
+
         // Miner specific properties
         this.miningSwingTimer = 0;
         this.miningProgress = 0;
@@ -76,7 +76,7 @@ class Lemming {
         if (this.state === LemmingState.SAVED) {
             return false;
         }
-        
+
         if (this.state === LemmingState.DEAD) {
             const timeSinceDeath = Date.now() - this.deathTime;
             if (timeSinceDeath >= this.deathFadeDuration) {
@@ -84,7 +84,7 @@ class Lemming {
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -93,12 +93,12 @@ class Lemming {
         if (this.state !== LemmingState.DEAD) {
             return 1.0;
         }
-        
+
         const timeSinceDeath = Date.now() - this.deathTime;
         if (timeSinceDeath >= this.deathFadeDuration) {
             return 0;
         }
-        
+
         const fadeProgress = timeSinceDeath / this.deathFadeDuration;
         return Math.max(0, 1.0 - fadeProgress);
     }
@@ -221,7 +221,7 @@ class Lemming {
     climb(terrain) {
         const lemmingWidth = this.getWidth();
         const lemmingHeight = this.getHeight();
-        
+
         // Check for ceiling collision
         const headY = this.y - 2;
         if (terrain.hasGround(this.x, headY)) {
@@ -237,7 +237,7 @@ class Lemming {
 
         // Check if still in contact with wall
         const wallCheckX = this.x + (this.direction * (lemmingWidth / 2 + 1));
-        
+
         let stillInContactWithWall = false;
         for (let checkY = this.y; checkY < this.y + lemmingHeight; checkY += 2) {
             if (terrain.hasGround(wallCheckX, checkY)) {
@@ -251,10 +251,10 @@ class Lemming {
             // Apply boost to clear the wall top
             const heightBoost = 5;
             const forwardBoost = 5;
-            
+
             this.y -= heightBoost;
             this.x += this.direction * forwardBoost;
-            
+
             // Check if there's ground to stand on after the boost
             if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
                 this.state = LemmingState.WALKING;
@@ -311,11 +311,21 @@ class Lemming {
         if (foundObstacle) {
             const color = terrain.removeTerrain((bashX - 1) - bashWidth / 2, this.y, bashWidth * 2, bashHeight);
 
+            // Create particles with directional velocity
             if (window.particleManager) {
-                window.particleManager.createTerrainParticles(bashX, this.y, bashWidth, bashHeight, color);
+                for (let i = 0; i < 10; i++) {
+                    window.particleManager.getParticle(
+                        bashX + Math.random() * bashWidth - bashWidth / 2,
+                        this.y + Math.random() * bashHeight,
+                        color || '#8B4513',
+                        this.direction * (Math.random() * 3 + 1), // Particles fly in bash direction
+                        Math.random() * 2 - 3
+                    );
+                }
             }
 
             this.x += this.direction * 0.25;
+            audioManager.playSound('basher'); // Add sound effect
         } else {
             // Check if we can walk forward
             if (!terrain.hasGround(this.x + this.direction * PHYSICS.walkSpeed, this.y + lemmingHeight / 2)) {
@@ -347,7 +357,15 @@ class Lemming {
             const color = terrain.removeTerrain(this.x - digWidth / 2, (digY - 1), digWidth, digHeight);
 
             if (window.particleManager) {
-                window.particleManager.createTerrainParticles(this.x, digY, digWidth, digHeight, color, 8);
+                for (let i = 0; i < 10; i++) {
+                    window.particleManager.getParticle(
+                        this.x + Math.random() * digWidth - digHeight / 2,
+                        this.y + Math.random() * digHeight,
+                        color || '#8B4513',
+                        this.direction * (Math.random() * 3 + 1), // Particles fly in bash direction
+                        Math.random() * 2 - 3
+                    );
+                }
             }
 
             this.y += 0.5;
@@ -382,7 +400,7 @@ class Lemming {
             tileY = this.y + lemmingHeight - stepHeight - 2;
         }
 
-        if(this.direction === -1){
+        if (this.direction === -1) {
             terrain.addTerrain((tileX - stepWidth * 2) + 2, tileY, stepWidth, stepHeight + 1);
         } else {
             terrain.addTerrain(tileX - stepWidth / 2, tileY, stepWidth, stepHeight + 1);
@@ -400,18 +418,18 @@ class Lemming {
 
     mine(terrain) {
         const lemmingHeight = this.getHeight();
-        
+
         this.miningSwingTimer++;
-        
+
         if (this.miningSwingTimer >= MINING.swingDuration) {
             this.miningSwingTimer = 0;
-            
+
             const angleRad = (MINING.angle * Math.PI) / 180;
             const tunnelRadius = lemmingHeight * 0.4;
-            
+
             const swingX = this.x + (this.direction * tunnelRadius * 1.5 * Math.cos(angleRad));
             const swingY = this.y + lemmingHeight + (tunnelRadius * Math.sin(angleRad));
-            
+
             // Check if there's still terrain to mine
             let foundTerrain = false;
             for (let angle = 0; angle < Math.PI * 2; angle += 0.5) {
@@ -422,13 +440,13 @@ class Lemming {
                     break;
                 }
             }
-            
+
             if (!foundTerrain) {
                 this.state = LemmingState.WALKING;
                 this.miningProgress = 0;
                 return;
             }
-            
+
             // Check for level boundaries
             if (swingX < tunnelRadius || swingX > terrain.width - tunnelRadius ||
                 swingY < 0 || swingY > terrain.height - tunnelRadius) {
@@ -436,7 +454,7 @@ class Lemming {
                 this.miningProgress = 0;
                 return;
             }
-            
+
             // Check for indestructible terrain if editor is available
             if (window.editor && window.editor.terrainManager) {
                 const checkBounds = {
@@ -445,7 +463,7 @@ class Lemming {
                     width: tunnelRadius * 2,
                     height: tunnelRadius * 2
                 };
-                
+
                 if (window.editor.checkIndestructibleCollision(checkBounds)) {
                     this.state = LemmingState.WALKING;
                     this.miningProgress = 0;
@@ -453,7 +471,7 @@ class Lemming {
                     return;
                 }
             }
-            
+
             // Remove terrain in circular area
             for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
                 for (let r = 0; r < tunnelRadius; r += 1) {
@@ -463,15 +481,30 @@ class Lemming {
                 }
             }
             terrain.updateImageData();
-            
+
             // Get terrain color for particles
             const imageData = terrain.ctx.getImageData(swingX, swingY, 1, 1);
             const color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
-            
+
+            // FIX: Create particles for mining
             if (window.particleManager) {
-                window.particleManager.createTerrainParticles(swingX, swingY, tunnelRadius * 2, tunnelRadius * 2, color, 12);
+                // Create particles in a circular pattern for mining
+                for (let i = 0; i < 12; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * tunnelRadius;
+                    const particleX = swingX + Math.cos(angle) * distance;
+                    const particleY = swingY + Math.sin(angle) * distance;
+
+                    window.particleManager.getParticle(
+                        particleX,
+                        particleY,
+                        color,
+                        Math.cos(angle) * (Math.random() * 2 + 1),
+                        Math.sin(angle) * (Math.random() * 2 + 1) - 1
+                    );
+                }
             }
-            
+
             // Move lemming to the bottom edge of the hole
             const lemmingWidth = this.getWidth();
             if (this.direction === 1) {
@@ -480,14 +513,14 @@ class Lemming {
                 this.x = swingX - tunnelRadius + lemmingWidth / 2;
             }
             this.y = swingY + tunnelRadius - lemmingHeight;
-            
+
             // After moving, check if there's ground beneath
             if (!terrain.hasGround(this.x, this.y + lemmingHeight)) {
                 this.state = LemmingState.WALKING;
                 this.miningProgress = 0;
                 return;
             }
-            
+
             audioManager.playSound('miner');
         }
     }
@@ -552,13 +585,13 @@ class Lemming {
 
     explode(terrain) {
         this.setDead();
-        
+
         audioManager.playSound('explosion');
-        
+
         const explosionRadius = 10;
         const cx = this.x;
         const cy = this.y + this.getHeight() / 2;
-        
+
         // Remove terrain in a circle
         for (let x = cx - explosionRadius; x <= cx + explosionRadius; x++) {
             for (let y = cy - explosionRadius; y <= cy + explosionRadius; y++) {
@@ -569,7 +602,7 @@ class Lemming {
             }
         }
         terrain.updateImageData();
-        
+
         // Create explosion particles
         if (window.particleManager) {
             window.particleManager.createExplosionParticles(cx, cy);
@@ -659,16 +692,16 @@ class Lemming {
         // Draw countdown for explosion timer
         if (this.explosionTimer > 0) {
             const seconds = Math.ceil(this.explosionTimer);
-            
+
             ctx.font = `bold ${Math.max(10, this.getHeight())}px Arial`;
             ctx.textAlign = 'center';
             ctx.fillStyle = 'white';
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 2;
-            
+
             const textX = this.x;
             const textY = this.y - 2;
-            
+
             ctx.strokeText(seconds.toString(), textX, textY);
             ctx.fillText(seconds.toString(), textX, textY);
         }

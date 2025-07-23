@@ -101,8 +101,14 @@ class Terrain {
     }
 
     removeTerrain(x, y, width, height) {
+        // Get color before clearing
         const imageData = this.ctx.getImageData(x, y, 1, 1);
-        const color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
+        let color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
+
+        // If color is transparent or black, use a default terrain color
+        if (imageData.data[3] === 0 || (imageData.data[0] === 0 && imageData.data[1] === 0 && imageData.data[2] === 0)) {
+            color = '#8B4513'; // Brown color for terrain
+        }
 
         this.ctx.clearRect(x, y, width, height);
         this.updateImageData();

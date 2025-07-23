@@ -84,16 +84,22 @@ class ParticleManager {
      * Create terrain destruction particles
      */
     createTerrainParticles(x, y, width, height, color, count = 10) {
-        for (let i = 0; i < count; i++) {
-            this.getParticle(
-                x + Math.random() * width - width / 2,
-                y + Math.random() * height,
-                color,
-                Math.random() * 2 - 1,
-                Math.random() * 2 - 3
-            );
-        }
+    // Parse color if needed
+    let particleColor = color;
+    if (!color || color === 'rgba(0, 0, 0, 0)') {
+        particleColor = '#8B4513'; // Default brown for terrain
     }
+    
+    for (let i = 0; i < count; i++) {
+        this.getParticle(
+            x + Math.random() * width - width / 2,
+            y + Math.random() * height - height / 2,
+            particleColor,
+            (Math.random() * 4 - 2) * this.direction, // Include direction
+            Math.random() * 2 - 3
+        );
+    }
+}
     
     /**
      * Create lava death particles
