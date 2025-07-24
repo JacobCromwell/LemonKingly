@@ -393,7 +393,7 @@ class Lemming {
             this.state = LemmingState.WALKING;
             return;
         }
-
+        
         // If not enough time has passed since the last tile was placed, do nothing
         // The lemming remains in the BUILDING state, effectively "waiting".
         if (currentTime - this.lastBuildTime < BUILDING.tileDelay) {
@@ -401,6 +401,11 @@ class Lemming {
         }
 
         // It's time to place a new tile.
+        // Play 'lastBricks' sound if it's one of the last 3 tiles, and only once per tile.
+        if (this.buildTilesPlaced >= (BUILDING.maxTiles - 3) && this.buildTilesPlaced < BUILDING.maxTiles) {
+            audioManager.playSound('lastBricks');
+        }
+
         this.lastBuildTime = currentTime; // Update the time of the current tile placement.
 
         const stepWidth = 6;  // Width of each bridge tile.
@@ -416,7 +421,7 @@ class Lemming {
             // For the very first tile, place it directly under the lemming's feet.
             // This ensures the lemming has ground to stand on immediately.
             tileY = this.y + lemmingHeight - 1;
-            tileX = this.x - 1; // Small adjustment for alignment.
+            tileX = this.x - 0.5; // Small adjustment for alignment.
         } else {
             // For subsequent tiles, they are placed in the direction the lemming is facing,
             // and elevated to form a rising bridge.
