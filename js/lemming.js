@@ -391,11 +391,12 @@ class Lemming {
         const stepWidth = 6;
         const stepHeight = 2;
 
-        const tileX = this.x + (this.direction * stepWidth - 2);
+        let tileX = this.x + (this.direction * stepWidth - 2);
         let tileY = 0;
 
         if (this.buildTilesPlaced === 0) {
             tileY = this.y + lemmingHeight - 1;
+            tileX = this.x - 2;
         } else {
             tileY = this.y + lemmingHeight - stepHeight - 2;
         }
