@@ -10,14 +10,11 @@ class Game {
         this.levelInfo = document.getElementById('levelInfo');
         this.levelEditor = document.getElementById('levelEditor');
 
-        this.terrain = null; // Will be created when level is loaded
-        this.level = null;   // Will be created when level is loaded
+        this.terrain = null;
+        this.level = null;
         this.lemmings = [];
-        this.particles = [];
-        this.particlePool = [];
-        this.maxParticlePool = 100;
+        
         this.selectedAction = ActionType.NONE;
-
         this.lemmingsSpawned = 0;
         this.lemmingsSaved = 0;
         this.lastSpawnTime = 0;
@@ -160,7 +157,10 @@ class Game {
 
         // Initialize game state
         this.lemmings = [];
-        this.particles = [];
+        // CHANGE: Clear particles using ParticleManager
+        if (window.particleManager) {
+            window.particleManager.clear();
+        }
         this.lemmingsSpawned = 0;
         this.lemmingsSaved = 0;
         this.gameRunning = true;
@@ -253,7 +253,10 @@ class Game {
 
         // Initialize game state
         this.lemmings = [];
-        this.particles = [];
+        // CHANGE: Clear particles using ParticleManager
+        if (window.particleManager) {
+            window.particleManager.clear();
+        }
         this.lemmingsSpawned = 0;
         this.lemmingsSaved = 0;
         this.gameRunning = true;
@@ -610,7 +613,7 @@ class Game {
         // Draw hazards (before lemmings so they appear behind)
         this.level.drawHazards(this.ctx);
 
-        // Draw level elements (spawn, exit) - these will be scaled by zoom
+        // Draw level elements (spawn, exit)
         this.level.drawExit(this.ctx);
         this.level.drawSpawner(this.ctx);
 
@@ -645,22 +648,13 @@ class Game {
             lemming.draw(this.ctx);
         });
 
-        // Update and draw particles
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            const particle = this.particles[i];
-            particle.update();
-
-            if (particle.isDead()) {
-                this.particles.splice(i, 1);
-                if (this.particlePool.length < this.maxParticlePool) {
-                    this.particlePool.push(particle);
-                }
-            } else {
-                particle.draw(this.ctx);
-            }
+        // UPDATE: Use ParticleManager instead of local particle array
+        if (window.particleManager) {
+            window.particleManager.update();
+            window.particleManager.draw(this.ctx);
         }
 
-        // Clean up fully faded lemmings every 5 seconds (300 frames at 60fps)
+        // Clean up fully faded lemmings every 5 seconds
         if (this.gameLoopCounter === undefined) {
             this.gameLoopCounter = 0;
         }
