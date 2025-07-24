@@ -22,6 +22,9 @@ class Lemming {
 
         // Store zoom for dynamic sizing
         this.zoom = zoom;
+
+        // Builder specific properties (new for timed building)
+        this.lastBuildTime = 0; // Tracks the timestamp of the last tile placed.
     }
 
     // Check if lemming already has the specified ability
@@ -148,7 +151,7 @@ class Lemming {
                 this.dig(terrain);
                 break;
             case LemmingState.BUILDING:
-                this.build(terrain);
+                this.build(terrain); // Call the updated build method
                 break;
             case LemmingState.CLIMBING:
                 this.climb(terrain);
@@ -278,7 +281,7 @@ class Lemming {
             if (this.fallDistance >= PHYSICS.maxFallHeight && !this.isFloater) {
                 this.setDead();
                 if (window.particleManager) {
-                    window.particleManager.createDeathParticles(this.x, this.y + lemmingHeight / 2);
+                    window.particleManager.createDeathParticles(this.x, lemmingHeight / 2);
                 }
             } else {
                 this.state = LemmingState.WALKING;
@@ -309,7 +312,7 @@ class Lemming {
         }
 
         if (foundObstacle) {
-            const color = terrain.removeTerrain((bashX - 1) - bashWidth / 2, this.y, bashWidth * 2, bashHeight);
+            const color = terrain.removeTerrain((bashX - 1) - bashWidth / 2, this.y + 1, bashWidth * 2, bashHeight);
 
             // Create particles with directional velocity
             if (window.particleManager) {
@@ -380,40 +383,72 @@ class Lemming {
         }
     }
 
+    // Updated build method for timed tile placement
     build(terrain) {
         const lemmingHeight = this.getHeight();
+        const currentTime = Date.now();
 
+        // If all tiles are placed, transition to walking state
         if (this.buildTilesPlaced >= BUILDING.maxTiles) {
             this.state = LemmingState.WALKING;
             return;
         }
-
-        const stepWidth = 6;
-        const stepHeight = 2;
-
-        const tileX = this.x + (this.direction * stepWidth - 2);
-        let tileY = 0;
-
-        if (this.buildTilesPlaced === 0) {
-            tileY = this.y + lemmingHeight - 1;
-        } else {
-            tileY = this.y + lemmingHeight - stepHeight - 2;
+        
+        // If not enough time has passed since the last tile was placed, do nothing
+        // The lemming remains in the BUILDING state, effectively "waiting".
+        if (currentTime - this.lastBuildTime < BUILDING.tileDelay) {
+            return;
         }
 
-        if (this.direction === -1) {
-            terrain.addTerrain((tileX - stepWidth * 2) + 2, tileY, stepWidth, stepHeight + 1);
+        // It's time to place a new tile.
+        // Play 'lastBricks' sound if it's one of the last 3 tiles, and only once per tile.
+        if (this.buildTilesPlaced >= (BUILDING.maxTiles - 3) && this.buildTilesPlaced < BUILDING.maxTiles) {
+            audioManager.playSound('lastBricks');
+        }
+
+        this.lastBuildTime = currentTime; // Update the time of the current tile placement.
+
+        const stepWidth = 6;  // Width of each bridge tile.
+        const stepHeight = 2; // Height increment for each bridge tile.
+
+        let tileX;
+        let tileY;
+
+        // Calculate tile position based on current lemming position and direction.
+        // The first tile is placed directly under the lemming to start the bridge.
+        // Subsequent tiles are placed in front and slightly elevated.
+        if (this.buildTilesPlaced === 0) {
+            // For the very first tile, place it directly under the lemming's feet.
+            // This ensures the lemming has ground to stand on immediately.
+            tileY = this.y + lemmingHeight - 1;
+            tileX = this.x - 0.5; // Small adjustment for alignment.
         } else {
+            // For subsequent tiles, they are placed in the direction the lemming is facing,
+            // and elevated to form a rising bridge.
+            tileY = this.y + lemmingHeight - stepHeight - 2;
+            tileX = this.x + (this.direction * stepWidth - 2);
+        }
+
+        // Add terrain at the calculated tile position.
+        if (this.direction === -1) { // If lemming is facing left.
+            // Adjust x-coordinate for left-facing lemming to place tile correctly.
+            terrain.addTerrain((tileX - stepWidth * 2) + 2, tileY, stepWidth, stepHeight + 1);
+        } else { // If lemming is facing right.
+            // Place tile in front of the lemming.
             terrain.addTerrain(tileX - stepWidth / 2, tileY, stepWidth, stepHeight + 1);
         }
 
-        this.buildTilesPlaced++;
+        this.buildTilesPlaced++; // Increment the count of tiles placed.
+        // Optional: Play a sound for each tile built.
+        // audioManager.playSound('builder_step');
 
+        // Move the lemming's position to stand on the newly placed tile.
+        // The lemming moves forward and up with each tile.
         this.x = tileX;
         this.y = tileY - lemmingHeight;
 
-        if (this.buildTilesPlaced >= BUILDING.maxTiles) {
-            this.state = LemmingState.WALKING;
-        }
+        // The state remains BUILDING until all tiles are placed,
+        // which is checked at the beginning of the next `update` call.
     }
 
     mine(terrain) {
@@ -559,6 +594,7 @@ class Lemming {
                 case ActionType.BUILDER:
                     this.state = LemmingState.BUILDING;
                     this.buildTilesPlaced = 0;
+                    this.lastBuildTime = Date.now(); // Initialize for the first tile
                     audioManager.playSound('builder');
                     break;
                 case ActionType.CLIMBER:

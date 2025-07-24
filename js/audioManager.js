@@ -475,6 +475,40 @@ class AudioManager {
                 osc3.stop(this.audioContext.currentTime + 0.4);
             });
 
+            // Generate 'lastBricks' sound (clunk/clatter warning)
+            this.sounds.lastBricks = this.createSound(() => {
+                const osc = this.audioContext.createOscillator();
+                const noise = this.createNoise();
+                const gain = this.audioContext.createGain();
+                const noiseGain = this.audioContext.createGain();
+                const masterGain = this.audioContext.createGain();
+
+                // Low frequency thud/clunk
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(120, this.audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, this.audioContext.currentTime + 0.08);
+
+                // Short, sharp noise burst for clatter
+                gain.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+
+                noiseGain.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.05);
+
+                masterGain.gain.value = this.soundVolume / 100;
+
+                osc.connect(gain);
+                noise.connect(noiseGain);
+                gain.connect(masterGain);
+                noiseGain.connect(masterGain);
+                masterGain.connect(this.audioContext.destination);
+
+                osc.start();
+                noise.start();
+                osc.stop(this.audioContext.currentTime + 0.1);
+                noise.stop(this.audioContext.currentTime + 0.05);
+            });
+
             if (this.envManager) {
                 this.envManager.devLog('All sound effects generated successfully');
             }
