@@ -71,14 +71,15 @@ body {
     gap: 10px;
 }
 
+/* Updated minimap positioning - place it underneath the toolbar */
 #minimapContainer {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
+    position: relative; /* Changed from absolute */
     background-color: rgba(0, 0, 0, 0.8);
     border: 2px solid #666;
     border-radius: 5px;
     padding: 5px;
+    margin: 10px auto 0; /* Center horizontally with top margin */
+    width: fit-content; /* Size to content */
 }
 
 #minimapCanvas {
@@ -89,6 +90,66 @@ body {
 
 #minimapContainer:hover {
     border-color: #888;
+}
+
+/* Update gameUI to use flexbox layout for proper ordering */
+#gameUI {
+    background-color: #333;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center; /* Center the contents */
+}
+
+/* Ensure toolbar comes first */
+#toolbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 10px;
+    background-color: #444;
+    border-radius: 5px;
+    order: 1; /* Explicitly set toolbar order */
+}
+
+/* Set minimap to come after toolbar */
+#minimapContainer {
+    order: 2; /* Explicitly set minimap order */
+}
+
+/* Optional: Add some visual improvements */
+#minimapContainer {
+    position: relative;
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 2px solid #666;
+    border-radius: 5px;
+    padding: 8px;
+    margin: 10px auto 0;
+    width: fit-content;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+#minimapContainer:hover {
+    border-color: #888;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Add a subtle label for the minimap */
+#minimapContainer::before {
+    content: "Minimap";
+    position: absolute;
+    top: -8px;
+    left: 8px;
+    background-color: #333;
+    color: #ccc;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #666;
 }
 
 #toolbar {

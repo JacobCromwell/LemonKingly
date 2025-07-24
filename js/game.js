@@ -1123,8 +1123,11 @@ class Game {
             this.minimapCanvas.style.display = 'block';
 
             this.minimapCtx = this.minimapCanvas.getContext('2d');
-            this.minimapCanvas.width = 500;
-            this.minimapCanvas.height = 200;
+
+            // Adjust minimap size for better fit underneath toolbar
+            // You can modify these dimensions as needed
+            this.minimapCanvas.width = 400;  // Reduced from 500
+            this.minimapCanvas.height = 160; // Reduced from 200
 
             // Minimap event handlers
             this.minimapCanvas.addEventListener('mousedown', this.handleMinimapMouseDown.bind(this));
