@@ -3,102 +3,104 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jacob Cromwell's Lemmings Tribute</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lemmings Clone</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div id="gameContainer">
-        <div id="menu">
-            <h1>Jacob Cromwell's</h1>
-            <h1>Lemmings Tribute</h1>
-            <label class="menuButton fileLabel">Load Custom Level<input type="file" accept=".json"
-                    onchange="game.loadAndPlayLevel(this.files[0])" style="display: none;">
-            </label>
-            <button class="menuButton" onclick="game.openLevelEditor()">Level Editor</button>
-            <button class="menuButton" onclick="game.showSettings()">Settings</button>
-            <button class="menuButton" onclick="game.quit()">Quit</button>
-        </div>
+    <div id="gameWrapper">
+        <div id="gameContainer">
+            <div id="menu">
+                <h1>Lemmings Clone</h1>
+                <label class="menuButton fileLabel">Load Custom Level<input type="file" accept=".json"
+                        onchange="game.loadAndPlayLevel(this.files[0])" style="display: none;">
+                </label>
+                <button class="menuButton" onclick="game.openLevelEditor()">Level Editor</button>
+                <button class="menuButton" onclick="game.showSettings()">Settings</button>
+                <button class="menuButton" onclick="game.quit()">Quit</button>
+            </div>
 
-        <div id="levelInfo" class="hidden">
-            <div>Lemmings Out: <span id="lemmingsOut">0</span>/<span id="totalLemmings">20</span></div>
-            <div>Saved: <span id="lemmingsSaved">0</span>/<span id="requiredLemmings">10</span></div>
-            <div>Alive: <span id="lemmingsAlive">0</span></div>
-        </div>
+            <div id="levelInfo" class="hidden">
+                <div>Lemmings Out: <span id="lemmingsOut">0</span>/<span id="totalLemmings">20</span></div>
+                <div>Saved: <span id="lemmingsSaved">0</span>/<span id="requiredLemmings">10</span></div>
+                <div>Alive: <span id="lemmingsAlive">0</span></div>
+            </div>
 
-        <canvas id="gameCanvas" class="hidden"></canvas>
+            <canvas id="gameCanvas" class="hidden"></canvas>
 
-        <div id="gameUI" class="hidden">
-            <!-- Update the toolbar section in index.html -->
-            <div id="toolbar">
-                <!-- Add pause button before the STOP button -->
-                <button class="actionButton" data-action="pause" onclick="game.selectAction('pause')"
-                    title="Pause/Resume Game">
-                    <div class="pause-icon">⏸️</div>
-                    <div class="pause-label" style="font-size: 12px; margin-top: 5px;">Pause</div>
-                </button>
+            <div id="gameUI" class="hidden">
+                <!-- Update the toolbar section in index.html -->
+                <div id="toolbar">
+                    <!-- Add pause button before the STOP button -->
+                    <button class="actionButton" data-action="pause" onclick="game.selectAction('pause')"
+                        title="Pause/Resume Game">
+                        <div class="pause-icon">⏸️</div>
+                        <div class="pause-label" style="font-size: 12px; margin-top: 5px;">Pause</div>
+                    </button>
 
-                <button class="actionButton" data-action="blocker" onclick="game.selectAction('blocker')">
-                    <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">STOP</div>
-                </button>
-                <button class="actionButton" data-action="basher" onclick="game.selectAction('basher')">
-                    <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">BASH</div>
-                </button>
-                <button class="actionButton" data-action="digger" onclick="game.selectAction('digger')">
-                    <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">DIG</div>
-                </button>
-                <button class="actionButton" data-action="builder" onclick="game.selectAction('builder')">
-                    <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">BUILD</div>
-                </button>
-                <button class="actionButton" data-action="climber" onclick="game.selectAction('climber')">
-                    <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">CLIMB</div>
-                </button>
-                <button class="actionButton" data-action="floater" onclick="game.selectAction('floater')">
-                    <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">FLOAT</div>
-                </button>
-                <button class="actionButton" data-action="miner" onclick="game.selectAction('miner')">
-                    <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">MINE</div>
-                </button>
-                <button class="actionButton" data-action="exploder" onclick="game.selectAction('exploder')">
-                    <span class="actionCount">50</span>
-                    <div style="font-size: 12px; margin-top: 5px;">BOMB</div>
-                </button>
-                <button class="actionButton nuke" data-action="nuke" onclick="game.applyNuke()">
-                    <div style="font-size: 24px; margin-top: 8px;">💥</div>
-                    <div style="font-size: 12px; margin-top: 2px;">NUKE</div>
-                </button>
+                    <button class="actionButton" data-action="blocker" onclick="game.selectAction('blocker')">
+                        <span class="actionCount">5</span>
+                        <div style="font-size: 12px; margin-top: 5px;">STOP</div>
+                    </button>
+                    <button class="actionButton" data-action="basher" onclick="game.selectAction('basher')">
+                        <span class="actionCount">5</span>
+                        <div style="font-size: 12px; margin-top: 5px;">BASH</div>
+                    </button>
+                    <button class="actionButton" data-action="digger" onclick="game.selectAction('digger')">
+                        <span class="actionCount">5</span>
+                        <div style="font-size: 12px; margin-top: 5px;">DIG</div>
+                    </button>
+                    <button class="actionButton" data-action="builder" onclick="game.selectAction('builder')">
+                        <span class="actionCount">5</span>
+                        <div style="font-size: 12px; margin-top: 5px;">BUILD</div>
+                    </button>
+                    <button class="actionButton" data-action="climber" onclick="game.selectAction('climber')">
+                        <span class="actionCount">5</span>
+                        <div style="font-size: 12px; margin-top: 5px;">CLIMB</div>
+                    </button>
+                    <button class="actionButton" data-action="floater" onclick="game.selectAction('floater')">
+                        <span class="actionCount">5</span>
+                        <div style="font-size: 12px; margin-top: 5px;">FLOAT</div>
+                    </button>
+                    <button class="actionButton" data-action="miner" onclick="game.selectAction('miner')">
+                        <span class="actionCount">5</span>
+                        <div style="font-size: 12px; margin-top: 5px;">MINE</div>
+                    </button>
+                    <button class="actionButton" data-action="exploder" onclick="game.selectAction('exploder')">
+                        <span class="actionCount">50</span>
+                        <div style="font-size: 12px; margin-top: 5px;">BOMB</div>
+                    </button>
+                    <button class="actionButton nuke" data-action="nuke" onclick="game.applyNuke()">
+                        <div style="font-size: 24px; margin-top: 8px;">💥</div>
+                        <div style="font-size: 12px; margin-top: 2px;">NUKE</div>
+                    </button>
 
-                <div class="speedControl">
-                    <span>Speed:</span>
-                    <button class="speedButton" onclick="game.decreaseSpawnRate()">-</button>
-                    <span id="spawnRate">2.0s</span>
-                    <button class="speedButton" onclick="game.increaseSpawnRate()">+</button>
+                    <div class="speedControl">
+                        <span>Speed:</span>
+                        <button class="speedButton" onclick="game.decreaseSpawnRate()">-</button>
+                        <span id="spawnRate">2.0s</span>
+                        <button class="speedButton" onclick="game.increaseSpawnRate()">+</button>
+                    </div>
+
+                    <button class="endLevelButton" onclick="game.endLevel()">
+                        End Level
+                    </button>
                 </div>
 
-                <button class="endLevelButton" onclick="game.endLevel()">
-                    End Level
-                </button>
+                <div id="minimapContainer">
+                    <canvas id="minimapCanvas" width="200" height="100"></canvas>
+                </div>
             </div>
 
-            <div id="minimapContainer">
-                <canvas id="minimapCanvas" width="200" height="100"></canvas>
+            <div id="levelEditor" class="hidden">
+                <!-- Editor UI will be dynamically created here -->
             </div>
-        </div>
-
-        <div id="levelEditor" class="hidden">
-            <!-- Editor UI will be dynamically created here -->
         </div>
     </div>
 
     <!-- Load utility files first -->
+    <script src="js/scaleManager.js"></script>
     <script src="js/environmentManager.js"></script>
     <script src="js/constants.js"></script>
     <script src="js/validationUtils.js"></script>

@@ -10,6 +10,10 @@ class Game {
         this.levelInfo = document.getElementById('levelInfo');
         this.levelEditor = document.getElementById('levelEditor');
 
+        // Scale-aware properties
+        this.displayScale = 1;
+        this.devicePixelRatio = 1;
+
         this.terrain = null;
         this.level = null;
         this.lemmings = [];
@@ -489,8 +493,17 @@ class Game {
     handleClick(e) {
         if (this.countdownActive || this.isPaused) return;
         const rect = this.canvas.getBoundingClientRect();
-        const screenX = e.clientX - rect.left;
-        const screenY = e.clientY - rect.top;
+
+        // Use scale manager to convert coordinates if available
+        let screenX, screenY;
+        if (window.scaleManager) {
+            const gameCoords = window.scaleManager.screenToGame(e.clientX, e.clientY);
+            screenX = gameCoords.x - rect.left / window.scaleManager.getScale();
+            screenY = gameCoords.y - rect.top / window.scaleManager.getScale();
+        } else {
+            screenX = e.clientX - rect.left;
+            screenY = e.clientY - rect.top;
+        }
 
         // Transform screen coordinates to world coordinates
         const worldX = (screenX / this.zoom) + this.camera.x;
@@ -561,8 +574,17 @@ class Game {
     // Handle mouse move with zoom transformation
     handleMouseMove(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const screenX = e.clientX - rect.left;
-        const screenY = e.clientY - rect.top;
+
+        // Use scale manager to convert coordinates if available
+        let screenX, screenY;
+        if (window.scaleManager) {
+            const gameCoords = window.scaleManager.screenToGame(e.clientX, e.clientY);
+            screenX = gameCoords.x - rect.left / window.scaleManager.getScale();
+            screenY = gameCoords.y - rect.top / window.scaleManager.getScale();
+        } else {
+            screenX = e.clientX - rect.left;
+            screenY = e.clientY - rect.top;
+        }
 
         // Transform screen coordinates to world coordinates
         const worldX = (screenX / this.zoom) + this.camera.x;
@@ -918,8 +940,16 @@ class Game {
     // Updated minimap click to work with zoom
     handleMinimapClick(e) {
         const rect = this.minimapCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+
+        let x, y;
+        if (window.scaleManager) {
+            const gameCoords = window.scaleManager.screenToGame(e.clientX, e.clientY);
+            x = gameCoords.x - rect.left / window.scaleManager.getScale();
+            y = gameCoords.y - rect.top / window.scaleManager.getScale();
+        } else {
+            x = e.clientX - rect.left;
+            y = e.clientY - rect.top;
+        }
 
         // Convert minimap coordinates to level coordinates
         const scaleX = this.levelWidth / this.minimapCanvas.width;
