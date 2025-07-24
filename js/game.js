@@ -39,6 +39,8 @@ class Game {
         this.countdownDuration = 3000; // 3 seconds total
         this.currentCountdownNumber = 3;
 
+        this.isPaused = false;
+
         this.canvas.addEventListener('click', this.handleClick.bind(this));
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
 
@@ -174,6 +176,12 @@ class Game {
         this.countdownActive = true;
         this.countdownStartTime = Date.now();
         this.currentCountdownNumber = 3;
+
+        // Reset pause state when starting a new level
+        this.isPaused = false;
+        this.updatePauseButton();
+        // Remove paused class from body if present
+        document.body.classList.remove('game-paused');
 
         // Load custom level
         this.loadCustomLevel(JSON.parse(testLevelData));
@@ -479,7 +487,7 @@ class Game {
 
     // Handle click with zoom transformation and smart selection
     handleClick(e) {
-        if (this.countdownActive) return;
+        if (this.countdownActive || this.isPaused) return;
         const rect = this.canvas.getBoundingClientRect();
         const screenX = e.clientX - rect.left;
         const screenY = e.clientY - rect.top;
@@ -661,8 +669,48 @@ class Game {
         ctx.restore();
     }
 
+    // Add pause toggle method
+    togglePause() {
+        if (this.countdownActive) {
+            // Don't allow pausing during countdown
+            return;
+        }
+
+        this.isPaused = !this.isPaused;
+        this.updatePauseButton();
+
+        // Add/remove class to body for CSS styling of disabled elements
+        if (this.isPaused) {
+            document.body.classList.add('game-paused');
+        } else {
+            document.body.classList.remove('game-paused');
+        }
+
+        console.log(this.isPaused ? 'Game paused' : 'Game resumed');
+    }
+
+    // Update pause button appearance
+    updatePauseButton() {
+        const pauseButton = document.querySelector('[data-action="pause"]');
+        if (pauseButton) {
+            const icon = pauseButton.querySelector('.pause-icon');
+            const label = pauseButton.querySelector('.pause-label');
+
+            if (this.isPaused) {
+                icon.textContent = '▶️';
+                label.textContent = 'Resume';
+                pauseButton.classList.add('paused');
+            } else {
+                icon.textContent = '⏸️';
+                label.textContent = 'Pause';
+                pauseButton.classList.remove('paused');
+            }
+        }
+    }
+
     // Game loop with zoom support
     gameLoop() {
+        // Don't run game logic if paused (but still render current state)
         if (!this.gameRunning && !this.countdownActive) return;
 
         // Update countdown if active
@@ -696,8 +744,8 @@ class Game {
         this.level.drawExit(this.ctx);
         this.level.drawSpawner(this.ctx);
 
-        // Only update game elements if game is actually running (not during countdown)
-        if (this.gameRunning) {
+        // Only update game elements if game is running AND not paused
+        if (this.gameRunning && !this.isPaused) {
             // Update hazards
             this.level.updateHazards();
 
@@ -745,10 +793,15 @@ class Game {
                 this.cleanupDeadLemmings();
             }
         } else {
-            // During countdown, still draw existing lemmings but don't update them
+            // During countdown or pause, still draw existing lemmings but don't update them
             this.lemmings.forEach(lemming => {
                 lemming.draw(this.ctx);
             });
+
+            // Draw particles even when paused (they look nice frozen)
+            if (window.particleManager) {
+                window.particleManager.draw(this.ctx);
+            }
         }
 
         // Restore context (end zoom transformation)
@@ -765,8 +818,8 @@ class Game {
         // Update UI
         this.updateStats();
 
-        // Check if level is complete (only if game is running)
-        if (this.gameRunning) {
+        // Check if level is complete (only if game is running and not paused)
+        if (this.gameRunning && !this.isPaused) {
             this.checkLevelComplete();
         }
 
@@ -885,6 +938,8 @@ class Game {
 
     returnToMenu() {
         this.gameRunning = false;
+        this.isPaused = false; // Reset pause state
+        document.body.classList.remove('game-paused'); // Remove pause styling
         this.canvas.classList.add('hidden');
         this.gameUI.style.display = 'none';
         this.levelInfo.classList.add('hidden');
@@ -910,13 +965,25 @@ class Game {
     }
 
     selectAction(action) {
+        if (action === 'pause') {
+            this.togglePause();
+            return;
+        }
+
+        // Don't allow action selection when paused
+        if (this.isPaused) return;
+
         this.selectedAction = action;
 
         // Update UI
-        document.querySelectorAll('.actionButton:not(.nuke)').forEach(btn => {
+        document.querySelectorAll('.actionButton:not(.nuke):not([data-action="pause"])').forEach(btn => {
             btn.classList.remove('selected');
         });
-        document.querySelector(`[data-action="${action}"]`).classList.add('selected');
+
+        const actionButton = document.querySelector(`[data-action="${action}"]`);
+        if (actionButton) {
+            actionButton.classList.add('selected');
+        }
     }
 
     handleKeyDown(e) {
@@ -966,6 +1033,7 @@ class Game {
     }
 
     spawnLemming() {
+        if (this.isPaused) return;
         if (this.lemmingsSpawned < this.level.totalLemmings) {
             const currentTime = Date.now();
             if (currentTime - this.lastSpawnTime >= this.level.spawnRate) {

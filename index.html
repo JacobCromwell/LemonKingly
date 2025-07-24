@@ -1,32 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lemmings Clone</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div id="gameContainer">
         <div id="menu">
             <h1>Lemmings Clone</h1>
-            <label class="menuButton fileLabel">Load Custom Level<input type="file" accept=".json" onchange="game.loadAndPlayLevel(this.files[0])" style="display: none;">
+            <label class="menuButton fileLabel">Load Custom Level<input type="file" accept=".json"
+                    onchange="game.loadAndPlayLevel(this.files[0])" style="display: none;">
             </label>
             <button class="menuButton" onclick="game.openLevelEditor()">Level Editor</button>
             <button class="menuButton" onclick="game.showSettings()">Settings</button>
             <button class="menuButton" onclick="game.quit()">Quit</button>
         </div>
-        
+
         <div id="levelInfo" class="hidden">
             <div>Lemmings Out: <span id="lemmingsOut">0</span>/<span id="totalLemmings">20</span></div>
             <div>Saved: <span id="lemmingsSaved">0</span>/<span id="requiredLemmings">10</span></div>
             <div>Alive: <span id="lemmingsAlive">0</span></div>
         </div>
-        
+
         <canvas id="gameCanvas" class="hidden"></canvas>
-        
+
         <div id="gameUI" class="hidden">
+            <!-- Update the toolbar section in index.html -->
             <div id="toolbar">
+                <!-- Add pause button before the STOP button -->
+                <button class="actionButton" data-action="pause" onclick="game.selectAction('pause')"
+                    title="Pause/Resume Game">
+                    <div class="pause-icon">⏸️</div>
+                    <div class="pause-label" style="font-size: 12px; margin-top: 5px;">Pause</div>
+                </button>
+
                 <button class="actionButton" data-action="blocker" onclick="game.selectAction('blocker')">
                     <span class="actionCount">5</span>
                     <div style="font-size: 12px; margin-top: 5px;">STOP</div>
@@ -63,24 +74,24 @@
                     <div style="font-size: 24px; margin-top: 8px;">💥</div>
                     <div style="font-size: 12px; margin-top: 2px;">NUKE</div>
                 </button>
-                
+
                 <div class="speedControl">
                     <span>Speed:</span>
                     <button class="speedButton" onclick="game.decreaseSpawnRate()">-</button>
                     <span id="spawnRate">2.0s</span>
                     <button class="speedButton" onclick="game.increaseSpawnRate()">+</button>
                 </div>
-                
+
                 <button class="endLevelButton" onclick="game.endLevel()">
                     End Level
                 </button>
             </div>
-            
+
             <div id="minimapContainer">
                 <canvas id="minimapCanvas" width="200" height="100"></canvas>
             </div>
         </div>
-        
+
         <div id="levelEditor" class="hidden">
             <!-- Editor UI will be dynamically created here -->
         </div>
@@ -92,22 +103,23 @@
     <script src="js/validationUtils.js"></script>
     <script src="js/cameraBase.js"></script>
     <script src="js/dialogManager.js"></script>
-    
+
     <!-- Core systems -->
     <script src="js/audioManager.js"></script>
     <script src="js/musicManager.js"></script>
     <script src="js/particle.js"></script>
     <script src="js/particleManager.js"></script>
-    
+
     <!-- Game objects -->
     <script src="js/hazard.js"></script>
     <script src="js/lemming.js"></script>
     <script src="js/terrain.js"></script>
     <script src="js/level.js"></script>
     <script src="js/levelManager.js"></script>
-    
+
     <!-- Main game -->
     <script src="js/game.js"></script>
     <script src="js/main.js"></script>
 </body>
+
 </html>

@@ -25,7 +25,7 @@ body {
 #menu h1 {
     font-size: 48px;
     margin-bottom: 40px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .menuButton {
@@ -147,6 +147,7 @@ body {
     from {
         box-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
     }
+
     to {
         box-shadow: 0 0 20px rgba(255, 68, 68, 0.6);
     }
@@ -212,7 +213,7 @@ body {
     position: absolute;
     top: 10px;
     left: 10px;
-    background-color: rgba(0,0,0,0.7);
+    background-color: rgba(0, 0, 0, 0.7);
     padding: 10px;
     border-radius: 5px;
     font-size: 14px;
@@ -337,10 +338,12 @@ body {
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.1);
         opacity: 0.8;
     }
+
     100% {
         transform: scale(1);
         opacity: 1;
@@ -353,6 +356,7 @@ body {
         opacity: 0;
         transform: translateY(-50px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);
@@ -379,6 +383,61 @@ body {
 }
 
 .countdown-active #minimapCanvas {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* Pause button styling */
+.actionButton[data-action="pause"] {
+    background-color: #2196F3;
+    border-color: #1976D2;
+}
+
+.actionButton[data-action="pause"]:hover {
+    background-color: #1976D2;
+    border-color: #1565C0;
+}
+
+.actionButton[data-action="pause"].paused {
+    background-color: #FF9800;
+    border-color: #F57C00;
+    animation: pausePulse 1.5s ease-in-out infinite alternate;
+}
+
+.actionButton[data-action="pause"].paused:hover {
+    background-color: #F57C00;
+    border-color: #EF6C00;
+}
+
+@keyframes pausePulse {
+    from {
+        box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
+    }
+
+    to {
+        box-shadow: 0 0 15px rgba(255, 152, 0, 0.6);
+    }
+}
+
+/* Disable other action buttons when paused */
+.game-paused .actionButton:not([data-action="pause"]) {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.game-paused .speedControl,
+.game-paused .endLevelButton {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+/* Update existing countdown-active styles to include pause state */
+.countdown-active .actionButton:not([data-action="pause"]),
+.countdown-active .speedControl,
+.countdown-active .endLevelButton,
+.game-paused .actionButton:not([data-action="pause"]),
+.game-paused .speedControl,
+.game-paused .endLevelButton {
     pointer-events: none;
     opacity: 0.7;
 }
