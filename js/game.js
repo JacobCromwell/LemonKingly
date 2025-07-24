@@ -13,7 +13,7 @@ class Game {
         this.terrain = null;
         this.level = null;
         this.lemmings = [];
-        
+
         this.selectedAction = ActionType.NONE;
         this.lemmingsSpawned = 0;
         this.lemmingsSaved = 0;
@@ -33,6 +33,11 @@ class Game {
 
         // Minimap interaction
         this.isDraggingMinimap = false;
+
+        this.countdownActive = false;
+        this.countdownStartTime = 0;
+        this.countdownDuration = 3000; // 3 seconds total
+        this.currentCountdownNumber = 3;
 
         this.canvas.addEventListener('click', this.handleClick.bind(this));
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
@@ -157,20 +162,24 @@ class Game {
 
         // Initialize game state
         this.lemmings = [];
-        // CHANGE: Clear particles using ParticleManager
         if (window.particleManager) {
             window.particleManager.clear();
         }
         this.lemmingsSpawned = 0;
         this.lemmingsSaved = 0;
-        this.gameRunning = true;
+        this.gameRunning = false; // Start as paused for countdown
         this.levelComplete = false;
+
+        // Initialize countdown
+        this.countdownActive = true;
+        this.countdownStartTime = Date.now();
+        this.currentCountdownNumber = 3;
 
         // Load custom level
         this.loadCustomLevel(JSON.parse(testLevelData));
 
-        // Set spawn timing - allow first lemming to spawn immediately
-        this.lastSpawnTime = Date.now() - this.level.spawnRate;
+        // Set spawn timing - but don't allow spawning during countdown
+        this.lastSpawnTime = Date.now() + this.countdownDuration;
 
         // Start music if loaded
         audioManager.playMusic();
@@ -253,14 +262,18 @@ class Game {
 
         // Initialize game state
         this.lemmings = [];
-        // CHANGE: Clear particles using ParticleManager
         if (window.particleManager) {
             window.particleManager.clear();
         }
         this.lemmingsSpawned = 0;
         this.lemmingsSaved = 0;
-        this.gameRunning = true;
+        this.gameRunning = false; // Start as paused for countdown
         this.levelComplete = false;
+
+        // Initialize countdown
+        this.countdownActive = true;
+        this.countdownStartTime = Date.now();
+        this.currentCountdownNumber = 3;
 
         // Create fresh terrain instance with correct dimensions
         const levelWidth = testLevelData?.width || 1200;
@@ -270,8 +283,8 @@ class Game {
         // Load custom level
         this.loadCustomLevel(testLevelData);
 
-        // Set spawn timing - allow first lemming to spawn immediately
-        this.lastSpawnTime = Date.now() - this.level.spawnRate;
+        // Set spawn timing - but don't allow spawning during countdown
+        this.lastSpawnTime = Date.now() + this.countdownDuration;
 
         // Update UI
         this.updateActionCounts();
@@ -466,6 +479,7 @@ class Game {
 
     // Handle click with zoom transformation and smart selection
     handleClick(e) {
+        if (this.countdownActive) return;
         const rect = this.canvas.getBoundingClientRect();
         const screenX = e.clientX - rect.left;
         const screenY = e.clientY - rect.top;
@@ -587,9 +601,74 @@ class Game {
         console.log(`Nuke activated! ${lemmingsNuked} lemmings set to explode.`);
     }
 
+    // Add countdown update method
+    updateCountdown() {
+        if (!this.countdownActive) return;
+
+        const elapsedTime = Date.now() - this.countdownStartTime;
+
+        if (elapsedTime >= this.countdownDuration) {
+            // Countdown finished - start the game
+            this.countdownActive = false;
+            this.gameRunning = true;
+            console.log('Countdown finished - game started!');
+        } else {
+            // Update countdown number based on elapsed time
+            const secondsRemaining = Math.ceil((this.countdownDuration - elapsedTime) / 1000);
+            this.currentCountdownNumber = Math.max(1, secondsRemaining);
+        }
+    }
+
+    // Add countdown rendering method
+    drawCountdown(ctx) {
+        if (!this.countdownActive) return;
+
+        // Save context
+        ctx.save();
+
+        // Create semi-transparent overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw countdown number
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+
+        // Large, bold font for countdown
+        ctx.font = 'bold 120px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // White text with black outline
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 8;
+        ctx.fillStyle = 'white';
+
+        const countdownText = this.currentCountdownNumber.toString();
+        ctx.strokeText(countdownText, centerX, centerY);
+        ctx.fillText(countdownText, centerX, centerY);
+
+        // Add "Get Ready!" text above the number
+        ctx.font = 'bold 36px Arial';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 4;
+        ctx.fillStyle = '#FFD700'; // Gold color
+
+        ctx.strokeText('Get Ready!', centerX, centerY - 100);
+        ctx.fillText('Get Ready!', centerX, centerY - 100);
+
+        // Restore context
+        ctx.restore();
+    }
+
     // Game loop with zoom support
     gameLoop() {
-        if (!this.gameRunning) return;
+        if (!this.gameRunning && !this.countdownActive) return;
+
+        // Update countdown if active
+        if (this.countdownActive) {
+            this.updateCountdown();
+        }
 
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -617,55 +696,68 @@ class Game {
         this.level.drawExit(this.ctx);
         this.level.drawSpawner(this.ctx);
 
-        // Update hazards
-        this.level.updateHazards();
+        // Only update game elements if game is actually running (not during countdown)
+        if (this.gameRunning) {
+            // Update hazards
+            this.level.updateHazards();
 
-        // Spawn lemmings
-        this.spawnLemming();
+            // Spawn lemmings
+            this.spawnLemming();
 
-        // Update and draw lemmings
-        this.lemmings.forEach(lemming => {
-            // Update lemming zoom if it has changed
-            if (lemming.zoom !== this.zoom) {
-                lemming.updateZoom(this.zoom);
+            // Update and draw lemmings
+            this.lemmings.forEach(lemming => {
+                // Update lemming zoom if it has changed
+                if (lemming.zoom !== this.zoom) {
+                    lemming.updateZoom(this.zoom);
+                }
+
+                lemming.update(this.terrain, this.lemmings);
+
+                // Check hazard collisions
+                if (lemming.state !== LemmingState.DEAD && lemming.state !== LemmingState.SAVED) {
+                    this.level.checkHazardCollisions(lemming);
+                }
+
+                // Check if lemming reached exit
+                if (lemming.state !== LemmingState.SAVED && this.level.isAtExit(lemming)) {
+                    lemming.state = LemmingState.SAVED;
+                    this.lemmingsSaved++;
+                    audioManager.playSound('save');
+                }
+
+                // Draw lemming (will be scaled by zoom)
+                lemming.draw(this.ctx);
+            });
+
+            // Update particles
+            if (window.particleManager) {
+                window.particleManager.update();
+                window.particleManager.draw(this.ctx);
             }
 
-            lemming.update(this.terrain, this.lemmings);
-
-            // Check hazard collisions
-            if (lemming.state !== LemmingState.DEAD && lemming.state !== LemmingState.SAVED) {
-                this.level.checkHazardCollisions(lemming);
+            // Clean up fully faded lemmings every 5 seconds
+            if (this.gameLoopCounter === undefined) {
+                this.gameLoopCounter = 0;
             }
 
-            // Check if lemming reached exit
-            if (lemming.state !== LemmingState.SAVED && this.level.isAtExit(lemming)) {
-                lemming.state = LemmingState.SAVED;
-                this.lemmingsSaved++;
-                audioManager.playSound('save');
+            this.gameLoopCounter++;
+            if (this.gameLoopCounter % 300 === 0) {
+                this.cleanupDeadLemmings();
             }
-
-            // Draw lemming (will be scaled by zoom)
-            lemming.draw(this.ctx);
-        });
-
-        // UPDATE: Use ParticleManager instead of local particle array
-        if (window.particleManager) {
-            window.particleManager.update();
-            window.particleManager.draw(this.ctx);
-        }
-
-        // Clean up fully faded lemmings every 5 seconds
-        if (this.gameLoopCounter === undefined) {
-            this.gameLoopCounter = 0;
-        }
-
-        this.gameLoopCounter++;
-        if (this.gameLoopCounter % 300 === 0) {
-            this.cleanupDeadLemmings();
+        } else {
+            // During countdown, still draw existing lemmings but don't update them
+            this.lemmings.forEach(lemming => {
+                lemming.draw(this.ctx);
+            });
         }
 
         // Restore context (end zoom transformation)
         this.ctx.restore();
+
+        // Draw countdown overlay (after restoring context, so it's not zoomed)
+        if (this.countdownActive) {
+            this.drawCountdown(this.ctx);
+        }
 
         // Draw UI elements at normal scale (minimap, etc.)
         this.drawMinimap();
@@ -673,8 +765,10 @@ class Game {
         // Update UI
         this.updateStats();
 
-        // Check if level is complete
-        this.checkLevelComplete();
+        // Check if level is complete (only if game is running)
+        if (this.gameRunning) {
+            this.checkLevelComplete();
+        }
 
         // Continue game loop
         requestAnimationFrame(() => this.gameLoop());
