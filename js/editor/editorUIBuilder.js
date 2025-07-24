@@ -313,19 +313,43 @@ class EditorUIBuilder {
     }
 
     /**
-     * Select a music track
+     * Select a music track (updated method from editorUIBuilder.js)
      */
     selectMusic(musicPath) {
-        // Update the editor's level data
+        // Normalize the music path before storing
+        let normalizedPath = null;
+        
+        if (musicPath) {
+            // Remove LOCAL: prefix if present and normalize to assets/music format
+            if (musicPath.startsWith('LOCAL:')) {
+                const filename = musicPath.substring(6); // Remove 'LOCAL:' prefix
+                normalizedPath = `assets/music/${filename}`;
+            } else if (musicPath.startsWith('./assets/music/')) {
+                // Remove leading ./ if present
+                normalizedPath = musicPath.substring(2);
+            } else if (musicPath.startsWith('assets/music/')) {
+                // Already in correct format
+                normalizedPath = musicPath;
+            } else if (!musicPath.includes('/')) {
+                // Just a filename, add the path
+                normalizedPath = `assets/music/${musicPath}`;
+            } else {
+                // Extract filename and add proper path
+                const filename = musicPath.split('/').pop();
+                normalizedPath = `assets/music/${filename}`;
+            }
+        }
+        
+        // Update the editor's level data with normalized path
         if (window.editor) {
-            window.editor.levelData.musicFile = musicPath;
+            window.editor.levelData.musicFile = normalizedPath;
         }
 
         // Update the display
         const selectedMusicDiv = document.getElementById('selectedMusic');
         if (selectedMusicDiv) {
-            if (musicPath) {
-                const filename = musicPath.split('/').pop();
+            if (normalizedPath) {
+                const filename = normalizedPath.split('/').pop();
                 selectedMusicDiv.innerHTML = `<span>🎵 ${filename}</span>`;
             } else {
                 selectedMusicDiv.innerHTML = '<span>No music selected</span>';

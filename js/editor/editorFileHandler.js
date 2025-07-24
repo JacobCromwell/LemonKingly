@@ -28,13 +28,22 @@ class EditorFileHandler {
             this.editor.levelData.requiredLemmings = parseInt(document.getElementById('requiredLemmings').value);
             this.editor.levelData.spawnRate = parseInt(document.getElementById('spawnRate').value);
 
+            // Normalize music file path for saving
+            let normalizedMusicFile = null;
+            if (this.editor.levelData.musicFile) {
+                normalizedMusicFile = this.normalizeMusicPath(this.editor.levelData.musicFile);
+            }
+
             const levelData = {
                 name: this.editor.levelName,
                 width: this.editor.levelWidth,
                 height: this.editor.levelHeight,
                 spawn: this.editor.spawnPoint,
                 exit: this.editor.exitPoint,
-                levelSettings: this.editor.levelData, // This contains totalLemmings
+                levelSettings: {
+                    ...this.editor.levelData,
+                    musicFile: normalizedMusicFile // Use normalized path
+                },
                 hazards: this.editor.hazards.map(h => ({
                     x: h.x,
                     y: h.y,
@@ -68,6 +77,41 @@ class EditorFileHandler {
         } catch (error) {
             this.envManager.handleError(error, 'level saving');
         }
+    }
+
+    /**
+     * Normalize music file path for consistent saving
+     * Converts any local or development paths to standard assets/music format
+     * @param {string} musicPath - Original music path
+     * @returns {string} Normalized path
+     */
+    normalizeMusicPath(musicPath) {
+        if (!musicPath) return null;
+
+        // Remove LOCAL: prefix if present
+        if (musicPath.startsWith('LOCAL:')) {
+            const filename = musicPath.substring(6); // Remove 'LOCAL:' prefix
+            return `assets/music/${filename}`;
+        }
+
+        // If it already starts with assets/music, keep it as is
+        if (musicPath.startsWith('assets/music/')) {
+            return musicPath;
+        }
+
+        // If it starts with ./assets/music, remove the leading ./
+        if (musicPath.startsWith('./assets/music/')) {
+            return musicPath.substring(2); // Remove './' prefix
+        }
+
+        // If it's just a filename, add the assets/music path
+        if (!musicPath.includes('/')) {
+            return `assets/music/${musicPath}`;
+        }
+
+        // For any other case, try to extract just the filename and add proper path
+        const filename = musicPath.split('/').pop();
+        return `assets/music/${filename}`;
     }
 
     async loadLevel(file) {
@@ -281,7 +325,12 @@ class EditorFileHandler {
         try {
             this.envManager.devLog('Testing level...');
 
-            // Prepare test level data
+            // Prepare test level data with normalized music path
+            let normalizedMusicFile = null;
+            if (this.editor.levelData.musicFile) {
+                normalizedMusicFile = this.normalizeMusicPath(this.editor.levelData.musicFile);
+            }
+
             const testLevelData = {
                 name: this.editor.levelName || 'Test Level',
                 width: this.editor.levelWidth,
@@ -290,7 +339,8 @@ class EditorFileHandler {
                 exit: this.editor.exitPoint,
                 levelSettings: {
                     ...this.editor.levelData,
-                    totalLemmings: parseInt(document.getElementById('totalLemmingsInput')?.value) || 20
+                    totalLemmings: parseInt(document.getElementById('totalLemmingsInput')?.value) || 20,
+                    musicFile: normalizedMusicFile // Use normalized path for testing too
                 },
                 hazards: this.editor.hazards.map(h => ({
                     x: h.x,
