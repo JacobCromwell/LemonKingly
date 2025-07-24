@@ -330,3 +330,55 @@ body {
     cursor: pointer;
     border-radius: 50%;
 }
+
+/* Optional: Add pulsing effect to countdown overlay */
+@keyframes countdownPulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Optional: Add fade-in effect for "Get Ready!" text */
+@keyframes fadeInFromTop {
+    0% {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Style for paused game state indicator */
+.game-paused-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    text-align: center;
+    pointer-events: none;
+}
+
+/* Disable UI interactions during countdown */
+.countdown-active .actionButton,
+.countdown-active .speedControl,
+.countdown-active .endLevelButton {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.countdown-active #minimapCanvas {
+    pointer-events: none;
+    opacity: 0.7;
+}
