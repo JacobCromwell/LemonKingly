@@ -383,9 +383,10 @@ class Lemming {
         }
     }
 
-    // Updated build method for timed tile placement
+    // Updated build method for timed tile placement with collision detection
     build(terrain) {
         const lemmingHeight = this.getHeight();
+        const lemmingWidth = this.getWidth();
         const currentTime = Date.now();
 
         // If all tiles are placed, transition to walking state
@@ -393,10 +394,25 @@ class Lemming {
             this.state = LemmingState.WALKING;
             return;
         }
-        
+
         // If not enough time has passed since the last tile was placed, do nothing
         // The lemming remains in the BUILDING state, effectively "waiting".
         if (currentTime - this.lastBuildTime < BUILDING.tileDelay) {
+            return;
+        }
+
+        // COLLISION CHECK: Before placing the next tile, check for terrain collision
+        if (this.checkBuildingCollision(terrain)) {
+            // Collision detected! Place current tile and cancel building
+            this.placeBuildTile(terrain);
+
+            // Turn around and switch to walking
+            this.direction *= -1;
+            this.state = LemmingState.WALKING;
+            this.buildTilesPlaced = 0; // Reset for future building actions
+
+            // Play a sound to indicate building was blocked
+            audioManager.playSound('lastBricks');
             return;
         }
 
@@ -406,49 +422,108 @@ class Lemming {
             audioManager.playSound('lastBricks');
         }
 
-        this.lastBuildTime = currentTime; // Update the time of the current tile placement.
-
-        const stepWidth = 6;  // Width of each bridge tile.
-        const stepHeight = 2; // Height increment for each bridge tile.
-
-        let tileX;
-        let tileY;
-
-        // Calculate tile position based on current lemming position and direction.
-        // The first tile is placed directly under the lemming to start the bridge.
-        // Subsequent tiles are placed in front and slightly elevated.
-        if (this.buildTilesPlaced === 0) {
-            // For the very first tile, place it directly under the lemming's feet.
-            // This ensures the lemming has ground to stand on immediately.
-            tileY = this.y + lemmingHeight - 1;
-            tileX = this.x - 0.5; // Small adjustment for alignment.
-        } else {
-            // For subsequent tiles, they are placed in the direction the lemming is facing,
-            // and elevated to form a rising bridge.
-            tileY = this.y + lemmingHeight - stepHeight - 2;
-            tileX = this.x + (this.direction * stepWidth - 2);
-        }
-
-        // Add terrain at the calculated tile position.
-        if (this.direction === -1) { // If lemming is facing left.
-            // Adjust x-coordinate for left-facing lemming to place tile correctly.
-            terrain.addTerrain((tileX - stepWidth * 2) + 2, tileY, stepWidth, stepHeight + 1);
-        } else { // If lemming is facing right.
-            // Place tile in front of the lemming.
-            terrain.addTerrain(tileX - stepWidth / 2, tileY, stepWidth, stepHeight + 1);
-        }
-
-        this.buildTilesPlaced++; // Increment the count of tiles placed.
-        // Optional: Play a sound for each tile built.
-        // audioManager.playSound('builder_step');
-
-        // Move the lemming's position to stand on the newly placed tile.
-        // The lemming moves forward and up with each tile.
-        this.x = tileX;
-        this.y = tileY - lemmingHeight;
+        this.placeBuildTile(terrain);
 
         // The state remains BUILDING until all tiles are placed,
         // which is checked at the beginning of the next `update` call.
+    }
+
+    /**
+     * Calculate the position for the next build tile and resulting lemming position
+     * @returns {Object} {tileX, tileY, lemmingX, lemmingY}
+     */
+    calculateNextBuildPosition() {
+        const lemmingHeight = this.getHeight();
+        const stepWidth = 6;  // Width of each bridge tile
+        const stepHeight = 2; // Height increment for each bridge tile
+
+        let tileX, tileY, lemmingX, lemmingY;
+
+        if (this.buildTilesPlaced === 0) {
+            // For the very first tile, place it directly under the lemming's feet
+            tileY = this.y + lemmingHeight - 1;
+            tileX = this.x - 0.5; // Small adjustment for alignment
+            lemmingX = this.x;
+            lemmingY = this.y;
+        } else {
+            // For subsequent tiles, they are placed in the direction the lemming is facing,
+            // and elevated to form a rising bridge
+            tileY = this.y + lemmingHeight - stepHeight - 2;
+            tileX = this.x + (this.direction * stepWidth - 2);
+            lemmingX = tileX;
+            lemmingY = tileY - lemmingHeight;
+        }
+
+        return { tileX, tileY, lemmingX, lemmingY };
+    }
+
+    /**
+     * Check for terrain collision while building
+     * Returns true if the lemming would collide with terrain that blocks building
+     */
+    checkBuildingCollision(terrain) {
+        const lemmingHeight = this.getHeight();
+        const lemmingWidth = this.getWidth();
+
+        // Get the position where the lemming will be after placing the next tile
+        const { lemmingX: nextLemmingX, lemmingY: nextLemmingY } = this.calculateNextBuildPosition();
+
+        // Check for collision in building direction (front)
+        const checkDistance = lemmingWidth / 2 + 2; // Slightly ahead of lemming
+        const frontX = nextLemmingX + (this.direction * checkDistance);
+
+        // Check multiple points along the lemming's height for front collision
+        for (let checkY = nextLemmingY; checkY < nextLemmingY + lemmingHeight - 2; checkY += 2) {
+            if (terrain.hasGround(frontX, checkY)) {
+                return true; // Front collision detected
+            }
+        }
+
+        // Check for head/ceiling collision
+        const headY = nextLemmingY - 2; // Slightly above lemming's head
+        for (let checkX = nextLemmingX - lemmingWidth / 2; checkX <= nextLemmingX + lemmingWidth / 2; checkX += 2) {
+            if (terrain.hasGround(checkX, headY)) {
+                return true; // Ceiling collision detected
+            }
+        }
+
+        // Check if lemming body would intersect with terrain (but not ground below feet)
+        for (let checkX = nextLemmingX - lemmingWidth / 2; checkX <= nextLemmingX + lemmingWidth / 2; checkX += 2) {
+            for (let checkY = nextLemmingY; checkY < nextLemmingY + lemmingHeight - 2; checkY += 2) {
+                if (terrain.hasGround(checkX, checkY)) {
+                    return true; // Body collision detected
+                }
+            }
+        }
+
+        return false; // No collision detected
+    }
+
+    /**
+     * Place a single build tile (extracted from original build method)
+     */
+    placeBuildTile(terrain) {
+        const currentTime = Date.now();
+        const stepWidth = 6;  // Width of each bridge tile
+        const stepHeight = 2; // Height increment for each bridge tile
+
+        this.lastBuildTime = currentTime; // Update the time of the current tile placement
+
+        // Calculate tile and lemming positions using shared logic
+        const { tileX, tileY, lemmingX, lemmingY } = this.calculateNextBuildPosition();
+
+        // Add terrain at the calculated tile position
+        if (this.direction === -1) { // If lemming is facing left
+            terrain.addTerrain((tileX - stepWidth * 2) + 2, tileY, stepWidth, stepHeight + 1);
+        } else { // If lemming is facing right
+            terrain.addTerrain(tileX - stepWidth / 2, tileY, stepWidth, stepHeight + 1);
+        }
+
+        this.buildTilesPlaced++; // Increment the count of tiles placed
+
+        // Move the lemming's position to stand on the newly placed tile
+        this.x = lemmingX;
+        this.y = lemmingY;
     }
 
     mine(terrain) {
