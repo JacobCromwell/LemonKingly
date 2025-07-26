@@ -57,6 +57,72 @@
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
       "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "06BombsAndBlockers",
+      "name": "Bombs and bashers",
+      "filename": "06BombsAndBlockers.json",
+      "difficulty": "Easy",
+      "description": "An explosion at the right spot makes all the difference",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "07MindTheStep",
+      "name": "Mind the Step",
+      "filename": "07MindTheStep.json",
+      "difficulty": "Easy",
+      "description": "Mind that step",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "08Fun",
+      "name": "Not as hard as it looks",
+      "filename": "08Fun.json",
+      "difficulty": "Easy",
+      "description": "It's not as hard as it looks",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "09Fun",
+      "name": "Sometimes you get chopped",
+      "filename": "09Fun.json",
+      "difficulty": "Easy",
+      "description": "Dont get chopped",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "10Fun",
+      "name": "Not enough floaters",
+      "filename": "10Fun.json",
+      "difficulty": "Easy",
+      "description": "Thinking is required",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "11Keep your hair on Mr.Lemming",
+      "name": "Keep your hair on Mr.Lemming",
+      "filename": "11Keep your hair on Mr.Lemming.json",
+      "difficulty": "Easy",
+      "description": "Keep your hair on Mr.Lemming",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
     }
   ]
 }
