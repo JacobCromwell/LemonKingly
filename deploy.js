@@ -121,6 +121,7 @@ ${this.config.cloudFrontDistributionId ? `☁️ CloudFront: ${this.config.cloud
             if (entry.isDirectory()) {
                 // Skip directories that shouldn't be deployed
                 const skipDirs = [
+                    'music',
                     'assets/music',
                     'node_modules', 
                     '.git', 
