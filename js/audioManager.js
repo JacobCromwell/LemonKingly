@@ -489,10 +489,10 @@ class AudioManager {
                 osc.frequency.exponentialRampToValueAtTime(80, this.audioContext.currentTime + 0.08);
 
                 // Short, sharp noise burst for clatter
-                gain.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+                gain.gain.setValueAtTime(1, this.audioContext.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
 
-                noiseGain.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+                noiseGain.gain.setValueAtTime(0.8, this.audioContext.currentTime);
                 noiseGain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.05);
 
                 masterGain.gain.value = this.soundVolume / 100;
