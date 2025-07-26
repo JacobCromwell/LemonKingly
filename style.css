@@ -69,57 +69,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
-}
-
-/* Updated minimap positioning - place it underneath the toolbar */
-#minimapContainer {
-    position: relative; /* Changed from absolute */
-    background-color: rgba(0, 0, 0, 0.8);
-    border: 2px solid #666;
-    border-radius: 5px;
-    padding: 5px;
-    margin: 10px auto 0; /* Center horizontally with top margin */
-    width: fit-content; /* Size to content */
-}
-
-#minimapCanvas {
-    display: block;
-    border: 1px solid #444;
-    cursor: pointer;
-}
-
-#minimapContainer:hover {
-    border-color: #888;
-}
-
-/* Update gameUI to use flexbox layout for proper ordering */
-#gameUI {
-    background-color: #333;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
     align-items: center; /* Center the contents */
 }
 
-/* Ensure toolbar comes first */
-#toolbar {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    padding: 10px;
-    background-color: #444;
-    border-radius: 5px;
-    order: 1; /* Explicitly set toolbar order */
-}
-
-/* Set minimap to come after toolbar */
-#minimapContainer {
-    order: 2; /* Explicitly set minimap order */
-}
-
-/* Optional: Add some visual improvements */
+/* Updated minimap positioning - place it underneath the toolbar */
 #minimapContainer {
     position: relative;
     background-color: rgba(0, 0, 0, 0.8);
@@ -130,6 +83,13 @@ body {
     width: fit-content;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     transition: all 0.2s ease;
+    order: 2; /* Explicitly set minimap order */
+}
+
+#minimapCanvas {
+    display: block;
+    border: 1px solid #444;
+    cursor: pointer;
 }
 
 #minimapContainer:hover {
@@ -152,6 +112,7 @@ body {
     border: 1px solid #666;
 }
 
+/* Ensure toolbar comes first */
 #toolbar {
     display: flex;
     justify-content: center;
@@ -160,8 +121,10 @@ body {
     padding: 10px;
     background-color: #444;
     border-radius: 5px;
+    order: 1; /* Explicitly set toolbar order */
 }
 
+/* UPDATED ACTION BUTTON STYLING */
 .actionButton {
     position: relative;
     width: 60px;
@@ -177,6 +140,8 @@ body {
     align-items: center;
     justify-content: center;
     font-weight: bold;
+    padding: 4px;
+    box-sizing: border-box;
 }
 
 .actionButton:hover {
@@ -187,6 +152,32 @@ body {
 .actionButton.selected {
     background-color: #4CAF50;
     border-color: #6FCF70;
+}
+
+/* UPDATED ACTION COUNT STYLING - now appears above the action text */
+.actionCount {
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: 
+        -1px -1px 0 black,
+        1px -1px 0 black,
+        -1px 1px 0 black,
+        1px 1px 0 black,
+        0 -1px 0 black,
+        0 1px 0 black,
+        -1px 0 0 black,
+        1px 0 0 black;
+    margin-bottom: 2px;
+    line-height: 1;
+}
+
+/* Action text styling to match the count */
+.actionButton > div:not(.actionCount) {
+    font-size: 12px;
+    margin-top: 2px;
+    line-height: 1;
+    text-align: center;
 }
 
 /* Nuke button special styling */
@@ -212,22 +203,6 @@ body {
     to {
         box-shadow: 0 0 20px rgba(255, 68, 68, 0.6);
     }
-}
-
-.actionCount {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background-color: #ff6b6b;
-    color: white;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
 }
 
 .speedControl {

@@ -31,6 +31,7 @@
 
         <div id="gameUI" class="hidden">
             <!-- Update the toolbar section in index.html -->
+            <!-- Updated toolbar section - replace the existing toolbar div in index.html -->
             <div id="toolbar">
                 <!-- Add pause button before the STOP button -->
                 <button class="actionButton" data-action="pause" onclick="game.selectAction('pause')"
@@ -41,36 +42,44 @@
 
                 <button class="actionButton" data-action="blocker" onclick="game.selectAction('blocker')">
                     <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">STOP</div>
+                    <div style="font-size: 12px; margin-top: 2px;">STOP</div>
                 </button>
+
                 <button class="actionButton" data-action="basher" onclick="game.selectAction('basher')">
                     <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">BASH</div>
+                    <div style="font-size: 12px; margin-top: 2px;">BASH</div>
                 </button>
+
                 <button class="actionButton" data-action="digger" onclick="game.selectAction('digger')">
                     <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">DIG</div>
+                    <div style="font-size: 12px; margin-top: 2px;">DIG</div>
                 </button>
+
                 <button class="actionButton" data-action="builder" onclick="game.selectAction('builder')">
                     <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">BUILD</div>
+                    <div style="font-size: 12px; margin-top: 2px;">BUILD</div>
                 </button>
+
                 <button class="actionButton" data-action="climber" onclick="game.selectAction('climber')">
                     <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">CLIMB</div>
+                    <div style="font-size: 12px; margin-top: 2px;">CLIMB</div>
                 </button>
+
                 <button class="actionButton" data-action="floater" onclick="game.selectAction('floater')">
                     <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">FLOAT</div>
+                    <div style="font-size: 12px; margin-top: 2px;">FLOAT</div>
                 </button>
+
                 <button class="actionButton" data-action="miner" onclick="game.selectAction('miner')">
                     <span class="actionCount">5</span>
-                    <div style="font-size: 12px; margin-top: 5px;">MINE</div>
+                    <div style="font-size: 12px; margin-top: 2px;">MINE</div>
                 </button>
+
                 <button class="actionButton" data-action="exploder" onclick="game.selectAction('exploder')">
                     <span class="actionCount">50</span>
-                    <div style="font-size: 12px; margin-top: 5px;">BOMB</div>
+                    <div style="font-size: 12px; margin-top: 2px;">BOMB</div>
                 </button>
+
                 <button class="actionButton nuke" data-action="nuke" onclick="game.applyNuke()">
                     <div style="font-size: 24px; margin-top: 8px;">💥</div>
                     <div style="font-size: 12px; margin-top: 2px;">NUKE</div>
