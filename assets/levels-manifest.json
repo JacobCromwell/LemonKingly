@@ -123,6 +123,61 @@
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
       "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "12Patience",
+      "name": "Patience",
+      "filename": "12Patience.json",
+      "difficulty": "Easy",
+      "description": "Bash and wait, then do some more stuff",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "13We All Fall Down",
+      "name": "13We All Fall Down",
+      "filename": "13We All Fall Down.json",
+      "difficulty": "Easy",
+      "description": "It is too high to jump",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "14Origin And Lemmings",
+      "name": "14Origins And Lemmings",
+      "filename": "14Origin And Lemmings.json",
+      "difficulty": "Easy",
+      "description": "It is too high to jump",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "15Dont Be Fooled",
+      "name": "15Dont Be Fooled",
+      "filename": "15Dont Be Fooled.json",
+      "difficulty": "Easy",
+      "description": "Dont let your eyes fool you.",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
+    },
+    {
+      "id": "16Dont Be Too Hasty",
+      "name": "16Dont Be Too Hasty",
+      "filename": "16Dont Be Too Hasty.json",
+      "difficulty": "Easy",
+      "description": "If you all run at once you all die at once.",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": ["beginner", "fun", "tutorial"]
     }
   ]
 }

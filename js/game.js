@@ -153,6 +153,9 @@ class Game {
     }
 
     startLevel() {
+        // IMPORTANT: Stop all music before starting new level
+        this.stopAllMusic();
+
         // Check if this is a custom level test
         const testLevelData = sessionStorage.getItem('testLevel');
         if (!testLevelData) {
@@ -201,9 +204,6 @@ class Game {
 
         // Set spawn timing - but don't allow spawning during countdown
         this.lastSpawnTime = Date.now() + this.countdownDuration;
-
-        // Start music if loaded
-        audioManager.playMusic();
 
         // Update UI to show current level settings
         this.updateActionCounts();
@@ -267,6 +267,9 @@ class Game {
     }
 
     testLevelFromEditor() {
+        // IMPORTANT: Stop all music before starting test level
+        this.stopAllMusic();
+
         // Get test level data from sessionStorage
         const testLevelData = JSON.parse(sessionStorage.getItem('testLevel'));
         if (!testLevelData) {
@@ -464,6 +467,9 @@ class Game {
 
     async loadLevelMusic(musicPath) {
         try {
+            // Stop any currently playing music first
+            this.stopAllMusic();
+
             // Load music manager if not already loaded
             if (!window.musicManager) {
                 const script = document.createElement('script');
@@ -482,6 +488,23 @@ class Game {
             console.error('Failed to load level music:', musicPath, error);
             // Continue without music
         }
+    }
+
+    /**
+ * NEW: Centralized method to stop all music sources
+ */
+    stopAllMusic() {
+        // Stop music through musicManager (preferred method)
+        if (window.musicManager && window.musicManager.stopAllMusic) {
+            window.musicManager.stopAllMusic();
+        }
+
+        // Fallback: Also stop through audioManager
+        if (window.audioManager) {
+            window.audioManager.pauseMusic();
+        }
+
+        console.log('Game: All music stopped');
     }
 
     // Center camera on spawn point
@@ -1008,13 +1031,8 @@ class Game {
         // Clear test level data
         sessionStorage.removeItem('testLevel');
 
-        // Pause music when returning to menu
-        audioManager.pauseMusic();
-
-        // Stop music when returning to menu
-        if (window.musicManager) {
-            window.musicManager.stopMusic();
-        }
+        // IMPORTANT: Stop all music when returning to menu
+        this.stopAllMusic();
     }
 
     quit() {
