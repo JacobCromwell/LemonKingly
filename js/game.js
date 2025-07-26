@@ -41,6 +41,13 @@ class Game {
 
         this.isPaused = false;
 
+        // NEW: Nuke state tracking
+        this.nukeActivated = false;
+        this.nukeInProgress = false;
+        this.nukeLemmingIndex = 0;
+        this.lastNukeTime = 0;
+        this.nukeDelay = 25; // 25ms delay between each lemming
+
         this.canvas.addEventListener('click', this.handleClick.bind(this));
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
 
@@ -172,6 +179,12 @@ class Game {
         this.gameRunning = false; // Start as paused for countdown
         this.levelComplete = false;
 
+        // Reset nuke state when starting a new level
+        this.nukeActivated = false;
+        this.nukeInProgress = false;
+        this.nukeLemmingIndex = 0;
+        this.lastNukeTime = 0;
+
         // Initialize countdown
         this.countdownActive = true;
         this.countdownStartTime = Date.now();
@@ -277,6 +290,12 @@ class Game {
         this.lemmingsSaved = 0;
         this.gameRunning = false; // Start as paused for countdown
         this.levelComplete = false;
+
+        // Reset nuke state
+        this.nukeActivated = false;
+        this.nukeInProgress = false;
+        this.nukeLemmingIndex = 0;
+        this.lastNukeTime = 0;
 
         // Initialize countdown
         this.countdownActive = true;
@@ -588,25 +607,54 @@ class Game {
         }
     }
 
-    // Apply nuke action to all active lemmings
+    // UPDATED: Enhanced nuke action with sequential timing and spawn prevention
     applyNuke() {
-        if (!this.gameRunning) return;
+        if (!this.gameRunning || this.nukeActivated) return;
 
         // Play nuke sound effect
         audioManager.playSound('nuke');
 
-        let lemmingsNuked = 0;
+        // Activate nuke - this stops future spawning
+        this.nukeActivated = true;
+        this.nukeInProgress = true;
+        this.nukeLemmingIndex = 0;
+        this.lastNukeTime = Date.now();
 
-        // Apply exploder without checking action counts
-        this.lemmings.forEach(lemming => {
-            if (lemming.state !== LemmingState.SAVED) {
-                if (lemming.applyAction(ActionType.EXPLODER)) {
-                    lemmingsNuked++;
+        console.log(`Nuke activated! Stopping future spawns. Will explode ${this.lemmings.length} existing lemmings sequentially.`);
+    }
+
+    // NEW: Process nuke timing during game loop
+    processNuke() {
+        if (!this.nukeInProgress) return;
+
+        const currentTime = Date.now();
+
+        // Check if enough time has passed for the next lemming
+        if (currentTime - this.lastNukeTime >= this.nukeDelay) {
+            // Find the next lemming that hasn't been nuked yet
+            while (this.nukeLemmingIndex < this.lemmings.length) {
+                const lemming = this.lemmings[this.nukeLemmingIndex];
+
+                // Skip lemmings that are already dead or saved
+                if (lemming.state !== LemmingState.DEAD && lemming.state !== LemmingState.SAVED) {
+                    // Apply exploder action to this lemming
+                    if (lemming.applyAction(ActionType.EXPLODER)) {
+                        console.log(`Nuke: Applied exploder to lemming ${this.nukeLemmingIndex + 1}`);
+                    }
+
+                    this.nukeLemmingIndex++;
+                    this.lastNukeTime = currentTime;
+                    return; // Exit to wait for next delay
                 }
-            }
-        });
 
-        console.log(`Nuke activated! ${lemmingsNuked} lemmings set to explode.`);
+                // Skip this lemming and move to next
+                this.nukeLemmingIndex++;
+            }
+
+            // All lemmings have been processed
+            this.nukeInProgress = false;
+            console.log('Nuke sequence complete');
+        }
     }
 
     // Add countdown update method
@@ -749,8 +797,13 @@ class Game {
             // Update hazards
             this.level.updateHazards();
 
-            // Spawn lemmings
-            this.spawnLemming();
+            // Process nuke timing if active
+            this.processNuke();
+
+            // Spawn lemmings (but not if nuke is activated)
+            if (!this.nukeActivated) {
+                this.spawnLemming();
+            }
 
             // Update and draw lemmings
             this.lemmings.forEach(lemming => {
@@ -946,6 +999,12 @@ class Game {
         this.levelEditor.classList.add('hidden');
         this.menu.classList.remove('hidden');
 
+        // Reset nuke state when returning to menu
+        this.nukeActivated = false;
+        this.nukeInProgress = false;
+        this.nukeLemmingIndex = 0;
+        this.lastNukeTime = 0;
+
         // Clear test level data
         sessionStorage.removeItem('testLevel');
 
@@ -1032,8 +1091,10 @@ class Game {
         document.getElementById('spawnRate').textContent = (this.level.spawnRate / 1000).toFixed(1) + 's';
     }
 
+    // UPDATED: Modified to respect nuke activation
     spawnLemming() {
-        if (this.isPaused) return;
+        if (this.isPaused || this.nukeActivated) return; // Don't spawn if nuke is activated
+
         if (this.lemmingsSpawned < this.level.totalLemmings) {
             const currentTime = Date.now();
             if (currentTime - this.lastSpawnTime >= this.level.spawnRate) {
@@ -1046,6 +1107,7 @@ class Game {
         }
     }
 
+    // UPDATED: Modified to count unspawned lemmings as dead when nuke is activated
     updateStats() {
         document.getElementById('lemmingsOut').textContent = this.lemmingsSpawned;
         document.getElementById('totalLemmings').textContent = this.level.totalLemmings;
@@ -1063,8 +1125,9 @@ class Game {
         document.getElementById('spawnRate').textContent = (this.level.spawnRate / 1000).toFixed(1) + 's';
     }
 
+    // UPDATED: Modified to account for nuke preventing spawns
     checkLevelComplete() {
-        const allSpawned = this.lemmingsSpawned >= this.level.totalLemmings;
+        const allSpawned = this.lemmingsSpawned >= this.level.totalLemmings || this.nukeActivated;
 
         // Check if all lemmings are either saved or fully dead (completely faded)
         const noActiveLemmings = this.lemmings.every(l =>
@@ -1144,5 +1207,4 @@ class Game {
         // This is called periodically to keep the lemmings array from growing too large
         this.lemmings = this.lemmings.filter(lemming => !lemming.isFullyDead);
     }
-
 }
