@@ -434,8 +434,6 @@ class Lemming {
      */
     calculateNextBuildPosition() {
         const lemmingHeight = this.getHeight();
-        const stepWidth = 6;  // Width of each bridge tile
-        const stepHeight = 2; // Height increment for each bridge tile
 
         let tileX, tileY, lemmingX, lemmingY;
 
@@ -448,8 +446,8 @@ class Lemming {
         } else {
             // For subsequent tiles, they are placed in the direction the lemming is facing,
             // and elevated to form a rising bridge
-            tileY = this.y + lemmingHeight - stepHeight - 2;
-            tileX = this.x + (this.direction * stepWidth - 2);
+            tileY = this.y + lemmingHeight - BUILDING.tileHeight - 2;
+            tileX = this.x + (this.direction * BUILDING.tileWidth - 2);
             lemmingX = tileX;
             lemmingY = tileY - lemmingHeight;
         }
@@ -468,18 +466,7 @@ class Lemming {
         // Get the position where the lemming will be after placing the next tile
         const { lemmingX: nextLemmingX, lemmingY: nextLemmingY } = this.calculateNextBuildPosition();
 
-        // Check for collision in building direction (front)
-        const checkDistance = lemmingWidth / 2 + 2; // Slightly ahead of lemming
-        const frontX = nextLemmingX + (this.direction * checkDistance);
-
-        // Check multiple points along the lemming's height for front collision
-        for (let checkY = nextLemmingY; checkY < nextLemmingY + lemmingHeight - 2; checkY += 2) {
-            if (terrain.hasGround(frontX, checkY)) {
-                return true; // Front collision detected
-            }
-        }
-
-        // Check for head/ceiling collision
+        // 1. Check for ceiling collision
         const headY = nextLemmingY - 2; // Slightly above lemming's head
         for (let checkX = nextLemmingX - lemmingWidth / 2; checkX <= nextLemmingX + lemmingWidth / 2; checkX += 2) {
             if (terrain.hasGround(checkX, headY)) {
@@ -487,11 +474,19 @@ class Lemming {
             }
         }
 
-        // Check if lemming body would intersect with terrain (but not ground below feet)
-        for (let checkX = nextLemmingX - lemmingWidth / 2; checkX <= nextLemmingX + lemmingWidth / 2; checkX += 2) {
+        // 2. Check if the lemming's body would be inside terrain IN FRONT of them
+        // Only check the front half of the lemming's body in the direction they're moving
+        const frontHalfStartX = nextLemmingX;
+        const frontHalfEndX = nextLemmingX + (this.direction * lemmingWidth / 2);
+
+        const startX = Math.min(frontHalfStartX, frontHalfEndX);
+        const endX = Math.max(frontHalfStartX, frontHalfEndX);
+
+        // Check the front portion of the lemming's body for terrain collision
+        for (let checkX = startX; checkX <= endX; checkX += 2) {
             for (let checkY = nextLemmingY; checkY < nextLemmingY + lemmingHeight - 2; checkY += 2) {
                 if (terrain.hasGround(checkX, checkY)) {
-                    return true; // Body collision detected
+                    return true; // Front body collision detected
                 }
             }
         }
@@ -504,8 +499,6 @@ class Lemming {
      */
     placeBuildTile(terrain) {
         const currentTime = Date.now();
-        const stepWidth = 6;  // Width of each bridge tile
-        const stepHeight = 2; // Height increment for each bridge tile
 
         this.lastBuildTime = currentTime; // Update the time of the current tile placement
 
@@ -514,9 +507,9 @@ class Lemming {
 
         // Add terrain at the calculated tile position
         if (this.direction === -1) { // If lemming is facing left
-            terrain.addTerrain((tileX - stepWidth * 2) + 2, tileY, stepWidth, stepHeight + 1);
+            terrain.addTerrain((tileX - BUILDING.tileWidth * 2) + 2, tileY, BUILDING.tileWidth, BUILDING.tileHeight + 1);
         } else { // If lemming is facing right
-            terrain.addTerrain(tileX - stepWidth / 2, tileY, stepWidth, stepHeight + 1);
+            terrain.addTerrain(tileX - BUILDING.tileWidth / 2, tileY, BUILDING.tileWidth, BUILDING.tileHeight + 1);
         }
 
         this.buildTilesPlaced++; // Increment the count of tiles placed
