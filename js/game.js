@@ -223,6 +223,7 @@ class Game {
         }
     }
 
+    // Updated loadEditorScripts method in game.js
     loadEditorScripts() {
         // Scripts to load in order - ALL PATHS ARE RELATIVE
         const editorScripts = [
@@ -232,10 +233,6 @@ class Game {
             'js/editor/editorToolsHandler.js',
             'js/editor/editorImageHandler.js',
             'js/editor/editorFileHandler.js',
-            'js/terrain/polygonUtils.js',
-            'js/terrain/indestructibleTerrain.js',
-            'js/editor/shapeDrawer.js',
-            'js/editor/terrainMenu.js',
             'js/editor/levelEditor.js'
         ];
 

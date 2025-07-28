@@ -558,23 +558,6 @@ class Lemming {
                 return;
             }
 
-            // Check for indestructible terrain if editor is available
-            if (window.editor && window.editor.terrainManager) {
-                const checkBounds = {
-                    x: swingX - tunnelRadius,
-                    y: swingY - tunnelRadius,
-                    width: tunnelRadius * 2,
-                    height: tunnelRadius * 2
-                };
-
-                if (window.editor.checkIndestructibleCollision(checkBounds)) {
-                    this.state = LemmingState.WALKING;
-                    this.miningProgress = 0;
-                    audioManager.playSound('miner');
-                    return;
-                }
-            }
-
             // Remove terrain in circular area
             for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
                 for (let r = 0; r < tunnelRadius; r += 1) {
