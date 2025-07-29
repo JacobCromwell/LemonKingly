@@ -12,7 +12,11 @@
       "requiredLemmings": 10,
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
-      "tags": ["beginner", "fun", "tutorial"]
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
     },
     {
       "id": "02Floaters",
@@ -23,7 +27,11 @@
       "requiredLemmings": 10,
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
-      "tags": ["beginner", "fun", "tutorial"]
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
     },
     {
       "id": "03Blockers",
@@ -34,7 +42,11 @@
       "requiredLemmings": 10,
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
-      "tags": ["beginner", "fun", "tutorial"]
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
     },
     {
       "id": "04Fun",
@@ -45,7 +57,11 @@
       "requiredLemmings": 10,
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
-      "tags": ["beginner", "fun", "tutorial"]
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
     },
     {
       "id": "05Bashers",
@@ -56,7 +72,11 @@
       "requiredLemmings": 10,
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
-      "tags": ["beginner", "fun", "tutorial"]
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
     },
     {
       "id": "06BombsAndBlockers",
@@ -67,7 +87,11 @@
       "requiredLemmings": 10,
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
-      "tags": ["beginner", "fun", "tutorial"]
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
     },
     {
       "id": "07MindTheStep",
@@ -78,7 +102,11 @@
       "requiredLemmings": 10,
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
-      "tags": ["beginner", "fun", "tutorial"]
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
     },
     {
       "id": "08Fun",
@@ -89,7 +117,11 @@
       "requiredLemmings": 10,
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
-      "tags": ["beginner", "fun", "tutorial"]
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
     },
     {
       "id": "09Fun",
@@ -100,7 +132,11 @@
       "requiredLemmings": 10,
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
-      "tags": ["beginner", "fun", "tutorial"]
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
     },
     {
       "id": "10Fun",
@@ -111,7 +147,11 @@
       "requiredLemmings": 10,
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
-      "tags": ["beginner", "fun", "tutorial"]
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
     },
     {
       "id": "11Keep your hair on Mr.Lemming",
@@ -122,7 +162,116 @@
       "requiredLemmings": 10,
       "totalLemmings": 20,
       "estimatedTime": "2-3 minutes",
-      "tags": ["beginner", "fun", "tutorial"]
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
+    },
+    {
+      "id": "12Patience",
+      "name": "12Patience",
+      "filename": "12Patience.json",
+      "difficulty": "Easy",
+      "description": "12Patience",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
+    },
+    {
+      "id": "13We All Fall Down",
+      "name": "13We All Fall Down",
+      "filename": "13We All Fall Down.json",
+      "difficulty": "Easy",
+      "description": "You wont survive the fall alone",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
+    },
+    {
+      "id": "14Origin And Lemmings",
+      "name": "14Origin And Lemmings",
+      "filename": "14Origin And Lemmings.json",
+      "difficulty": "Easy",
+      "description": "We all know this story!",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
+    },
+    {
+      "id": "15Dont Be Fooled",
+      "name": "15Dont Be Fooled",
+      "filename": "15Dont Be Fooled.json",
+      "difficulty": "Easy",
+      "description": "Building bridges is dangerous",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
+    },
+    {
+      "id": "16Dont Be Too Hasty",
+      "name": "16Dont Be Too Hasty",
+      "filename": "16Dont Be Too Hasty.json",
+      "difficulty": "Easy",
+      "description": "Stay in line! Stay orderly! Or you cant have any pudding!",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
+    },
+    {
+      "id": "17Heaven",
+      "name": "17Heaven",
+      "filename": "17Heaven.json",
+      "difficulty": "Easy",
+      "description": "Welcome to Heaven, papers please!",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
+    },
+    {
+      "id": "18Block and Blow",
+      "name": "18Block and Blow",
+      "filename": "18Block and Blow.json",
+      "difficulty": "Easy",
+      "description": "Those are not hot tubs!",
+      "requiredLemmings": 10,
+      "totalLemmings": 20,
+      "estimatedTime": "2-3 minutes",
+      "tags": [
+        "beginner",
+        "fun",
+        "tutorial"
+      ]
     }
   ]
 }

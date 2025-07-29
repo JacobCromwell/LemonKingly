@@ -13,7 +13,7 @@ const LEMMING_CONFIG = {
 
 // Physics constants
 const PHYSICS = {
-    maxFallHeight: 60,
+    maxFallHeight: 64,
     climbHeight: 10,
     gravity: 2,
     walkSpeed: 0.65,
