@@ -1,4 +1,6 @@
-// Simplified Lemming class with dead code removed
+// Updated js/lemming.js - Add IDT collision checking for terrain removal actions
+
+// Simplified Lemming class with dead code removed and IDT support
 class Lemming {
     constructor(x, y, zoom = 1.0) {
         this.x = x;
@@ -290,6 +292,7 @@ class Lemming {
         }
     }
 
+    // UPDATED: Check for IDT before bashing
     bash(terrain) {
         const lemmingWidth = this.getWidth();
         const lemmingHeight = this.getHeight();
@@ -297,6 +300,14 @@ class Lemming {
         const bashX = this.x + (this.direction * (lemmingWidth / 2 + 2));
         const bashWidth = 6;
         const bashHeight = lemmingHeight;
+
+        // NEW: Check if bashing area contains indestructible terrain
+        if (terrain.hasIndestructibleTerrain(bashX - bashWidth / 2, this.y + 1, bashWidth * 2, bashHeight)) {
+            // Hit IDT - stop bashing and return to walking
+            this.state = LemmingState.WALKING;
+            console.log('Basher stopped by indestructible terrain');
+            return;
+        }
 
         let foundObstacle = false;
 
@@ -314,21 +325,27 @@ class Lemming {
         if (foundObstacle) {
             const color = terrain.removeTerrain((bashX - 1) - bashWidth / 2, this.y + 1, bashWidth * 2, bashHeight);
 
-            // Create particles with directional velocity
-            if (window.particleManager) {
-                for (let i = 0; i < 10; i++) {
-                    window.particleManager.getParticle(
-                        bashX + Math.random() * bashWidth - bashWidth / 2,
-                        this.y + Math.random() * bashHeight,
-                        color || '#8B4513',
-                        this.direction * (Math.random() * 3 + 1), // Particles fly in bash direction
-                        Math.random() * 2 - 3
-                    );
+            // Only create particles and advance if terrain was actually removed
+            if (color) {
+                // Create particles with directional velocity
+                if (window.particleManager) {
+                    for (let i = 0; i < 10; i++) {
+                        window.particleManager.getParticle(
+                            bashX + Math.random() * bashWidth - bashWidth / 2,
+                            this.y + Math.random() * bashHeight,
+                            color || '#8B4513',
+                            this.direction * (Math.random() * 3 + 1), // Particles fly in bash direction
+                            Math.random() * 2 - 3
+                        );
+                    }
                 }
-            }
 
-            this.x += this.direction * 0.25;
-            audioManager.playSound('basher'); // Add sound effect
+                this.x += this.direction * 0.25;
+                audioManager.playSound('basher'); // Add sound effect
+            } else {
+                // Could not remove terrain (IDT encountered) - stop bashing
+                this.state = LemmingState.WALKING;
+            }
         } else {
             // Check if we can walk forward
             if (!terrain.hasGround(this.x + this.direction * PHYSICS.walkSpeed, this.y + lemmingHeight / 2)) {
@@ -339,6 +356,7 @@ class Lemming {
         }
     }
 
+    // UPDATED: Check for IDT before digging
     dig(terrain) {
         const lemmingWidth = this.getWidth();
         const lemmingHeight = this.getHeight();
@@ -346,6 +364,14 @@ class Lemming {
         const digY = this.y + lemmingHeight;
         const digWidth = lemmingWidth + 4;
         const digHeight = 4;
+
+        // NEW: Check if digging area contains indestructible terrain
+        if (terrain.hasIndestructibleTerrain(this.x - digWidth / 2, digY - 1, digWidth, digHeight)) {
+            // Hit IDT - stop digging and return to walking
+            this.state = LemmingState.WALKING;
+            console.log('Digger stopped by indestructible terrain');
+            return;
+        }
 
         let foundGround = false;
 
@@ -359,19 +385,25 @@ class Lemming {
         if (foundGround) {
             const color = terrain.removeTerrain(this.x - digWidth / 2, (digY - 1), digWidth, digHeight);
 
-            if (window.particleManager) {
-                for (let i = 0; i < 10; i++) {
-                    window.particleManager.getParticle(
-                        this.x + Math.random() * digWidth - digHeight / 2,
-                        this.y + Math.random() * digHeight,
-                        color || '#8B4513',
-                        this.direction * (Math.random() * 3 + 1), // Particles fly in bash direction
-                        Math.random() * 2 - 3
-                    );
+            // Only advance if terrain was actually removed
+            if (color) {
+                if (window.particleManager) {
+                    for (let i = 0; i < 10; i++) {
+                        window.particleManager.getParticle(
+                            this.x + Math.random() * digWidth - digHeight / 2,
+                            this.y + Math.random() * digHeight,
+                            color || '#8B4513',
+                            this.direction * (Math.random() * 3 + 1),
+                            Math.random() * 2 - 3
+                        );
+                    }
                 }
-            }
 
-            this.y += 0.5;
+                this.y += 0.5;
+            } else {
+                // Could not remove terrain (IDT encountered) - stop digging
+                this.state = LemmingState.WALKING;
+            }
         } else {
             // No more ground to dig
             if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
@@ -383,7 +415,7 @@ class Lemming {
         }
     }
 
-    // Updated build method for timed tile placement with collision detection
+    // Updated build method for timed tile placement with collision detection (unchanged - builders not affected by IDT)
     build(terrain) {
         const lemmingHeight = this.getHeight();
         const lemmingWidth = this.getWidth();
@@ -396,7 +428,6 @@ class Lemming {
         }
 
         // If not enough time has passed since the last tile was placed, do nothing
-        // The lemming remains in the BUILDING state, effectively "waiting".
         if (currentTime - this.lastBuildTime < BUILDING.tileDelay) {
             return;
         }
@@ -417,35 +448,24 @@ class Lemming {
         }
 
         // It's time to place a new tile.
-        // Play 'lastBricks' sound if it's one of the last 3 tiles, and only once per tile.
         if (this.buildTilesPlaced >= (BUILDING.maxTiles - 3) && this.buildTilesPlaced < BUILDING.maxTiles) {
             audioManager.playSound('lastBricks');
         }
 
         this.placeBuildTile(terrain);
-
-        // The state remains BUILDING until all tiles are placed,
-        // which is checked at the beginning of the next `update` call.
     }
 
-    /**
-     * Calculate the position for the next build tile and resulting lemming position
-     * @returns {Object} {tileX, tileY, lemmingX, lemmingY}
-     */
     calculateNextBuildPosition() {
         const lemmingHeight = this.getHeight();
 
         let tileX, tileY, lemmingX, lemmingY;
 
         if (this.buildTilesPlaced === 0) {
-            // For the very first tile, place it directly under the lemming's feet
             tileY = this.y + lemmingHeight - 1;
-            tileX = this.x - 0.5; // Small adjustment for alignment
+            tileX = this.x - 0.5;
             lemmingX = this.x;
             lemmingY = this.y;
         } else {
-            // For subsequent tiles, they are placed in the direction the lemming is facing,
-            // and elevated to form a rising bridge
             tileY = this.y + lemmingHeight - BUILDING.tileHeight - 2;
             tileX = this.x + (this.direction * BUILDING.tileWidth - 2);
             lemmingX = tileX;
@@ -455,70 +475,58 @@ class Lemming {
         return { tileX, tileY, lemmingX, lemmingY };
     }
 
-    /**
-     * Check for terrain collision while building
-     * Returns true if the lemming would collide with terrain that blocks building
-     */
     checkBuildingCollision(terrain) {
         const lemmingHeight = this.getHeight();
         const lemmingWidth = this.getWidth();
 
-        // Get the position where the lemming will be after placing the next tile
         const { lemmingX: nextLemmingX, lemmingY: nextLemmingY } = this.calculateNextBuildPosition();
 
-        // 1. Check for ceiling collision
-        const headY = nextLemmingY - 2; // Slightly above lemming's head
+        // Check for ceiling collision
+        const headY = nextLemmingY - 2;
         for (let checkX = nextLemmingX - lemmingWidth / 2; checkX <= nextLemmingX + lemmingWidth / 2; checkX += 2) {
             if (terrain.hasGround(checkX, headY)) {
-                return true; // Ceiling collision detected
+                return true;
             }
         }
 
-        // 2. Check if the lemming's body would be inside terrain IN FRONT of them
-        // Only check the front half of the lemming's body in the direction they're moving
+        // Check front body collision
         const frontHalfStartX = nextLemmingX;
         const frontHalfEndX = nextLemmingX + (this.direction * lemmingWidth / 2);
 
         const startX = Math.min(frontHalfStartX, frontHalfEndX);
         const endX = Math.max(frontHalfStartX, frontHalfEndX);
 
-        // Check the front portion of the lemming's body for terrain collision
         for (let checkX = startX; checkX <= endX; checkX += 2) {
             for (let checkY = nextLemmingY; checkY < nextLemmingY + lemmingHeight - 2; checkY += 2) {
                 if (terrain.hasGround(checkX, checkY)) {
-                    return true; // Front body collision detected
+                    return true;
                 }
             }
         }
 
-        return false; // No collision detected
+        return false;
     }
 
-    /**
-     * Place a single build tile (extracted from original build method)
-     */
     placeBuildTile(terrain) {
         const currentTime = Date.now();
 
-        this.lastBuildTime = currentTime; // Update the time of the current tile placement
+        this.lastBuildTime = currentTime;
 
-        // Calculate tile and lemming positions using shared logic
         const { tileX, tileY, lemmingX, lemmingY } = this.calculateNextBuildPosition();
 
-        // Add terrain at the calculated tile position
-        if (this.direction === -1) { // If lemming is facing left
+        if (this.direction === -1) {
             terrain.addTerrain((tileX - BUILDING.tileWidth * 2) + 2, tileY, BUILDING.tileWidth, BUILDING.tileHeight + 1);
-        } else { // If lemming is facing right
+        } else {
             terrain.addTerrain(tileX - BUILDING.tileWidth / 2, tileY, BUILDING.tileWidth, BUILDING.tileHeight + 1);
         }
 
-        this.buildTilesPlaced++; // Increment the count of tiles placed
+        this.buildTilesPlaced++;
 
-        // Move the lemming's position to stand on the newly placed tile
         this.x = lemmingX;
         this.y = lemmingY;
     }
 
+    // UPDATED: Check for IDT before mining
     mine(terrain) {
         const lemmingHeight = this.getHeight();
 
@@ -532,6 +540,20 @@ class Lemming {
 
             const swingX = this.x + (this.direction * tunnelRadius * 1.5 * Math.cos(angleRad));
             const swingY = this.y + lemmingHeight + (tunnelRadius * Math.sin(angleRad));
+
+            // NEW: Check if mining area contains indestructible terrain
+            if (terrain.hasIndestructibleTerrain(
+                swingX - tunnelRadius, 
+                swingY - tunnelRadius, 
+                tunnelRadius * 2, 
+                tunnelRadius * 2
+            )) {
+                // Hit IDT - stop mining and return to walking
+                this.state = LemmingState.WALKING;
+                this.miningProgress = 0;
+                console.log('Miner stopped by indestructible terrain');
+                return;
+            }
 
             // Check if there's still terrain to mine
             let foundTerrain = false;
@@ -558,23 +580,38 @@ class Lemming {
                 return;
             }
 
-            // Remove terrain in circular area
+            // Remove terrain in circular area - but skip IDT pixels
+            let removedAnyTerrain = false;
             for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
                 for (let r = 0; r < tunnelRadius; r += 1) {
                     const removeX = swingX + Math.cos(angle) * r;
                     const removeY = swingY + Math.sin(angle) * r;
-                    terrain.removeTerrainPixel(Math.floor(removeX), Math.floor(removeY));
+                    const pixelX = Math.floor(removeX);
+                    const pixelY = Math.floor(removeY);
+                    
+                    // Only remove if not indestructible
+                    if (terrain.hasGround(pixelX, pixelY) && !terrain.isIndestructible(pixelX, pixelY)) {
+                        terrain.removeTerrainPixel(pixelX, pixelY);
+                        removedAnyTerrain = true;
+                    }
                 }
             }
             terrain.updateImageData();
+
+            // If no terrain could be removed (all IDT), stop mining
+            if (!removedAnyTerrain) {
+                this.state = LemmingState.WALKING;
+                this.miningProgress = 0;
+                console.log('Miner stopped - all terrain in area is indestructible');
+                return;
+            }
 
             // Get terrain color for particles
             const imageData = terrain.ctx.getImageData(swingX, swingY, 1, 1);
             const color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
 
-            // FIX: Create particles for mining
+            // Create particles for mining
             if (window.particleManager) {
-                // Create particles in a circular pattern for mining
                 for (let i = 0; i < 12; i++) {
                     const angle = Math.random() * Math.PI * 2;
                     const distance = Math.random() * tunnelRadius;
@@ -645,7 +682,7 @@ class Lemming {
                 case ActionType.BUILDER:
                     this.state = LemmingState.BUILDING;
                     this.buildTilesPlaced = 0;
-                    this.lastBuildTime = Date.now(); // Initialize for the first tile
+                    this.lastBuildTime = Date.now();
                     audioManager.playSound('builder');
                     break;
                 case ActionType.CLIMBER:
@@ -670,6 +707,7 @@ class Lemming {
         return false;
     }
 
+    // UPDATED: Explosion respects IDT terrain
     explode(terrain) {
         this.setDead();
 
@@ -679,12 +717,18 @@ class Lemming {
         const cx = this.x;
         const cy = this.y + this.getHeight() / 2;
 
-        // Remove terrain in a circle
+        // Remove terrain in a circle - but preserve IDT terrain
         for (let x = cx - explosionRadius; x <= cx + explosionRadius; x++) {
             for (let y = cy - explosionRadius; y <= cy + explosionRadius; y++) {
                 const distance = Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
                 if (distance <= explosionRadius) {
-                    terrain.removeTerrainPixel(Math.floor(x), Math.floor(y));
+                    const pixelX = Math.floor(x);
+                    const pixelY = Math.floor(y);
+                    
+                    // Only remove terrain if it's not indestructible
+                    if (terrain.hasGround(pixelX, pixelY) && !terrain.isIndestructible(pixelX, pixelY)) {
+                        terrain.removeTerrainPixel(pixelX, pixelY);
+                    }
                 }
             }
         }

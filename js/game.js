@@ -317,6 +317,8 @@ class Game {
         this.gameLoop();
     }
 
+    // Updated loadCustomLevel method in js/game.js - Add IDT support
+
     loadCustomLevel(levelData) {
         console.log('Loading custom level:', levelData);
 
@@ -419,16 +421,34 @@ class Game {
                 this.terrain.ctx.clearRect(0, 0, this.terrain.width, this.terrain.height);
                 this.terrain.ctx.drawImage(terrainImg, 0, 0);
                 this.terrain.updateImageData();
+
+                // NEW: Load IDT areas after terrain is loaded
+                if (levelData.idtAreas && Array.isArray(levelData.idtAreas)) {
+                    this.terrain.loadIdtAreas(levelData.idtAreas);
+                    console.log('Loaded', levelData.idtAreas.length, 'IDT areas for gameplay');
+                }
             };
             terrainImg.onerror = () => {
                 console.error('Failed to load terrain image');
                 // Initialize with empty terrain if image fails to load
                 this.terrain.updateImageData();
+
+                // Still load IDT areas even if terrain image fails
+                if (levelData.idtAreas && Array.isArray(levelData.idtAreas)) {
+                    this.terrain.loadIdtAreas(levelData.idtAreas);
+                    console.log('Loaded', levelData.idtAreas.length, 'IDT areas for gameplay (no terrain image)');
+                }
             };
             terrainImg.src = levelData.terrain;
         } else {
             // No terrain data, just initialize empty terrain
             this.terrain.updateImageData();
+
+            // Load IDT areas even without terrain image
+            if (levelData.idtAreas && Array.isArray(levelData.idtAreas)) {
+                this.terrain.loadIdtAreas(levelData.idtAreas);
+                console.log('Loaded', levelData.idtAreas.length, 'IDT areas for gameplay (no terrain)');
+            }
         }
 
         // Load hazards
@@ -457,6 +477,11 @@ class Game {
 
         console.log('Level loaded. Total lemmings:', this.level.totalLemmings, 'Required:', this.level.requiredLemmings, 'Spawn rate:', this.level.spawnRate);
         console.log('Action counts:', this.level.actionCounts);
+
+        // NEW: Log IDT information
+        if (levelData.idtAreas && levelData.idtAreas.length > 0) {
+            console.log('IDT areas loaded:', levelData.idtAreas.length);
+        }
     }
 
     async loadLevelMusic(musicPath) {
