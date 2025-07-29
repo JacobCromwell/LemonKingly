@@ -16,7 +16,7 @@ const PHYSICS = {
     maxFallHeight: 60,
     climbHeight: 10,
     gravity: 2,
-    walkSpeed: 1,
+    walkSpeed: 0.65,
     floaterGravityMultiplier: 0.5
 };
 

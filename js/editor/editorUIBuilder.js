@@ -1,4 +1,5 @@
-// Builds the editor UI dynamically
+// Updated js/editor/editorUIBuilder.js - Add IDT entity button
+
 class EditorUIBuilder {
     constructor() {
         this.activeSubmenu = null;
@@ -73,6 +74,13 @@ class EditorUIBuilder {
                             <button class="toolButton" data-tool="spikes" onclick="editor.toolsHandler.selectTool('spikes')" title="Place Spikes">
                                 <span class="toolIcon">⚔️</span>
                                 <span class="toolLabel">Spikes</span>
+                            </button>
+                            
+                            <div class="separator"></div>
+                            <h4>Terrain Modifiers</h4>
+                            <button class="toolButton" data-tool="idt" onclick="editor.toolsHandler.selectTool('idt')" title="Place Indestructible Terrain Area">
+                                <span class="toolIcon">🛡️</span>
+                                <span class="toolLabel">IDT</span>
                             </button>
                             
                             <div class="hazardSize">
@@ -318,7 +326,7 @@ class EditorUIBuilder {
     selectMusic(musicPath) {
         // Normalize the music path before storing
         let normalizedPath = null;
-        
+
         if (musicPath) {
             // Remove LOCAL: prefix if present and normalize to assets/music format
             if (musicPath.startsWith('LOCAL:')) {
@@ -339,7 +347,7 @@ class EditorUIBuilder {
                 normalizedPath = `assets/music/${filename}`;
             }
         }
-        
+
         // Update the editor's level data with normalized path
         if (window.editor) {
             window.editor.levelData.musicFile = normalizedPath;

@@ -1,4 +1,5 @@
-// Handles tool functionality and tool-specific drawing
+// Updated js/editor/editorToolsHandler.js - Add IDT entity support
+
 class EditorToolsHandler {
     constructor(editor) {
         this.editor = editor;
@@ -44,6 +45,18 @@ class EditorToolsHandler {
             case 'spikes':
                 const size = this.getHazardSize();
                 this.editor.hazards.push(new EditorHazard(levelPos.x, levelPos.y, size.width, size.height, tool));
+                break;
+
+            case 'idt':
+                // NEW: Handle IDT placement
+                const idtSize = this.getHazardSize(); // Reuse hazard size controls
+                this.editor.terrain.addIdtArea(
+                    levelPos.x - idtSize.width / 2,
+                    levelPos.y - idtSize.height / 2,
+                    idtSize.width,
+                    idtSize.height
+                );
+                console.log('IDT area added at', levelPos.x, levelPos.y);
                 break;
         }
         
@@ -118,7 +131,7 @@ class EditorToolsHandler {
     
     drawDeathHeight(ctx) {
         // Death height is drawn in world space, not screen space
-        const deathDistance = MAX_FALL_HEIGHT;
+        const deathDistance = PHYSICS.maxFallHeight;
         
         ctx.save();
         
@@ -160,6 +173,20 @@ class EditorToolsHandler {
                 ctx.fillStyle = '#999999';
                 ctx.fillRect(this.editor.mouseX - size.width/2, this.editor.mouseY - size.height/2, size.width, size.height);
                 break;
+            case 'idt':
+                // NEW: IDT preview with purple color and border
+                ctx.fillStyle = 'rgba(128, 0, 128, 0.5)';
+                ctx.fillRect(this.editor.mouseX - size.width/2, this.editor.mouseY - size.height/2, size.width, size.height);
+                ctx.strokeStyle = 'rgba(128, 0, 128, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.editor.mouseX - size.width/2, this.editor.mouseY - size.height/2, size.width, size.height);
+                
+                // Add "IDT" text label
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('IDT', this.editor.mouseX, this.editor.mouseY);
+                break;
             case 'spawn':
                 ctx.fillStyle = '#2196F3';
                 ctx.fillRect(this.editor.mouseX - 20, this.editor.mouseY - 30, 40, 30);
@@ -174,7 +201,7 @@ class EditorToolsHandler {
     }
 }
 
-// Editor-specific hazard class with additional functionality
+// Editor-specific hazard class with additional functionality (unchanged)
 class EditorHazard extends Hazard {
     constructor(x, y, width, height, type) {
         super(x, y, width, height, type);

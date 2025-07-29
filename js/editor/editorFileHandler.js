@@ -1,4 +1,5 @@
-// Handles saving and loading level files - Environment Aware
+// Updated js/editor/editorFileHandler.js - Add IDT support to save/load
+
 class EditorFileHandler {
     constructor(editor) {
         this.editor = editor;
@@ -51,6 +52,8 @@ class EditorFileHandler {
                     height: h.height,
                     type: h.type
                 })),
+                // NEW: Save IDT areas
+                idtAreas: this.editor.terrain.getIdtAreas(),
                 terrain: this.editor.terrain.canvas.toDataURL(),
                 background: this.editor.backgroundImage ? this.editor.backgroundImage.src : null,
                 zoom: this.editor.zoom,
@@ -186,6 +189,12 @@ class EditorFileHandler {
             // Load terrain
             if (data.terrain) {
                 await this.loadImageFromDataURL(data.terrain, 'terrain');
+            }
+
+            // NEW: Load IDT areas after terrain is loaded
+            if (data.idtAreas) {
+                this.editor.terrain.loadIdtAreas(data.idtAreas);
+                this.envManager.devLog('Loaded', data.idtAreas.length, 'IDT areas');
             }
 
             // Update UI inputs
@@ -349,6 +358,8 @@ class EditorFileHandler {
                     height: h.height,
                     type: h.type
                 })),
+                // NEW: Include IDT areas in test level
+                idtAreas: this.editor.terrain.getIdtAreas(),
                 terrain: this.editor.terrain.canvas.toDataURL(),
                 background: this.editor.backgroundImage ? this.editor.backgroundImage.src : null,
                 zoom: this.editor.zoom,
