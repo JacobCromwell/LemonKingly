@@ -23,7 +23,7 @@ const PHYSICS = {
 // Building constants
 const BUILDING = {
     tileWidth: 6,
-    tileHeight: 1,
+    tileHeight: 3,
     maxTiles: 12,
     tileDelay: 700 // The delay in milliseconds (1 second) between placing each tile.
 };

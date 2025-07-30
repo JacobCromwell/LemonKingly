@@ -455,24 +455,50 @@ class Lemming {
         this.placeBuildTile(terrain);
     }
 
+    // Updated building methods for lemming.js
     calculateNextBuildPosition() {
         const lemmingHeight = this.getHeight();
 
         let tileX, tileY, lemmingX, lemmingY;
 
-        if (this.buildTilesPlaced === 0) {
-            tileY = this.y + lemmingHeight - 1;
-            tileX = this.x - 0.5;
+        if (this.buildTilesPlaced === 110) {
+            // First tile: place it at ground level where lemming is standing
+            tileY = this.y + lemmingHeight; // 2px high tile at ground level
+            tileX = this.x + (this.direction * (BUILDING.tileWidth / 2));
             lemmingX = this.x;
             lemmingY = this.y;
         } else {
-            tileY = this.y + lemmingHeight - BUILDING.tileHeight - 2;
-            tileX = this.x + (this.direction * BUILDING.tileWidth - 2);
+
+            tileY = (this.y + lemmingHeight) - BUILDING.tileHeight; // Position for new tile
+            tileX = this.x + (this.direction * (BUILDING.tileWidth / 2));
+
+            // Lemming moves forward and up by 1px
             lemmingX = tileX;
-            lemmingY = tileY - lemmingHeight;
+            lemmingY = this.y - 2; // Move up 1px for each tile
         }
 
         return { tileX, tileY, lemmingX, lemmingY };
+    }
+
+    placeBuildTile(terrain) {
+        const currentTime = Date.now();
+        this.lastBuildTime = currentTime;
+
+        const { tileX, tileY, lemmingX, lemmingY } = this.calculateNextBuildPosition();
+
+        if (this.direction === -1) {
+            // Building left
+            terrain.addTerrain(tileX - BUILDING.tileWidth, tileY, BUILDING.tileWidth, BUILDING.tileHeight);
+        } else {
+            // Building right  
+            terrain.addTerrain(tileX - BUILDING.tileWidth / 2, tileY, BUILDING.tileWidth, BUILDING.tileHeight);
+        }
+
+        this.buildTilesPlaced++;
+
+        // Update lemming position
+        this.x = lemmingX;
+        this.y = lemmingY;
     }
 
     checkBuildingCollision(terrain) {
@@ -507,25 +533,6 @@ class Lemming {
         return false;
     }
 
-    placeBuildTile(terrain) {
-        const currentTime = Date.now();
-
-        this.lastBuildTime = currentTime;
-
-        const { tileX, tileY, lemmingX, lemmingY } = this.calculateNextBuildPosition();
-
-        if (this.direction === -1) {
-            terrain.addTerrain((tileX - BUILDING.tileWidth * 2) + 2, tileY, BUILDING.tileWidth, BUILDING.tileHeight + 1);
-        } else {
-            terrain.addTerrain(tileX - BUILDING.tileWidth / 2, tileY, BUILDING.tileWidth, BUILDING.tileHeight + 1);
-        }
-
-        this.buildTilesPlaced++;
-
-        this.x = lemmingX;
-        this.y = lemmingY;
-    }
-
     // UPDATED: Check for IDT before mining
     mine(terrain) {
         const lemmingHeight = this.getHeight();
@@ -543,9 +550,9 @@ class Lemming {
 
             // NEW: Check if mining area contains indestructible terrain
             if (terrain.hasIndestructibleTerrain(
-                swingX - tunnelRadius, 
-                swingY - tunnelRadius, 
-                tunnelRadius * 2, 
+                swingX - tunnelRadius,
+                swingY - tunnelRadius,
+                tunnelRadius * 2,
                 tunnelRadius * 2
             )) {
                 // Hit IDT - stop mining and return to walking
@@ -588,7 +595,7 @@ class Lemming {
                     const removeY = swingY + Math.sin(angle) * r;
                     const pixelX = Math.floor(removeX);
                     const pixelY = Math.floor(removeY);
-                    
+
                     // Only remove if not indestructible
                     if (terrain.hasGround(pixelX, pixelY) && !terrain.isIndestructible(pixelX, pixelY)) {
                         terrain.removeTerrainPixel(pixelX, pixelY);
@@ -724,7 +731,7 @@ class Lemming {
                 if (distance <= explosionRadius) {
                     const pixelX = Math.floor(x);
                     const pixelY = Math.floor(y);
-                    
+
                     // Only remove terrain if it's not indestructible
                     if (terrain.hasGround(pixelX, pixelY) && !terrain.isIndestructible(pixelX, pixelY)) {
                         terrain.removeTerrainPixel(pixelX, pixelY);
