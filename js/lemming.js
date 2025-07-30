@@ -669,6 +669,25 @@ class Lemming {
             return false;
         }
 
+        // Special case for BUILDER - can be applied to already building lemmings to reset them
+        if (action === ActionType.BUILDER) {
+            if (this.state === LemmingState.BUILDING) {
+                // Reset the building lemming
+                this.buildTilesPlaced = 0;
+                this.lastBuildTime = Date.now();
+                audioManager.playSound('builder');
+                return true;
+            } else if (this.state === LemmingState.WALKING || this.state === LemmingState.FALLING) {
+                // Apply builder to walking/falling lemming
+                this.state = LemmingState.BUILDING;
+                this.buildTilesPlaced = 0;
+                this.lastBuildTime = Date.now();
+                audioManager.playSound('builder');
+                return true;
+            }
+            return false;
+        }
+
         // For all other actions, only allow on walking or falling lemmings
         if (this.state === LemmingState.WALKING || this.state === LemmingState.FALLING) {
             switch (action) {
@@ -685,12 +704,6 @@ class Lemming {
                         this.state = LemmingState.DIGGING;
                         audioManager.playSound('digger');
                     }
-                    break;
-                case ActionType.BUILDER:
-                    this.state = LemmingState.BUILDING;
-                    this.buildTilesPlaced = 0;
-                    this.lastBuildTime = Date.now();
-                    audioManager.playSound('builder');
                     break;
                 case ActionType.CLIMBER:
                     this.isClimber = true;
