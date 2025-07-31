@@ -107,12 +107,31 @@
         </div>
     </div>
 
+    <!-- Loading Screen (dynamically added) -->
+    <div id="loadingScreen" class="loading-screen hidden">
+        <div class="loading-content">
+            <h1>Loading Lemmings...</h1>
+            <div class="loading-bar-container">
+                <div class="loading-bar" id="loadingBar"></div>
+            </div>
+            <div class="loading-text" id="loadingText">Loading sprites... 0%</div>
+            <div class="loading-fallback hidden" id="loadingFallback">
+                <p>Some sprites could not be loaded. Using fallback graphics.</p>
+                <button onclick="window.game.continueWithFallback()">Continue Anyway</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Load utility files first -->
     <script src="js/environmentManager.js"></script>
     <script src="js/constants.js"></script>
     <script src="js/validationUtils.js"></script>
     <script src="js/cameraBase.js"></script>
     <script src="js/dialogManager.js"></script>
+
+    <!-- Animation system -->
+    <script src="js/spriteManager.js"></script>
+    <script src="js/animationController.js"></script>
 
     <!-- Core systems -->
     <script src="js/audioManager.js"></script>

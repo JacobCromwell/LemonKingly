@@ -1,6 +1,6 @@
-// Updated js/lemming.js - Add IDT collision checking for terrain removal actions
+// Updated js/lemming.js - Add animation support
 
-// Simplified Lemming class with dead code removed and IDT support
+// Simplified Lemming class with animation support
 class Lemming {
     constructor(x, y, zoom = 1.0) {
         this.x = x;
@@ -17,6 +17,7 @@ class Lemming {
         this.deathTime = 0;
         this.deathFadeDuration = 2000; // 2 seconds
         this.isFullyDead = false;
+        this.deathType = null; // Track how the lemming died
 
         // Miner specific properties
         this.miningSwingTimer = 0;
@@ -27,6 +28,9 @@ class Lemming {
 
         // Builder specific properties (new for timed building)
         this.lastBuildTime = 0; // Tracks the timestamp of the last tile placed.
+        
+        // Initialize animation controller
+        this.animationController = new AnimationController();
     }
 
     // Check if lemming already has the specified ability
@@ -67,11 +71,17 @@ class Lemming {
     }
 
     // Set lemming as dead and start fade timer
-    setDead() {
+    setDead(deathType = 'default') {
         if (this.state !== LemmingState.DEAD) {
             this.state = LemmingState.DEAD;
             this.deathTime = Date.now();
             this.isFullyDead = false;
+            this.deathType = deathType;
+            
+            // Update animation controller with death type
+            this.animationController.setDeathType(deathType);
+            this.animationController.updateAnimationState(this.state, this);
+            
             audioManager.playSound('death');
         }
     }
@@ -83,10 +93,13 @@ class Lemming {
         }
 
         if (this.state === LemmingState.DEAD) {
-            const timeSinceDeath = Date.now() - this.deathTime;
-            if (timeSinceDeath >= this.deathFadeDuration) {
-                this.isFullyDead = true;
-                return false;
+            // Check if death animation is complete
+            if (this.animationController.isDeathAnimationComplete()) {
+                const timeSinceDeath = Date.now() - this.deathTime;
+                if (timeSinceDeath >= this.deathFadeDuration) {
+                    this.isFullyDead = true;
+                    return false;
+                }
             }
         }
 
@@ -96,6 +109,11 @@ class Lemming {
     // Get current opacity based on death fade
     getOpacity() {
         if (this.state !== LemmingState.DEAD) {
+            return 1.0;
+        }
+
+        // Only start fading after death animation completes
+        if (!this.animationController.isDeathAnimationComplete()) {
             return 1.0;
         }
 
@@ -112,6 +130,10 @@ class Lemming {
         if (this.state === LemmingState.SAVED || this.isFullyDead) {
             return;
         }
+        
+        // Update animation
+        this.animationController.update();
+        this.animationController.updateAnimationState(this.state, this);
 
         // Handle explosion timer for all states (including blockers)
         if (this.explosionTimer > 0) {
@@ -129,7 +151,7 @@ class Lemming {
 
         // Check if lemming has fallen out of bounds
         if (this.y > terrain.height + 50) {
-            this.setDead();
+            this.setDead('fall');
             if (window.particleManager) {
                 window.particleManager.createDeathParticles(this.x, this.y + this.getHeight() / 2);
             }
@@ -281,7 +303,7 @@ class Lemming {
         if (terrain.hasGround(this.x, this.y + lemmingHeight)) {
             // Floaters don't die from fall damage
             if (this.fallDistance >= PHYSICS.maxFallHeight && !this.isFloater) {
-                this.setDead();
+                this.setDead('fall');
                 if (window.particleManager) {
                     window.particleManager.createDeathParticles(this.x, lemmingHeight / 2);
                 }
@@ -455,24 +477,50 @@ class Lemming {
         this.placeBuildTile(terrain);
     }
 
+    // Updated building methods for lemming.js
     calculateNextBuildPosition() {
         const lemmingHeight = this.getHeight();
 
         let tileX, tileY, lemmingX, lemmingY;
 
-        if (this.buildTilesPlaced === 0) {
-            tileY = this.y + lemmingHeight - 1;
-            tileX = this.x - 0.5;
+        if (this.buildTilesPlaced === 110) {
+            // First tile: place it at ground level where lemming is standing
+            tileY = this.y + lemmingHeight; // 2px high tile at ground level
+            tileX = this.x + (this.direction * (BUILDING.tileWidth / 2));
             lemmingX = this.x;
             lemmingY = this.y;
         } else {
-            tileY = this.y + lemmingHeight - BUILDING.tileHeight - 2;
-            tileX = this.x + (this.direction * BUILDING.tileWidth - 2);
+
+            tileY = (this.y + lemmingHeight) - BUILDING.tileHeight; // Position for new tile
+            tileX = this.x + (this.direction * (BUILDING.tileWidth / 2));
+
+            // Lemming moves forward and up by 1px
             lemmingX = tileX;
-            lemmingY = tileY - lemmingHeight;
+            lemmingY = this.y - 2; // Move up 1px for each tile
         }
 
         return { tileX, tileY, lemmingX, lemmingY };
+    }
+
+    placeBuildTile(terrain) {
+        const currentTime = Date.now();
+        this.lastBuildTime = currentTime;
+
+        const { tileX, tileY, lemmingX, lemmingY } = this.calculateNextBuildPosition();
+
+        if (this.direction === -1) {
+            // Building left
+            terrain.addTerrain(tileX - BUILDING.tileWidth, tileY, BUILDING.tileWidth, BUILDING.tileHeight);
+        } else {
+            // Building right  
+            terrain.addTerrain(tileX - BUILDING.tileWidth / 2, tileY, BUILDING.tileWidth, BUILDING.tileHeight);
+        }
+
+        this.buildTilesPlaced++;
+
+        // Update lemming position
+        this.x = lemmingX;
+        this.y = lemmingY;
     }
 
     checkBuildingCollision(terrain) {
@@ -507,25 +555,6 @@ class Lemming {
         return false;
     }
 
-    placeBuildTile(terrain) {
-        const currentTime = Date.now();
-
-        this.lastBuildTime = currentTime;
-
-        const { tileX, tileY, lemmingX, lemmingY } = this.calculateNextBuildPosition();
-
-        if (this.direction === -1) {
-            terrain.addTerrain((tileX - BUILDING.tileWidth * 2) + 2, tileY, BUILDING.tileWidth, BUILDING.tileHeight + 1);
-        } else {
-            terrain.addTerrain(tileX - BUILDING.tileWidth / 2, tileY, BUILDING.tileWidth, BUILDING.tileHeight + 1);
-        }
-
-        this.buildTilesPlaced++;
-
-        this.x = lemmingX;
-        this.y = lemmingY;
-    }
-
     // UPDATED: Check for IDT before mining
     mine(terrain) {
         const lemmingHeight = this.getHeight();
@@ -543,9 +572,9 @@ class Lemming {
 
             // NEW: Check if mining area contains indestructible terrain
             if (terrain.hasIndestructibleTerrain(
-                swingX - tunnelRadius, 
-                swingY - tunnelRadius, 
-                tunnelRadius * 2, 
+                swingX - tunnelRadius,
+                swingY - tunnelRadius,
+                tunnelRadius * 2,
                 tunnelRadius * 2
             )) {
                 // Hit IDT - stop mining and return to walking
@@ -588,7 +617,7 @@ class Lemming {
                     const removeY = swingY + Math.sin(angle) * r;
                     const pixelX = Math.floor(removeX);
                     const pixelY = Math.floor(removeY);
-                    
+
                     // Only remove if not indestructible
                     if (terrain.hasGround(pixelX, pixelY) && !terrain.isIndestructible(pixelX, pixelY)) {
                         terrain.removeTerrainPixel(pixelX, pixelY);
@@ -662,6 +691,25 @@ class Lemming {
             return false;
         }
 
+        // Special case for BUILDER - can be applied to already building lemmings to reset them
+        if (action === ActionType.BUILDER) {
+            if (this.state === LemmingState.BUILDING) {
+                // Reset the building lemming
+                this.buildTilesPlaced = 0;
+                this.lastBuildTime = Date.now();
+                audioManager.playSound('builder');
+                return true;
+            } else if (this.state === LemmingState.WALKING || this.state === LemmingState.FALLING) {
+                // Apply builder to walking/falling lemming
+                this.state = LemmingState.BUILDING;
+                this.buildTilesPlaced = 0;
+                this.lastBuildTime = Date.now();
+                audioManager.playSound('builder');
+                return true;
+            }
+            return false;
+        }
+
         // For all other actions, only allow on walking or falling lemmings
         if (this.state === LemmingState.WALKING || this.state === LemmingState.FALLING) {
             switch (action) {
@@ -678,12 +726,6 @@ class Lemming {
                         this.state = LemmingState.DIGGING;
                         audioManager.playSound('digger');
                     }
-                    break;
-                case ActionType.BUILDER:
-                    this.state = LemmingState.BUILDING;
-                    this.buildTilesPlaced = 0;
-                    this.lastBuildTime = Date.now();
-                    audioManager.playSound('builder');
                     break;
                 case ActionType.CLIMBER:
                     this.isClimber = true;
@@ -709,7 +751,7 @@ class Lemming {
 
     // UPDATED: Explosion respects IDT terrain
     explode(terrain) {
-        this.setDead();
+        this.setDead('explode');
 
         audioManager.playSound('explosion');
 
@@ -724,7 +766,7 @@ class Lemming {
                 if (distance <= explosionRadius) {
                     const pixelX = Math.floor(x);
                     const pixelY = Math.floor(y);
-                    
+
                     // Only remove terrain if it's not indestructible
                     if (terrain.hasGround(pixelX, pixelY) && !terrain.isIndestructible(pixelX, pixelY)) {
                         terrain.removeTerrainPixel(pixelX, pixelY);
@@ -757,6 +799,54 @@ class Lemming {
         ctx.save();
         ctx.globalAlpha = opacity;
 
+        // Get current animation and frame
+        const animationKey = this.animationController.getCurrentAnimation();
+        const frameIndex = this.animationController.getCurrentFrame();
+        
+        // Calculate scale based on zoom
+        const scale = this.zoom / LEMMING_CONFIG.baseZoom;
+        
+        // Check if we should flip the sprite (when facing left)
+        const flipX = this.direction === -1;
+        
+        // Draw sprite if available, otherwise fall back to colored rectangle
+        if (window.spriteManager && window.spriteManager.getSprite(animationKey)) {
+            window.spriteManager.drawFrame(
+                ctx,
+                animationKey,
+                frameIndex,
+                this.x,
+                this.y,
+                scale,
+                flipX
+            );
+        } else {
+            // Fallback to colored rectangle rendering
+            this.drawFallback(ctx, lemmingWidth, lemmingHeight);
+        }
+
+        // Draw countdown for explosion timer
+        if (this.explosionTimer > 0) {
+            const seconds = Math.ceil(this.explosionTimer);
+
+            ctx.font = `bold ${Math.max(10, this.getHeight())}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+
+            const textX = this.x;
+            const textY = this.y - 2;
+
+            ctx.strokeText(seconds.toString(), textX, textY);
+            ctx.fillText(seconds.toString(), textX, textY);
+        }
+
+        ctx.restore();
+    }
+
+    // Fallback drawing method (original colored rectangles)
+    drawFallback(ctx, lemmingWidth, lemmingHeight) {
         // Set lemming color based on state
         if (this.state === LemmingState.DEAD) {
             ctx.fillStyle = '#ff0000';
@@ -819,25 +909,6 @@ class Lemming {
             ctx.lineTo(this.x, this.y + lemmingHeight * 0.1);
             ctx.stroke();
         }
-
-        // Draw countdown for explosion timer
-        if (this.explosionTimer > 0) {
-            const seconds = Math.ceil(this.explosionTimer);
-
-            ctx.font = `bold ${Math.max(10, this.getHeight())}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.fillStyle = 'white';
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 2;
-
-            const textX = this.x;
-            const textY = this.y - 2;
-
-            ctx.strokeText(seconds.toString(), textX, textY);
-            ctx.fillText(seconds.toString(), textX, textY);
-        }
-
-        ctx.restore();
     }
 
     // Draw parachute when falling

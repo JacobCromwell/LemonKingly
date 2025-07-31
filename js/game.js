@@ -1229,4 +1229,85 @@ class Game {
         // This is called periodically to keep the lemmings array from growing too large
         this.lemmings = this.lemmings.filter(lemming => !lemming.isFullyDead);
     }
+
+    // Add these methods to the Game class in js/game.js
+
+// Add to Game constructor:
+// this.spritesLoaded = false;
+
+async loadGameAssets() {
+    const loadingBar = document.getElementById('loadingBar');
+    const loadingText = document.getElementById('loadingText');
+    const loadingScreen = document.getElementById('loadingScreen');
+    const loadingFallback = document.getElementById('loadingFallback');
+    
+    try {
+        // Update loading progress periodically
+        const updateProgress = setInterval(() => {
+            const progress = window.spriteManager.getLoadingProgress();
+            const percentage = Math.round(progress * 100);
+            
+            if (loadingBar) {
+                loadingBar.style.width = percentage + '%';
+            }
+            if (loadingText) {
+                loadingText.textContent = `Loading sprites... ${percentage}%`;
+            }
+        }, 100);
+        
+        // Load all sprites
+        const success = await window.spriteManager.preloadAll();
+        
+        clearInterval(updateProgress);
+        
+        if (success && window.spriteManager.isFullyLoaded()) {
+            // All sprites loaded successfully
+            this.spritesLoaded = true;
+            this.hideLoadingScreen();
+        } else {
+            // Some sprites failed to load
+            if (loadingFallback) {
+                loadingFallback.classList.remove('hidden');
+            }
+            
+            // Check if we have at least fallback sprites
+            const hasFallbacks = window.spriteManager.getLoadingProgress() > 0;
+            if (hasFallbacks) {
+                // Auto-continue with fallbacks after a delay
+                setTimeout(() => this.continueWithFallback(), 3000);
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error loading game assets:', error);
+        
+        // Show fallback option
+        if (loadingFallback) {
+            loadingFallback.classList.remove('hidden');
+        }
+    }
+}
+
+hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+        // Fade out animation
+        loadingScreen.style.transition = 'opacity 0.5s ease';
+        loadingScreen.style.opacity = '0';
+        
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+        }, 500);
+    }
+}
+
+continueWithFallback() {
+    console.log('Continuing with fallback graphics');
+    this.spritesLoaded = true; // Mark as loaded even with fallbacks
+    this.hideLoadingScreen();
+}
+
+// Update the draw loop in game.js to check if sprites are loaded:
+// In gameLoop() method, add at the beginning:
+// if (!this.spritesLoaded) return;
 }
