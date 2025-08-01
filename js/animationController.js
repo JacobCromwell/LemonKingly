@@ -51,10 +51,6 @@ class AnimationController {
             newAnimation = 'float';
         }
         
-        if (lemmingState === LemmingState.EXPLODING && lemming.explosionTimer <= 1) {
-            newAnimation = 'explodeCountdown';
-        }
-        
         if (lemmingState === LemmingState.DEAD && this.deathType) {
             newAnimation = this.deathAnimations[this.deathType] || this.deathAnimations.default;
         }

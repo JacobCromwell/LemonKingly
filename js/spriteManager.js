@@ -13,7 +13,7 @@ class SpriteManager {
             walk: { url: 'assets/sprites/lemming-walk-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
             fall: { url: 'assets/sprites/lemming-fall-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
             climb: { url: 'assets/sprites/lemming-climb-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
-            float: { url: 'assets/sprites/lemming-float-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
+            float: { url: 'assets/sprites/lemming-float-sheet.png', frames: 4, width: 6, height: 12, spacing: 2 },
 
             // Action animations
             bash: { url: 'assets/sprites/lemming-bash-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
@@ -26,10 +26,7 @@ class SpriteManager {
             deathFall: { url: 'assets/sprites/lemming-death-fall-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
             deathDrown: { url: 'assets/sprites/lemming-death-drown-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
             deathChop: { url: 'assets/sprites/lemming-death-chop-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
-            deathExplode: { url: 'assets/sprites/lemming-death-explode-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
-
-            // Special states
-            explodeCountdown: { url: 'assets/sprites/lemming-explode-countdown-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 }
+            deathExplode: { url: 'assets/sprites/lemming-death-explode-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 }
         };
 
         this.totalCount = Object.keys(this.spriteSheets).length;
