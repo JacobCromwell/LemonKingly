@@ -5,7 +5,7 @@ Abilities
     revise all 8 Abilities
         [x] Can EXPLODE blockers
         better bashing detection (multi-direction), slower, stops after getting through a wall
-        builder should have 12 tiles, tiles need to be correct size, change direction on hitting wall
+        [x] builder should have 12 tiles, tiles need to be correct size, change direction on hitting wall
     [x] bug - no duplicate ability click
     [x] bug - ease to click on other lemmings
     builder calculation needs a tweak when building to the left
@@ -13,9 +13,9 @@ Abilities
 [x] fall death
 mini map no dead space underneath
 better lemming animations
-single direction bashing terrain
-metal terrain
-    Is not actually indestructible at all
+[x] single direction bashing terrain
+[x] metal terrain
+    [x] Is not actually indestructible at all
 animated lava, water, acid etc.
 finalize folder locations (S3 & users other than myself)
 
