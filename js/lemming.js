@@ -322,9 +322,9 @@ class Lemming {
         const lemmingWidth = this.getWidth();
         const lemmingHeight = this.getHeight();
 
-        const bashX = this.x + (this.direction * (lemmingWidth / 2 + 2));
-        const bashWidth = 6;
-        const bashHeight = lemmingHeight;
+        const bashX = this.x + (this.direction * (lemmingWidth / 2));
+        const bashWidth = 4;
+        const bashHeight = lemmingHeight - 1;
 
         // NEW: Check if bashing area contains indestructible terrain
         if (terrain.hasIndestructibleTerrain(bashX - bashWidth / 2, this.y + 1, bashWidth * 2, bashHeight)) {
@@ -348,13 +348,13 @@ class Lemming {
         }
 
         if (foundObstacle) {
-            const color = terrain.removeTerrain((bashX - 1) - bashWidth / 2, this.y + 1, bashWidth * 2, bashHeight);
+            const color = terrain.removeTerrain((bashX - 1) - bashWidth / 2, this.y - 1, bashWidth * 2, bashHeight);
 
             // Only create particles and advance if terrain was actually removed
             if (color) {
                 // Create particles with directional velocity
                 if (window.particleManager) {
-                    for (let i = 0; i < 10; i++) {
+                    for (let i = 0; i < 2; i++) {
                         window.particleManager.getParticle(
                             bashX + Math.random() * bashWidth - bashWidth / 2,
                             this.y + Math.random() * bashHeight,
