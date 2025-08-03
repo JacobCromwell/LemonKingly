@@ -559,126 +559,156 @@ class Lemming {
     }
 
     // UPDATED: Check for IDT before mining
-    mine(terrain) {
-        const lemmingHeight = this.getHeight();
+    // UPDATED: Improved mining logic in lemming.js
+mine(terrain) {
+    const lemmingHeight = this.getHeight();
 
-        this.miningSwingTimer++;
+    this.miningSwingTimer++;
 
-        if (this.miningSwingTimer >= MINING.swingDuration) {
-            this.miningSwingTimer = 0;
+    if (this.miningSwingTimer >= MINING.swingDuration) {
+        this.miningSwingTimer = 0;
 
-            const angleRad = (MINING.angle * Math.PI) / 180;
-            const tunnelRadius = lemmingHeight * 0.4;
+        const angleRad = (MINING.angle * Math.PI) / 180;
+        
+        // REDUCED: Smaller tunnel radius for more controlled mining
+        const tunnelRadius = Math.max(4, lemmingHeight * 0.8); // Reduced from 0.4 to 0.25
 
-            const swingX = this.x + (this.direction * tunnelRadius * 1.5 * Math.cos(angleRad));
-            const swingY = this.y + lemmingHeight + (tunnelRadius * Math.sin(angleRad));
+        // IMPROVED: Better positioning - mine slightly ahead and down
+        const directionOffset = this.direction * (tunnelRadius * 0.5);
+        const swingX = this.x + directionOffset + (this.direction * tunnelRadius * Math.cos(angleRad));
+        const swingY = this.y + lemmingHeight * 0.7 + (tunnelRadius * Math.sin(angleRad)); // Start from lemming's feet area
 
-            // NEW: Check if mining area contains indestructible terrain
-            if (terrain.hasIndestructibleTerrain(
-                swingX - tunnelRadius,
-                swingY - tunnelRadius,
-                tunnelRadius * 2,
-                tunnelRadius * 2
-            )) {
-                // Hit IDT - stop mining and return to walking
-                this.state = LemmingState.WALKING;
-                this.miningProgress = 0;
-                console.log('Miner stopped by indestructible terrain');
-                return;
-            }
-
-            // Check if there's still terrain to mine
-            let foundTerrain = false;
-            for (let angle = 0; angle < Math.PI * 2; angle += 0.5) {
-                const checkX = swingX + Math.cos(angle) * tunnelRadius;
-                const checkY = swingY + Math.sin(angle) * tunnelRadius;
-                if (terrain.hasGround(checkX, checkY)) {
-                    foundTerrain = true;
-                    break;
-                }
-            }
-
-            if (!foundTerrain) {
-                this.state = LemmingState.WALKING;
-                this.miningProgress = 0;
-                return;
-            }
-
-            // Check for level boundaries
-            if (swingX < tunnelRadius || swingX > terrain.width - tunnelRadius ||
-                swingY < 0 || swingY > terrain.height - tunnelRadius) {
-                this.state = LemmingState.WALKING;
-                this.miningProgress = 0;
-                return;
-            }
-
-            // Remove terrain in circular area - but skip IDT pixels
-            let removedAnyTerrain = false;
-            for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
-                for (let r = 0; r < tunnelRadius; r += 1) {
-                    const removeX = swingX + Math.cos(angle) * r;
-                    const removeY = swingY + Math.sin(angle) * r;
-                    const pixelX = Math.floor(removeX);
-                    const pixelY = Math.floor(removeY);
-
-                    // Only remove if not indestructible
-                    if (terrain.hasGround(pixelX, pixelY) && !terrain.isIndestructible(pixelX, pixelY)) {
-                        terrain.removeTerrainPixel(pixelX, pixelY);
-                        removedAnyTerrain = true;
-                    }
-                }
-            }
-            terrain.updateImageData();
-
-            // If no terrain could be removed (all IDT), stop mining
-            if (!removedAnyTerrain) {
-                this.state = LemmingState.WALKING;
-                this.miningProgress = 0;
-                console.log('Miner stopped - all terrain in area is indestructible');
-                return;
-            }
-
-            // Get terrain color for particles
-            const imageData = terrain.ctx.getImageData(swingX, swingY, 1, 1);
-            const color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
-
-            // Create particles for mining
-            if (window.particleManager) {
-                for (let i = 0; i < 12; i++) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const distance = Math.random() * tunnelRadius;
-                    const particleX = swingX + Math.cos(angle) * distance;
-                    const particleY = swingY + Math.sin(angle) * distance;
-
-                    window.particleManager.getParticle(
-                        particleX,
-                        particleY,
-                        color,
-                        Math.cos(angle) * (Math.random() * 2 + 1),
-                        Math.sin(angle) * (Math.random() * 2 + 1) - 1
-                    );
-                }
-            }
-
-            // Move lemming to the bottom edge of the hole
-            const lemmingWidth = this.getWidth();
-            if (this.direction === 1) {
-                this.x = swingX + tunnelRadius - lemmingWidth / 2;
-            } else {
-                this.x = swingX - tunnelRadius + lemmingWidth / 2;
-            }
-            this.y = swingY + tunnelRadius - lemmingHeight;
-
-            // After moving, check if there's ground beneath
-            if (!terrain.hasGround(this.x, this.y + lemmingHeight)) {
-                this.state = LemmingState.WALKING;
-                this.miningProgress = 0;
-                return;
-            }
-
-            audioManager.playSound('miner');
+        // Check if mining area contains indestructible terrain
+        if (terrain.hasIndestructibleTerrain(
+            swingX - tunnelRadius,
+            swingY - tunnelRadius,
+            tunnelRadius * 2,
+            tunnelRadius * 2
+        )) {
+            this.state = LemmingState.WALKING;
+            this.miningProgress = 0;
+            console.log('Miner stopped by indestructible terrain');
+            return;
         }
+
+        // IMPROVED: More conservative terrain detection
+        // Check for terrain in a smaller area around the mining point
+        let foundTerrain = false;
+        const checkRadius = tunnelRadius * 0.8; // Check slightly smaller area
+        
+        for (let angle = 0; angle < Math.PI * 2; angle += 0.3) { // Reduced sampling density
+            const checkX = swingX + Math.cos(angle) * checkRadius;
+            const checkY = swingY + Math.sin(angle) * checkRadius;
+            if (terrain.hasGround(checkX, checkY)) {
+                foundTerrain = true;
+                break;
+            }
+        }
+
+        // IMPROVED: Also check if there's terrain directly ahead for continued mining
+        const aheadX = this.x + (this.direction * (lemmingHeight * 0.6));
+        const aheadY = this.y + lemmingHeight * 0.8;
+        const hasTerrainAhead = terrain.hasGround(aheadX, aheadY);
+
+        // Stop mining only if no terrain found AND no terrain ahead
+        if (!foundTerrain && !hasTerrainAhead) {
+            this.state = LemmingState.WALKING;
+            this.miningProgress = 0;
+            return;
+        }
+
+        // Check for level boundaries
+        if (swingX < tunnelRadius || swingX > terrain.width - tunnelRadius ||
+            swingY < 0 || swingY > terrain.height - tunnelRadius) {
+            this.state = LemmingState.WALKING;
+            this.miningProgress = 0;
+            return;
+        }
+
+        // IMPROVED: More controlled terrain removal
+        let removedAnyTerrain = false;
+        const removalRadius = tunnelRadius * 0.7; // Remove terrain in smaller area than detection
+        
+        // Remove terrain in smaller chunks for better control
+        for (let angle = 0; angle < Math.PI * 2; angle += 0.2) { // Increased angle steps for fewer removal points
+            for (let r = 0; r < removalRadius; r += 1.5) { // Increased radius steps
+                const removeX = swingX + Math.cos(angle) * r;
+                const removeY = swingY + Math.sin(angle) * r;
+                const pixelX = Math.floor(removeX);
+                const pixelY = Math.floor(removeY);
+
+                // Only remove if not indestructible
+                if (terrain.hasGround(pixelX, pixelY) && !terrain.isIndestructible(pixelX, pixelY)) {
+                    terrain.removeTerrainPixel(pixelX, pixelY);
+                    removedAnyTerrain = true;
+                }
+            }
+        }
+        terrain.updateImageData();
+
+        // If no terrain could be removed (all IDT), stop mining
+        if (!removedAnyTerrain) {
+            this.state = LemmingState.WALKING;
+            this.miningProgress = 0;
+            console.log('Miner stopped - all terrain in area is indestructible');
+            return;
+        }
+
+        // Get terrain color for particles
+        const imageData = terrain.ctx.getImageData(Math.floor(swingX), Math.floor(swingY), 1, 1);
+        const color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
+
+        // Create particles for mining (fewer particles for performance)
+        if (window.particleManager) {
+            for (let i = 0; i < 8; i++) { // Reduced from 12 to 8
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * removalRadius;
+                const particleX = swingX + Math.cos(angle) * distance;
+                const particleY = swingY + Math.sin(angle) * distance;
+
+                window.particleManager.getParticle(
+                    particleX,
+                    particleY,
+                    color,
+                    Math.cos(angle) * (Math.random() * 2 + 1),
+                    Math.sin(angle) * (Math.random() * 2 + 1) - 1
+                );
+            }
+        }
+
+        // IMPROVED: More conservative lemming movement
+        // Move lemming more gradually to avoid falling through terrain
+        const moveDistance = MINING.progressPerSwing * 0.5; // Reduced movement per swing
+        
+        this.x += this.direction * moveDistance;
+        this.y += moveDistance * Math.sin(angleRad);
+
+        // IMPROVED: Better ground check after movement
+        // Check if lemming is still supported by terrain
+        const supportCheckPoints = [
+            { x: this.x - this.getWidth() * 0.3, y: this.y + lemmingHeight },
+            { x: this.x, y: this.y + lemmingHeight },
+            { x: this.x + this.getWidth() * 0.3, y: this.y + lemmingHeight }
+        ];
+
+        let hasSupport = false;
+        for (const point of supportCheckPoints) {
+            if (terrain.hasGround(point.x, point.y)) {
+                hasSupport = true;
+                break;
+            }
+        }
+
+        // If no support found, switch to walking (which will trigger falling if needed)
+        if (!hasSupport) {
+            this.state = LemmingState.WALKING;
+            this.miningProgress = 0;
+            return;
+        }
+
+        audioManager.playSound('miner');
     }
+}
 
     applyAction(action) {
         // Special case for EXPLODER - can be applied to any lemming except dead/saved
