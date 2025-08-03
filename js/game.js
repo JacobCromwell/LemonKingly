@@ -126,6 +126,7 @@ class Game {
         reader.readAsText(file);
     }
 
+    // JRC TODO maybe remove this
     validateLevelData(levelData) {
         // Check for required properties
         const requiredFields = ['name', 'width', 'height', 'spawn', 'exit'];

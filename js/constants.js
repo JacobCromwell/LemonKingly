@@ -14,7 +14,7 @@ const LEMMING_CONFIG = {
 // Physics constants
 const PHYSICS = {
     maxFallHeight: 64,
-    climbHeight: 10,
+    climbHeight: 5,
     gravity: 1,
     walkSpeed: 0.5,
     floaterGravityMultiplier: 0.5
@@ -63,25 +63,3 @@ const LemmingState = {
     DEAD: 'dead',
     SAVED: 'saved'
 };
-
-// Export for global access
-window.LEMMING_CONFIG = LEMMING_CONFIG;
-window.PHYSICS = PHYSICS;
-window.BUILDING = BUILDING;
-window.MINING = MINING;
-window.ActionType = ActionType;
-window.LemmingState = LemmingState;
-
-// Legacy support (deprecated - will be removed in future)
-window.LEMMING_HEIGHT = LEMMING_CONFIG.baseHeight;
-window.LEMMING_WIDTH = LEMMING_CONFIG.baseWidth;
-window.MAX_FALL_HEIGHT = PHYSICS.maxFallHeight;
-window.CLIMB_HEIGHT = PHYSICS.climbHeight;
-window.GRAVITY = PHYSICS.gravity;
-window.WALK_SPEED = PHYSICS.walkSpeed;
-window.BUILD_TILE_WIDTH = BUILDING.tileWidth;
-window.BUILD_TILE_HEIGHT = BUILDING.tileHeight;
-window.MAX_BUILD_TILES = BUILDING.maxTiles;
-window.MINER_SWING_DURATION = MINING.swingDuration;
-window.MINER_ANGLE = MINING.angle;
-window.MINER_PROGRESS_PER_SWING = MINING.progressPerSwing;

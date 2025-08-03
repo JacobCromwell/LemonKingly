@@ -1,5 +1,9 @@
 Outstanding items
 
+Screen Size Adaptation
+
+Fix so browser refresh isnt needed every time
+
 Abilities
     [x] miner
     revise all 8 Abilities

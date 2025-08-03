@@ -1,5 +1,4 @@
-// Updated js/terrain.js - Add IDT support
-
+// Enhanced terrain.js with improved collision detection
 class Terrain {
     constructor(width, height) {
         this.width = width;
@@ -14,9 +13,9 @@ class Terrain {
         this.idtData = null; // Stores which pixels are indestructible
         this.idtAreas = []; // Stores IDT area definitions for editor/saving
 
-        // Add collision cache
+        // IMPROVED: Smaller collision grid for better precision
         this.collisionGrid = null;
-        this.gridCellSize = 10; // Check every 10 pixels for performance
+        this.gridCellSize = 4; // Reduced from 10 to 4 for better precision
 
         this.updateImageData();
     }
@@ -25,7 +24,6 @@ class Terrain {
         try {
             this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
             
-            // Initialize IDT data if not exists
             if (!this.idtData) {
                 this.idtData = new Uint8Array(this.width * this.height);
             }
@@ -33,7 +31,6 @@ class Terrain {
             this.updateCollisionCache();
         } catch (error) {
             console.error('Error updating image data:', error);
-            // Create empty image data as fallback
             this.imageData = this.ctx.createImageData(this.width, this.height);
             this.idtData = new Uint8Array(this.width * this.height);
         }
@@ -69,32 +66,66 @@ class Terrain {
         }
     }
 
-    // OPTIMIZE hasGround() with fast path:
+    // ENHANCED: Improved hasGround with better precision and debugging
     hasGround(x, y) {
+        // Handle boundary conditions
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
             return true; // Treat boundaries as solid
         }
 
-        x = Math.floor(x);
-        y = Math.floor(y);
+        // IMPROVED: Use more precise rounding
+        const pixelX = Math.round(x);
+        const pixelY = Math.round(y);
 
-        // Quick check using collision grid first
-        if (this.collisionGrid) {
-            const gx = Math.floor(x / this.gridCellSize);
-            const gy = Math.floor(y / this.gridCellSize);
-
-            // If grid cell has no collision, skip expensive pixel check
-            if (!this.collisionGrid[gy][gx]) {
-                return false;
-            }
+        // Ensure we're still within bounds after rounding
+        if (pixelX < 0 || pixelX >= this.width || pixelY < 0 || pixelY >= this.height) {
+            return true;
         }
 
-        // Only do pixel-perfect check if grid cell has collision
-        const index = (y * this.width + x) * 4;
-        return this.imageData.data[index + 3] > 0;
+        // ENHANCED: Multi-point sampling for better accuracy at high zoom
+        const hasGroundAtPoint = (px, py) => {
+            if (px < 0 || px >= this.width || py < 0 || py >= this.height) {
+                return true;
+            }
+            const index = (py * this.width + px) * 4;
+            return this.imageData.data[index + 3] > 0;
+        };
+
+        // Check the exact pixel first
+        const hasMain = hasGroundAtPoint(pixelX, pixelY);
+
+        // For critical collision detection, also check neighboring pixels
+        // This helps catch edge cases where rounding might miss thin terrain
+        const hasLeft = hasGroundAtPoint(pixelX - 1, pixelY);
+        const hasRight = hasGroundAtPoint(pixelX + 1, pixelY);
+        const hasUp = hasGroundAtPoint(pixelX, pixelY - 1);
+        const hasDown = hasGroundAtPoint(pixelX, pixelY + 1);
+
+        // If any of the nearby pixels have ground, consider it solid
+        // This provides more robust collision detection
+        const result = hasMain || hasLeft || hasRight || hasUp || hasDown;
+
+        return result;
     }
 
-    // NEW: Check if terrain at position is indestructible
+    // ENHANCED: More robust ground checking for lemmings
+    hasGroundForLemming(x, y, width, height) {
+        // Check multiple points across the lemming's bottom edge
+        const checkPoints = Math.max(3, Math.ceil(width / 2));
+        const stepSize = width / (checkPoints - 1);
+
+        for (let i = 0; i < checkPoints; i++) {
+            const checkX = x - width/2 + (i * stepSize);
+            const checkY = y + height;
+            
+            if (this.hasGround(checkX, checkY)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Rest of the existing methods remain the same...
     isIndestructible(x, y) {
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
             return false;
@@ -107,7 +138,6 @@ class Terrain {
         return this.idtData[index] === 1;
     }
 
-    // NEW: Check if any terrain in area is indestructible
     hasIndestructibleTerrain(x, y, width, height) {
         const startX = Math.max(0, Math.floor(x));
         const endX = Math.min(this.width - 1, Math.floor(x + width));
@@ -124,7 +154,7 @@ class Terrain {
         return false;
     }
 
-    // NEW: Add IDT area and mark existing terrain pixels as indestructible
+        // NEW: Add IDT area and mark existing terrain pixels as indestructible
     addIdtArea(x, y, width, height) {
         // Store the area definition for saving/loading
         this.idtAreas.push({ x, y, width, height });
@@ -200,7 +230,7 @@ class Terrain {
 
     getObstacleHeight(x, y) {
         let height = 0;
-        let checkY = y + LEMMING_CONFIG.getHeight(1); // Use base height for obstacle checking
+        let checkY = y + LEMMING_CONFIG.getHeight(1);
 
         while (height < PHYSICS.climbHeight + 1 && this.hasGround(x, checkY - height)) {
             height++;
