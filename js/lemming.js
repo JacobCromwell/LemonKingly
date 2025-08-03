@@ -194,56 +194,59 @@ class Lemming {
     }
 
     walk(terrain, lemmings) {
-        const lemmingHeight = this.getHeight();
-        const lemmingWidth = this.getWidth();
+    const lemmingHeight = this.getHeight();
+    const lemmingWidth = this.getWidth();
 
-        if (!terrain.hasGround(this.x, this.y + lemmingHeight)) {
-            this.state = LemmingState.FALLING;
-            this.fallDistance = 0;
-            return;
-        }
+    // ENHANCED: Use more robust ground checking
+    const hasGroundBelow = terrain.hasGroundForLemming(this.x, this.y, lemmingWidth, lemmingHeight);
+    
+    if (!hasGroundBelow) {
+        this.state = LemmingState.FALLING;
+        this.fallDistance = 0;
+        return;
+    }
 
-        const nextX = this.x + this.direction * PHYSICS.walkSpeed;
-        let blocker = null;
+    const nextX = this.x + this.direction * PHYSICS.walkSpeed;
+    let blocker = null;
 
-        // Check for blocking lemmings
-        for (let i = 0; i < lemmings.length; i++) {
-            const l = lemmings[i];
-            if (l === this || l.state !== LemmingState.BLOCKING) continue;
+    // Check for blocking lemmings
+    for (let i = 0; i < lemmings.length; i++) {
+        const l = lemmings[i];
+        if (l === this || l.state !== LemmingState.BLOCKING) continue;
 
-            const xDist = Math.abs(l.x - nextX);
-            if (xDist >= lemmingWidth) continue;
+        const xDist = Math.abs(l.x - nextX);
+        if (xDist >= lemmingWidth) continue;
 
-            const yDist = Math.abs(l.y - this.y);
-            if (yDist < lemmingHeight) {
-                blocker = l;
-                break;
-            }
-        }
-
-        if (blocker) {
-            this.direction *= -1;
-            return;
-        }
-
-        // Check for obstacles
-        const obstacleHeight = terrain.getObstacleHeight(nextX, this.y);
-        if (obstacleHeight > PHYSICS.climbHeight) {
-            if (this.isClimber) {
-                this.state = LemmingState.CLIMBING;
-                return;
-            } else {
-                this.direction *= -1;
-            }
-        } else if (obstacleHeight > 0) {
-            // Small obstacle - climb over it
-            this.y -= obstacleHeight;
-            this.x = nextX;
-        } else {
-            // Normal walking
-            this.x = nextX;
+        const yDist = Math.abs(l.y - this.y);
+        if (yDist < lemmingHeight) {
+            blocker = l;
+            break;
         }
     }
+
+    if (blocker) {
+        this.direction *= -1;
+        return;
+    }
+
+    // Check for obstacles
+    const obstacleHeight = terrain.getObstacleHeight(nextX, this.y);
+    if (obstacleHeight > PHYSICS.climbHeight) {
+        if (this.isClimber) {
+            this.state = LemmingState.CLIMBING;
+            return;
+        } else {
+            this.direction *= -1;
+        }
+    } else if (obstacleHeight > 0) {
+        // Small obstacle - climb over it
+        this.y -= obstacleHeight;
+        this.x = nextX;
+    } else {
+        // Normal walking
+        this.x = nextX;
+    }
+}
 
     climb(terrain) {
         const lemmingWidth = this.getWidth();
