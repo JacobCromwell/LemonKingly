@@ -413,7 +413,7 @@ class Lemming {
             // Only advance if terrain was actually removed
             if (color) {
                 if (window.particleManager) {
-                    for (let i = 0; i < 10; i++) {
+                    for (let i = 0; i < 3; i++) {
                         window.particleManager.getParticle(
                             this.x + Math.random() * digWidth - digHeight / 2,
                             this.y + Math.random() * digHeight,
@@ -656,7 +656,7 @@ mine(terrain) {
 
         // Get terrain color for particles
         const imageData = terrain.ctx.getImageData(Math.floor(swingX), Math.floor(swingY), 1, 1);
-        const color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
+        //const color = `rgb(${imageData.data[0]}, ${imageData.data[1]}, ${imageData.data[2]})`;
 
         // Create particles for mining (fewer particles for performance)
         if (window.particleManager) {
@@ -669,7 +669,7 @@ mine(terrain) {
                 window.particleManager.getParticle(
                     particleX,
                     particleY,
-                    color,
+                    commonColors.terrainBrown,
                     Math.cos(angle) * (Math.random() * 2 + 1),
                     Math.sin(angle) * (Math.random() * 2 + 1) - 1
                 );

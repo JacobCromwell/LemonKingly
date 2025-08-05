@@ -1212,8 +1212,8 @@ class Game {
 
             // Adjust minimap size for better fit underneath toolbar
             // You can modify these dimensions as needed
-            this.minimapCanvas.width = 400;  // Reduced from 500
-            this.minimapCanvas.height = 160; // Reduced from 200
+            this.minimapCanvas.width = 800;  // Reduced from 500
+            this.minimapCanvas.height = 120; // Reduced from 200
 
             // Minimap event handlers
             this.minimapCanvas.addEventListener('mousedown', this.handleMinimapMouseDown.bind(this));

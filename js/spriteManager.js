@@ -12,13 +12,13 @@ class SpriteManager {
             // Movement animations
             walk: { url: 'assets/sprites/lemming-walk-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
             fall: { url: 'assets/sprites/lemming-fall-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
-            climb: { url: 'assets/sprites/lemming-climb-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
-            float: { url: 'assets/sprites/lemming-float-sheet.png', frames: 4, width: 6, height: 12, spacing: 2 },
+            climb: { url: 'assets/sprites/lemming-climb-sheet.png', frames: 4, width: 6, height: 10, spacing: 3 },
+            float: { url: 'assets/sprites/lemming-float-sheet.png', frames: 4, width: 8, height: 12, spacing: 3 },
 
             // Action animations
             bash: { url: 'assets/sprites/lemming-bash-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
             dig: { url: 'assets/sprites/lemming-dig-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
-            mine: { url: 'assets/sprites/lemming-mine-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
+            mine: { url: 'assets/sprites/lemming-mine-sheet.png', frames: 4, width: 8, height: 11, spacing: 3 },
             build: { url: 'assets/sprites/lemming-build-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
             block: { url: 'assets/sprites/lemming-block-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
 

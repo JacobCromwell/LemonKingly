@@ -63,3 +63,7 @@ const LemmingState = {
     DEAD: 'dead',
     SAVED: 'saved'
 };
+
+const commonColors = {
+    terrainBrown: '#8B4513'
+}
