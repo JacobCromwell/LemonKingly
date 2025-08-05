@@ -45,7 +45,7 @@ class EditorBase {
         // Level elements
         this.hazards = [];
         this.spawnPoint = { x: 100, y: 80 };
-        this.exitPoint = { x: 700, y: 80, width: 60, height: 50 };
+        this.exitPoint = { x: 700, y: 80, width: LEVEL_EDITOR.BASIC_TOOLS.EXIT_WIDTH, height: LEVEL_EDITOR.BASIC_TOOLS.EXIT_HEIGHT };
 
         // Editor state
         this.selectedTool = null;

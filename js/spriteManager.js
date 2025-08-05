@@ -26,7 +26,11 @@ class SpriteManager {
             deathFall: { url: 'assets/sprites/lemming-death-fall-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
             deathDrown: { url: 'assets/sprites/lemming-death-drown-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
             deathChop: { url: 'assets/sprites/lemming-death-chop-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
-            deathExplode: { url: 'assets/sprites/lemming-death-explode-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 }
+            deathExplode: { url: 'assets/sprites/lemming-death-explode-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
+
+            // NEW: Level element animations
+            spawn: { url: 'assets/sprites/spawn-animation-sheet.png', frames: 4, width: 40, height: 30, spacing: 3 },
+            exit: { url: 'assets/sprites/exit-animation-sheet.png', frames: 4, width: LEVEL_EDITOR.BASIC_TOOLS.EXIT_WIDTH, height: LEVEL_EDITOR.BASIC_TOOLS.EXIT_HEIGHT, spacing: 3 }
         };
 
         this.totalCount = Object.keys(this.spriteSheets).length;

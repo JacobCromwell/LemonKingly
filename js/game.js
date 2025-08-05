@@ -483,6 +483,8 @@ class Game {
         if (levelData.idtAreas && levelData.idtAreas.length > 0) {
             console.log('IDT areas loaded:', levelData.idtAreas.length);
         }
+
+        this.level.initializeExitAnimation();
     }
 
     async loadLevelMusic(musicPath) {
@@ -781,127 +783,138 @@ class Game {
 
     // Game loop with zoom support
     gameLoop() {
-        // Don't run game logic if paused (but still render current state)
-        if (!this.gameRunning && !this.countdownActive) return;
+    // Don't run game logic if paused (but still render current state)
+    if (!this.gameRunning && !this.countdownActive) return;
 
-        // Update countdown if active
-        if (this.countdownActive) {
-            this.updateCountdown();
+    // Update countdown if active
+    if (this.countdownActive) {
+        this.updateCountdown();
+        
+        // NEW: Start spawn animation when countdown finishes
+        if (!this.countdownActive && this.gameRunning) {
+            // Countdown just finished, start spawn animation
+            this.level.startSpawnAnimation();
         }
-
-        // Clear canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Apply zoom and camera transformation
-        this.ctx.save();
-        this.ctx.scale(this.zoom, this.zoom);
-        this.ctx.translate(-this.camera.x, -this.camera.y);
-
-        // Draw background
-        if (this.customBackground) {
-            this.ctx.drawImage(this.customBackground, 0, 0, this.levelWidth, this.levelHeight);
-        } else {
-            this.ctx.fillStyle = '#87CEEB';
-            this.ctx.fillRect(0, 0, this.levelWidth, this.levelHeight);
-        }
-
-        // Draw terrain
-        this.terrain.draw(this.ctx);
-
-        // Draw hazards (before lemmings so they appear behind)
-        this.level.drawHazards(this.ctx);
-
-        // Draw level elements (spawn, exit)
-        this.level.drawExit(this.ctx);
-        this.level.drawSpawner(this.ctx);
-
-        // Only update game elements if game is running AND not paused
-        if (this.gameRunning && !this.isPaused) {
-            // Update hazards
-            this.level.updateHazards();
-
-            // Process nuke timing if active
-            this.processNuke();
-
-            // Spawn lemmings (but not if nuke is activated)
-            if (!this.nukeActivated) {
-                this.spawnLemming();
-            }
-
-            // Update and draw lemmings
-            this.lemmings.forEach(lemming => {
-                // Update lemming zoom if it has changed
-                if (lemming.zoom !== this.zoom) {
-                    lemming.updateZoom(this.zoom);
-                }
-
-                lemming.update(this.terrain, this.lemmings);
-
-                // Check hazard collisions
-                if (lemming.state !== LemmingState.DEAD && lemming.state !== LemmingState.SAVED) {
-                    this.level.checkHazardCollisions(lemming);
-                }
-
-                // Check if lemming reached exit
-                if (lemming.state !== LemmingState.SAVED && this.level.isAtExit(lemming)) {
-                    lemming.state = LemmingState.SAVED;
-                    this.lemmingsSaved++;
-                    audioManager.playSound('save');
-                }
-
-                // Draw lemming (will be scaled by zoom)
-                lemming.draw(this.ctx);
-            });
-
-            // Update particles
-            if (window.particleManager) {
-                window.particleManager.update();
-                window.particleManager.draw(this.ctx);
-            }
-
-            // Clean up fully faded lemmings every 5 seconds
-            if (this.gameLoopCounter === undefined) {
-                this.gameLoopCounter = 0;
-            }
-
-            this.gameLoopCounter++;
-            if (this.gameLoopCounter % 300 === 0) {
-                this.cleanupDeadLemmings();
-            }
-        } else {
-            // During countdown or pause, still draw existing lemmings but don't update them
-            this.lemmings.forEach(lemming => {
-                lemming.draw(this.ctx);
-            });
-
-            // Draw particles even when paused (they look nice frozen)
-            if (window.particleManager) {
-                window.particleManager.draw(this.ctx);
-            }
-        }
-
-        // Restore context (end zoom transformation)
-        this.ctx.restore();
-
-        // Draw countdown overlay (after restoring context, so it's not zoomed)
-        if (this.countdownActive) {
-            this.drawCountdown(this.ctx);
-        }
-
-        // Draw UI elements at normal scale (minimap, etc.)
-        this.drawMinimap();
-
-        // Update UI
-        this.updateStats();
-
-        // Check if level is complete (only if game is running and not paused)
-        if (this.gameRunning && !this.isPaused) {
-            this.checkLevelComplete();
-        }
-
-        // Continue game loop
-        requestAnimationFrame(() => this.gameLoop());
     }
+
+    // Clear canvas
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // Apply zoom and camera transformation
+    this.ctx.save();
+    this.ctx.scale(this.zoom, this.zoom);
+    this.ctx.translate(-this.camera.x, -this.camera.y);
+
+    // Draw background
+    if (this.customBackground) {
+        this.ctx.drawImage(this.customBackground, 0, 0, this.levelWidth, this.levelHeight);
+    } else {
+        this.ctx.fillStyle = '#87CEEB';
+        this.ctx.fillRect(0, 0, this.levelWidth, this.levelHeight);
+    }
+
+    // Draw terrain
+    this.terrain.draw(this.ctx);
+
+    // Draw hazards (before lemmings so they appear behind)
+    this.level.drawHazards(this.ctx);
+
+    // NEW: Update level animations (spawn and exit)
+    if (this.level) {
+        this.level.updateAnimations();
+    }
+
+    // Draw level elements (spawn, exit) - now with animations
+    this.level.drawExit(this.ctx);
+    this.level.drawSpawner(this.ctx);
+
+    // Only update game elements if game is running AND not paused
+    if (this.gameRunning && !this.isPaused) {
+        // Update hazards
+        this.level.updateHazards();
+
+        // Process nuke timing if active
+        this.processNuke();
+
+        // Spawn lemmings (but not if nuke is activated)
+        if (!this.nukeActivated) {
+            this.spawnLemming();
+        }
+
+        // Update and draw lemmings
+        this.lemmings.forEach(lemming => {
+            // Update lemming zoom if it has changed
+            if (lemming.zoom !== this.zoom) {
+                lemming.updateZoom(this.zoom);
+            }
+
+            lemming.update(this.terrain, this.lemmings);
+
+            // Check hazard collisions
+            if (lemming.state !== LemmingState.DEAD && lemming.state !== LemmingState.SAVED) {
+                this.level.checkHazardCollisions(lemming);
+            }
+
+            // Check if lemming reached exit
+            if (lemming.state !== LemmingState.SAVED && this.level.isAtExit(lemming)) {
+                lemming.state = LemmingState.SAVED;
+                this.lemmingsSaved++;
+                audioManager.playSound('save');
+            }
+
+            // Draw lemming (will be scaled by zoom)
+            lemming.draw(this.ctx);
+        });
+
+        // Update particles
+        if (window.particleManager) {
+            window.particleManager.update();
+            window.particleManager.draw(this.ctx);
+        }
+
+        // Clean up fully faded lemmings every 5 seconds
+        if (this.gameLoopCounter === undefined) {
+            this.gameLoopCounter = 0;
+        }
+
+        this.gameLoopCounter++;
+        if (this.gameLoopCounter % 300 === 0) {
+            this.cleanupDeadLemmings();
+        }
+    } else {
+        // During countdown or pause, still draw existing lemmings but don't update them
+        this.lemmings.forEach(lemming => {
+            lemming.draw(this.ctx);
+        });
+
+        // Draw particles even when paused (they look nice frozen)
+        if (window.particleManager) {
+            window.particleManager.draw(this.ctx);
+        }
+    }
+
+    // Restore context (end zoom transformation)
+    this.ctx.restore();
+
+    // Draw countdown overlay (after restoring context, so it's not zoomed)
+    if (this.countdownActive) {
+        this.drawCountdown(this.ctx);
+    }
+
+    // Draw UI elements at normal scale (minimap, etc.)
+    this.drawMinimap();
+
+    // Update UI
+    this.updateStats();
+
+    // Check if level is complete (only if game is running and not paused)
+    if (this.gameRunning && !this.isPaused) {
+        this.checkLevelComplete();
+    }
+
+    // Continue game loop
+    requestAnimationFrame(() => this.gameLoop());
+}
 
     // Minimap drawing with proper world coordinates
     drawMinimap() {
@@ -1233,82 +1246,82 @@ class Game {
 
     // Add these methods to the Game class in js/game.js
 
-// Add to Game constructor:
-// this.spritesLoaded = false;
+    // Add to Game constructor:
+    // this.spritesLoaded = false;
 
-async loadGameAssets() {
-    const loadingBar = document.getElementById('loadingBar');
-    const loadingText = document.getElementById('loadingText');
-    const loadingScreen = document.getElementById('loadingScreen');
-    const loadingFallback = document.getElementById('loadingFallback');
-    
-    try {
-        // Update loading progress periodically
-        const updateProgress = setInterval(() => {
-            const progress = window.spriteManager.getLoadingProgress();
-            const percentage = Math.round(progress * 100);
-            
-            if (loadingBar) {
-                loadingBar.style.width = percentage + '%';
+    async loadGameAssets() {
+        const loadingBar = document.getElementById('loadingBar');
+        const loadingText = document.getElementById('loadingText');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loadingFallback = document.getElementById('loadingFallback');
+
+        try {
+            // Update loading progress periodically
+            const updateProgress = setInterval(() => {
+                const progress = window.spriteManager.getLoadingProgress();
+                const percentage = Math.round(progress * 100);
+
+                if (loadingBar) {
+                    loadingBar.style.width = percentage + '%';
+                }
+                if (loadingText) {
+                    loadingText.textContent = `Loading sprites... ${percentage}%`;
+                }
+            }, 100);
+
+            // Load all sprites
+            const success = await window.spriteManager.preloadAll();
+
+            clearInterval(updateProgress);
+
+            if (success && window.spriteManager.isFullyLoaded()) {
+                // All sprites loaded successfully
+                this.spritesLoaded = true;
+                this.hideLoadingScreen();
+            } else {
+                // Some sprites failed to load
+                if (loadingFallback) {
+                    loadingFallback.classList.remove('hidden');
+                }
+
+                // Check if we have at least fallback sprites
+                const hasFallbacks = window.spriteManager.getLoadingProgress() > 0;
+                if (hasFallbacks) {
+                    // Auto-continue with fallbacks after a delay
+                    setTimeout(() => this.continueWithFallback(), 3000);
+                }
             }
-            if (loadingText) {
-                loadingText.textContent = `Loading sprites... ${percentage}%`;
-            }
-        }, 100);
-        
-        // Load all sprites
-        const success = await window.spriteManager.preloadAll();
-        
-        clearInterval(updateProgress);
-        
-        if (success && window.spriteManager.isFullyLoaded()) {
-            // All sprites loaded successfully
-            this.spritesLoaded = true;
-            this.hideLoadingScreen();
-        } else {
-            // Some sprites failed to load
+
+        } catch (error) {
+            console.error('Error loading game assets:', error);
+
+            // Show fallback option
             if (loadingFallback) {
                 loadingFallback.classList.remove('hidden');
             }
-            
-            // Check if we have at least fallback sprites
-            const hasFallbacks = window.spriteManager.getLoadingProgress() > 0;
-            if (hasFallbacks) {
-                // Auto-continue with fallbacks after a delay
-                setTimeout(() => this.continueWithFallback(), 3000);
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error loading game assets:', error);
-        
-        // Show fallback option
-        if (loadingFallback) {
-            loadingFallback.classList.remove('hidden');
         }
     }
-}
 
-hideLoadingScreen() {
-    const loadingScreen = document.getElementById('loadingScreen');
-    if (loadingScreen) {
-        // Fade out animation
-        loadingScreen.style.transition = 'opacity 0.5s ease';
-        loadingScreen.style.opacity = '0';
-        
-        setTimeout(() => {
-            loadingScreen.style.display = 'none';
-        }, 500);
+    hideLoadingScreen() {
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (loadingScreen) {
+            // Fade out animation
+            loadingScreen.style.transition = 'opacity 0.5s ease';
+            loadingScreen.style.opacity = '0';
+
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+            }, 500);
+        }
     }
-}
 
-continueWithFallback() {
-    console.log('Continuing with fallback graphics');
-    this.spritesLoaded = true; // Mark as loaded even with fallbacks
-    this.hideLoadingScreen();
-}
+    continueWithFallback() {
+        console.log('Continuing with fallback graphics');
+        this.spritesLoaded = true; // Mark as loaded even with fallbacks
+        this.hideLoadingScreen();
+    }
 
-// Update the draw loop in game.js to check if sprites are loaded:
-// In gameLoop() method, add at the beginning:
-// if (!this.spritesLoaded) return;
+    // Update the draw loop in game.js to check if sprites are loaded:
+    // In gameLoop() method, add at the beginning:
+    // if (!this.spritesLoaded) return;
 }
