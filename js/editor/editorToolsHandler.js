@@ -189,11 +189,11 @@ class EditorToolsHandler {
                 break;
             case 'spawn':
                 ctx.fillStyle = '#2196F3';
-                ctx.fillRect(this.editor.mouseX - 20, this.editor.mouseY - 30, 40, 30);
+                ctx.fillRect(this.editor.mouseX - 20, this.editor.mouseY - 30, LEVEL_EDITOR.BASIC_TOOLS.SPAWN_WIDTH, LEVEL_EDITOR.BASIC_TOOLS.SPAWN_HEIGHT);
                 break;
             case 'exit':
                 ctx.fillStyle = '#4CAF50';
-                ctx.fillRect(this.editor.mouseX - 30, this.editor.mouseY - 25, 40, 26);  //width: 40, height: 26
+                ctx.fillRect(this.editor.mouseX - 30, this.editor.mouseY - 25, LEVEL_EDITOR.BASIC_TOOLS.EXIT_WIDTH, LEVEL_EDITOR.BASIC_TOOLS.EXIT_HEIGHT);
                 break;
         }
         
