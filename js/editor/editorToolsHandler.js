@@ -33,8 +33,8 @@ class EditorToolsHandler {
                 this.editor.exitPoint = { 
                     x: levelPos.x - 30, 
                     y: levelPos.y - 25, 
-                    width: 60, 
-                    height: 50 
+                    width: LEVEL_EDITOR.BASIC_TOOLS.EXIT_WIDTH, 
+                    height: LEVEL_EDITOR.BASIC_TOOLS.EXIT_HEIGHT 
                 };
                 this.editor.selectedTool = null;
                 this.updateToolSelection();
@@ -189,11 +189,11 @@ class EditorToolsHandler {
                 break;
             case 'spawn':
                 ctx.fillStyle = '#2196F3';
-                ctx.fillRect(this.editor.mouseX - 20, this.editor.mouseY - 30, 40, 30);
+                ctx.fillRect(this.editor.mouseX - 20, this.editor.mouseY - 30, LEVEL_EDITOR.BASIC_TOOLS.SPAWN_WIDTH, LEVEL_EDITOR.BASIC_TOOLS.SPAWN_HEIGHT);
                 break;
             case 'exit':
                 ctx.fillStyle = '#4CAF50';
-                ctx.fillRect(this.editor.mouseX - 30, this.editor.mouseY - 25, 60, 50);
+                ctx.fillRect(this.editor.mouseX - 30, this.editor.mouseY - 25, LEVEL_EDITOR.BASIC_TOOLS.EXIT_WIDTH, LEVEL_EDITOR.BASIC_TOOLS.EXIT_HEIGHT);
                 break;
         }
         

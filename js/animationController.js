@@ -1,4 +1,4 @@
-// js/animationController.js - Manages animation states and frame timing
+// js/animationController.js - Add support for one-time animations
 
 class AnimationController {
     constructor() {
@@ -10,7 +10,11 @@ class AnimationController {
         this.lastFrameTime = Date.now();
         this.isAnimating = true;
         
-        // Animation state mappings
+        // NEW: Support for one-time animations
+        this.isLooping = true; // Most animations loop
+        this.hasCompleted = false; // Track if non-looping animation completed
+        
+        // Animation state mappings (existing code)
         this.stateAnimations = {
             [LemmingState.WALKING]: 'walk',
             [LemmingState.FALLING]: 'fall',
@@ -20,33 +24,27 @@ class AnimationController {
             [LemmingState.DIGGING]: 'dig',
             [LemmingState.BUILDING]: 'build',
             [LemmingState.MINING]: 'mine',
-            [LemmingState.EXPLODING]: 'walk', // Use walk animation with countdown overlay
-            [LemmingState.DEAD]: null // Will be set based on death type
+            [LemmingState.EXPLODING]: 'walk',
+            [LemmingState.DEAD]: null
         };
         
-        // Death type to animation mapping
+        // Death type to animation mapping (existing code)
         this.deathAnimations = {
             fall: 'deathFall',
             drown: 'deathDrown',
             chop: 'deathChop',
             explode: 'deathExplode',
-            default: 'deathFall' // Fallback
+            default: 'deathFall'
         };
         
-        // Track death animation completion
+        // Track death animation completion (existing code)
         this.deathAnimationComplete = false;
         this.deathType = null;
     }
-    
-    /**
-     * Update animation state based on lemming state
-     * @param {string} lemmingState - Current lemming state
-     * @param {Object} lemming - Reference to lemming for special cases
-     */
+
     updateAnimationState(lemmingState, lemming) {
         let newAnimation = this.stateAnimations[lemmingState];
         
-        // Special cases
         if (lemmingState === LemmingState.FALLING && lemming.isFloater) {
             newAnimation = 'float';
         }
@@ -55,34 +53,45 @@ class AnimationController {
             newAnimation = this.deathAnimations[this.deathType] || this.deathAnimations.default;
         }
         
-        // Reset frame if animation changed
         if (newAnimation !== this.currentAnimation) {
             this.currentAnimation = newAnimation;
             this.currentFrame = 0;
             this.frameTimer = 0;
             this.lastFrameTime = Date.now();
+            this.isLooping = true; // Lemming animations are typically looping
+            this.hasCompleted = false;
             
-            // For death animations, track completion
             if (newAnimation && newAnimation.startsWith('death')) {
                 this.deathAnimationComplete = false;
             }
         }
     }
     
-    /**
-     * Set death type for death animation selection
-     * @param {string} type - Type of death (fall, drown, chop, explode)
-     */
-    setDeathType(type) {
-        this.deathType = type;
+    // NEW: Set animation as one-time (non-looping)
+    setOneTimeAnimation(animationKey) {
+        this.currentAnimation = animationKey;
+        this.currentFrame = 0;
+        this.frameTimer = 0;
+        this.lastFrameTime = Date.now();
+        this.isAnimating = true;
+        this.isLooping = false;
+        this.hasCompleted = false;
     }
     
-    /**
-     * Update animation frame timing
-     * @returns {boolean} True if frame advanced
-     */
+    // NEW: Set animation as looping (default behavior)
+    setLoopingAnimation(animationKey) {
+        this.currentAnimation = animationKey;
+        this.currentFrame = 0;
+        this.frameTimer = 0;
+        this.lastFrameTime = Date.now();
+        this.isAnimating = true;
+        this.isLooping = true;
+        this.hasCompleted = false;
+    }
+    
+    // UPDATED: Update animation frame timing with one-time support
     update() {
-        if (!this.isAnimating || !this.currentAnimation) {
+        if (!this.isAnimating || !this.currentAnimation || this.hasCompleted) {
             return false;
         }
         
@@ -98,17 +107,23 @@ class AnimationController {
             const sprite = window.spriteManager?.getSprite(this.currentAnimation);
             const frameCount = sprite?.frames || 4;
             
-            // Handle frame wrapping
+            // Handle frame wrapping/completion
             if (this.currentFrame >= frameCount) {
-                // For death animations, stop at last frame
-                if (this.currentAnimation.startsWith('death')) {
-                    this.currentFrame = frameCount - 1;
-                    this.deathAnimationComplete = true;
-                    this.isAnimating = false;
-                } else {
-                    // Loop other animations
+                if (this.isLooping) {
+                    // Loop animation - restart from frame 0
                     this.currentFrame = 0;
+                } else {
+                    // One-time animation - stop at last frame and mark complete
+                    this.currentFrame = frameCount - 1;
+                    this.hasCompleted = true;
+                    this.isAnimating = false;
                 }
+            }
+            
+            // Special handling for death animations (existing code)
+            if (this.currentAnimation.startsWith('death') && this.currentFrame >= frameCount - 1) {
+                this.deathAnimationComplete = true;
+                this.isAnimating = false;
             }
             
             return true;
@@ -117,62 +132,49 @@ class AnimationController {
         return false;
     }
     
-    /**
-     * Get current frame index
-     * @returns {number} Current frame (0-based)
-     */
-    getCurrentFrame() {
-        return this.currentFrame;
+    // NEW: Check if one-time animation has completed
+    isCompleted() {
+        return this.hasCompleted;
     }
     
-    /**
-     * Get current animation key
-     * @returns {string} Current animation sprite key
-     */
-    getCurrentAnimation() {
-        return this.currentAnimation;
-    }
-    
-    /**
-     * Check if death animation has completed
-     * @returns {boolean} True if death animation is complete
-     */
-    isDeathAnimationComplete() {
-        return this.deathAnimationComplete;
-    }
-    
-    /**
-     * Reset animation state
-     */
+    // UPDATED: Reset method with one-time animation support
     reset() {
         this.currentAnimation = 'walk';
         this.currentFrame = 0;
         this.frameTimer = 0;
         this.lastFrameTime = Date.now();
         this.isAnimating = true;
+        this.isLooping = true;
+        this.hasCompleted = false;
         this.deathAnimationComplete = false;
         this.deathType = null;
     }
     
-    /**
-     * Pause animation
-     */
+    setDeathType(type) {
+        this.deathType = type;
+    }
+    
+    getCurrentFrame() {
+        return this.currentFrame;
+    }
+    
+    getCurrentAnimation() {
+        return this.currentAnimation;
+    }
+    
+    isDeathAnimationComplete() {
+        return this.deathAnimationComplete;
+    }
+    
     pause() {
         this.isAnimating = false;
     }
     
-    /**
-     * Resume animation
-     */
     resume() {
         this.isAnimating = true;
         this.lastFrameTime = Date.now();
     }
     
-    /**
-     * Set animation speed (frames per second)
-     * @param {number} fps - Frames per second
-     */
     setFrameRate(fps) {
         this.frameRate = fps;
         this.frameDuration = 1000 / fps;

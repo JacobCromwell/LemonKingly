@@ -67,3 +67,13 @@ const LemmingState = {
 const commonColors = {
     terrainBrown: '#8B4513'
 }
+
+const LEVEL_EDITOR = {
+    BASIC_TOOLS: {
+        EXIT_WIDTH: 40,
+        EXIT_HEIGHT: 26,
+        SPAWN_WIDTH: 40,
+        SPAWN_HEIGHT: 30
+
+    }
+}
