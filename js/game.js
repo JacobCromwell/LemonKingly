@@ -813,11 +813,11 @@ class Game {
         this.ctx.fillRect(0, 0, this.levelWidth, this.levelHeight);
     }
 
-    // Draw terrain
-    this.terrain.draw(this.ctx);
-
     // Draw hazards (before lemmings so they appear behind)
     this.level.drawHazards(this.ctx);
+
+    // Draw terrain
+    this.terrain.draw(this.ctx);
 
     // NEW: Update level animations (spawn and exit)
     if (this.level) {
