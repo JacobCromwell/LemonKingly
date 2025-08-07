@@ -33,7 +33,7 @@ class SpriteManager {
             exit: { url: 'assets/sprites/exit-animation-sheet.png', frames: 4, width: LEVEL_EDITOR.BASIC_TOOLS.EXIT_WIDTH, height: LEVEL_EDITOR.BASIC_TOOLS.EXIT_HEIGHT, spacing: 3 },
             
             // Hazard animations (32px wide, 40px tall, tileable)
-            hazardLava: { url: 'assets/sprites/hazard-lava-sheet.png', frames: 4, width: 32, height: 40, spacing: 2 },
+            hazardLava: { url: 'assets/sprites/hazard-lava-sheet.png', frames: 7, width: 40, height: 32, spacing: 2 },
             hazardAcid: { url: 'assets/sprites/hazard-acid-sheet.png', frames: 6, width: 40, height: 32, spacing: 2 },
             hazardWater: { url: 'assets/sprites/hazard-water-sheet.png', frames: 4, width: 32, height: 40, spacing: 2 }
         };
