@@ -1,5 +1,3 @@
-// js/spriteManager.js - Manages sprite sheet loading and caching
-
 class SpriteManager {
     constructor() {
         this.sprites = new Map();
@@ -28,9 +26,14 @@ class SpriteManager {
             deathChop: { url: 'assets/sprites/lemming-death-chop-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
             deathExplode: { url: 'assets/sprites/lemming-death-explode-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
 
-            // NEW: Level element animations
+            // Level element animations
             spawn: { url: 'assets/sprites/spawn-animation-sheet.png', frames: 4, width: LEVEL_EDITOR.BASIC_TOOLS.SPAWN_WIDTH, height: LEVEL_EDITOR.BASIC_TOOLS.SPAWN_HEIGHT, spacing: 3 },
-            exit: { url: 'assets/sprites/exit-animation-sheet.png', frames: 4, width: LEVEL_EDITOR.BASIC_TOOLS.EXIT_WIDTH, height: LEVEL_EDITOR.BASIC_TOOLS.EXIT_HEIGHT, spacing: 3 }
+            exit: { url: 'assets/sprites/exit-animation-sheet.png', frames: 4, width: LEVEL_EDITOR.BASIC_TOOLS.EXIT_WIDTH, height: LEVEL_EDITOR.BASIC_TOOLS.EXIT_HEIGHT, spacing: 3 },
+            
+            // Hazard animations (32px wide, 40px tall, tileable)
+            hazardLava: { url: 'assets/sprites/hazard-lava-sheet.png', frames: 7, width: 40, height: 32, spacing: 2 },
+            hazardAcid: { url: 'assets/sprites/hazard-acid-sheet.png', frames: 6, width: 40, height: 32, spacing: 2 },
+            hazardWater: { url: 'assets/sprites/hazard-water-sheet.png', frames: 5, width: 23, height: 21, spacing: 0 }
         };
 
         this.totalCount = Object.keys(this.spriteSheets).length;
@@ -134,7 +137,10 @@ class SpriteManager {
             deathDrown: '#0066ff',
             deathChop: '#cc0000',
             deathExplode: '#ff8800',
-            explodeCountdown: '#ffff00'
+            explodeCountdown: '#ffff00',
+            hazardLava: '#ff3300',
+            hazardAcid: '#00ff00',
+            hazardWater: '#0099ff'
         };
 
         const color = colors[key] || '#00ff00';
@@ -290,6 +296,165 @@ class SpriteManager {
             srcX, srcY, sprite.frameWidth, sprite.frameHeight,
             x - destWidth / 2, y, destWidth, destHeight
         );
+
+        ctx.restore();
+    }
+
+    /**
+     * Draw a tiled sprite horizontally with vertical stretching
+     * Used for hazard animations that need to repeat across width
+     * @param {CanvasRenderingContext2D} ctx - Canvas context
+     * @param {string} spriteKey - Sprite sheet identifier
+     * @param {number} frameIndex - Which frame to draw (0-based)
+     * @param {number} x - X position to draw at
+     * @param {number} y - Y position to draw at
+     * @param {number} width - Total width to fill with tiles
+     * @param {number} height - Total height (sprite will stretch if needed)
+     */
+    drawTiledSprite(ctx, spriteKey, frameIndex, x, y, width, height) {
+        const sprite = this.getSprite(spriteKey);
+        if (!sprite) return;
+
+        // Calculate source rectangle accounting for spacing
+        const spacing = sprite.spacing || 0;
+        const srcY = 0;
+
+        // Calculate how many tiles we need horizontally
+        const tilesNeeded = width / sprite.frameWidth;
+        const fullTiles = Math.floor(tilesNeeded);
+        const partialTileWidth = (width % sprite.frameWidth);
+
+        ctx.save();
+        
+        // Disable image smoothing to prevent blurring and gaps
+        ctx.imageSmoothingEnabled = false;
+        
+        // Round positions to prevent sub-pixel rendering
+        const roundedX = Math.floor(x);
+        const roundedY = Math.floor(y);
+        const roundedHeight = Math.ceil(height);
+
+        // Draw full tiles with 1px overlap to prevent gaps
+        for (let i = 0; i < fullTiles; i++) {
+            // Calculate frame index for this tile (offset by tile index)
+            const tileFrameIndex = (frameIndex + i) % sprite.frames;
+            const srcX = tileFrameIndex * (sprite.frameWidth + spacing);
+            
+            // Calculate destination X with slight overlap (except for first tile)
+            const destX = roundedX + (i * sprite.frameWidth) - (i > 0 ? 1 : 0);
+            // Add 1px to width (except for last full tile if there's no partial)
+            const tileWidth = sprite.frameWidth + ((i < fullTiles - 1) || partialTileWidth > 0 ? 1 : 0);
+            
+            ctx.drawImage(
+                sprite.image,
+                srcX, srcY, sprite.frameWidth, sprite.frameHeight,
+                destX, roundedY, tileWidth, roundedHeight
+            );
+        }
+
+        // Draw partial tile if needed
+        if (partialTileWidth > 0) {
+            // Calculate frame index for the partial tile
+            const tileFrameIndex = (frameIndex + fullTiles) % sprite.frames;
+            const srcX = tileFrameIndex * (sprite.frameWidth + spacing);
+            
+            const destX = roundedX + (fullTiles * sprite.frameWidth) - 1; // Overlap by 1px
+            
+            // Clip the drawing area for the partial tile
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(destX, roundedY, Math.ceil(partialTileWidth) + 1, roundedHeight);
+            ctx.clip();
+            
+            ctx.drawImage(
+                sprite.image,
+                srcX, srcY, sprite.frameWidth, sprite.frameHeight,
+                destX, roundedY, sprite.frameWidth, roundedHeight
+            );
+            
+            ctx.restore();
+        }
+
+        ctx.restore();
+    }
+
+    /**
+     * Draw a tiled sprite horizontally with vertical stretching and custom frame offsets
+     * Used for hazard animations with random frame offsets per tile
+     * @param {CanvasRenderingContext2D} ctx - Canvas context
+     * @param {string} spriteKey - Sprite sheet identifier
+     * @param {number} frameIndex - Base frame index (0-based)
+     * @param {number} x - X position to draw at
+     * @param {number} y - Y position to draw at
+     * @param {number} width - Total width to fill with tiles
+     * @param {number} height - Total height (sprite will stretch if needed)
+     * @param {number[]} frameOffsets - Array of frame offsets for each tile
+     */
+    drawTiledSpriteWithOffsets(ctx, spriteKey, frameIndex, x, y, width, height, frameOffsets) {
+        const sprite = this.getSprite(spriteKey);
+        if (!sprite) return;
+
+        // Calculate source rectangle accounting for spacing
+        const spacing = sprite.spacing || 0;
+        const srcY = 0;
+
+        // Calculate how many tiles we need horizontally
+        const tilesNeeded = width / sprite.frameWidth;
+        const fullTiles = Math.floor(tilesNeeded);
+        const partialTileWidth = (width % sprite.frameWidth);
+
+        ctx.save();
+        
+        // Disable image smoothing to prevent blurring and gaps
+        ctx.imageSmoothingEnabled = false;
+        
+        // Round positions to prevent sub-pixel rendering
+        const roundedX = Math.floor(x);
+        const roundedY = Math.floor(y);
+        const roundedHeight = Math.ceil(height);
+
+        // Draw full tiles with 1px overlap to prevent gaps
+        for (let i = 0; i < fullTiles; i++) {
+            // Use the random offset for this tile (or 0 if not enough offsets)
+            const offset = frameOffsets && frameOffsets[i] !== undefined ? frameOffsets[i] : 0;
+            const tileFrameIndex = (frameIndex + offset) % sprite.frames;
+            const srcX = tileFrameIndex * (sprite.frameWidth + spacing);
+            
+            // Calculate destination X with slight overlap (except for first tile)
+            const destX = roundedX + (i * sprite.frameWidth) - (i > 0 ? 1 : 0);
+            // Add 1px to width (except for last full tile if there's no partial)
+            const tileWidth = sprite.frameWidth + ((i < fullTiles - 1) || partialTileWidth > 0 ? 1 : 0);
+            
+            ctx.drawImage(
+                sprite.image,
+                srcX, srcY, sprite.frameWidth, sprite.frameHeight,
+                destX, roundedY, tileWidth, roundedHeight
+            );
+        }
+
+        // Draw partial tile if needed
+        if (partialTileWidth > 0) {
+            // Use the random offset for the partial tile
+            const offset = frameOffsets && frameOffsets[fullTiles] !== undefined ? frameOffsets[fullTiles] : 0;
+            const tileFrameIndex = (frameIndex + offset) % sprite.frames;
+            const srcX = tileFrameIndex * (sprite.frameWidth + spacing);
+            
+            const destX = roundedX + (fullTiles * sprite.frameWidth) - 1; // Overlap by 1px
+            
+            // Clip the drawing area for the partial tile
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(destX, roundedY, Math.ceil(partialTileWidth) + 1, roundedHeight);
+            ctx.clip();
+            
+            ctx.drawImage(
+                sprite.image,
+                srcX, srcY, sprite.frameWidth, sprite.frameHeight,
+                destX, roundedY, sprite.frameWidth, roundedHeight
+            );
+            
+            ctx.restore();
+        }
 
         ctx.restore();
     }

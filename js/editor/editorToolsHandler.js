@@ -41,6 +41,8 @@ class EditorToolsHandler {
                 break;
                 
             case 'lava':
+            case 'acid':
+            case 'water':
             case 'bearTrap':
             case 'spikes':
                 const size = this.getHazardSize();
@@ -163,6 +165,14 @@ class EditorToolsHandler {
         switch (this.editor.selectedTool) {
             case 'lava':
                 ctx.fillStyle = '#ff3300';
+                ctx.fillRect(this.editor.mouseX - size.width/2, this.editor.mouseY - size.height/2, size.width, size.height);
+                break;
+            case 'acid':
+                ctx.fillStyle = '#1cb30eff';
+                ctx.fillRect(this.editor.mouseX - size.width/2, this.editor.mouseY - size.height/2, size.width, size.height);
+                break;
+            case 'water':
+                ctx.fillStyle = '#2403dfff';
                 ctx.fillRect(this.editor.mouseX - size.width/2, this.editor.mouseY - size.height/2, size.width, size.height);
                 break;
             case 'bearTrap':

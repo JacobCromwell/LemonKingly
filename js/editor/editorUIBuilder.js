@@ -67,6 +67,14 @@ class EditorUIBuilder {
                                 <span class="toolIcon">🔥</span>
                                 <span class="toolLabel">Lava</span>
                             </button>
+                            <button class="toolButton" data-tool="acid" onclick="editor.toolsHandler.selectTool('acid')" title="Place Acid">
+                                <span class="toolIcon">🧪</span>
+                                <span class="toolLabel">Acid</span>
+                            </button>
+                            <button class="toolButton" data-tool="water" onclick="editor.toolsHandler.selectTool('water')" title="Place Water">
+                                <span class="toolIcon">💧</span>
+                                <span class="toolLabel">Water</span>
+                            </button>
                             <button class="toolButton" data-tool="bearTrap" onclick="editor.toolsHandler.selectTool('bearTrap')" title="Place Bear Trap">
                                 <span class="toolIcon">🪤</span>
                                 <span class="toolLabel">Trap</span>
