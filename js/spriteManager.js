@@ -35,7 +35,7 @@ class SpriteManager {
             // Hazard animations (32px wide, 40px tall, tileable)
             hazardLava: { url: 'assets/sprites/hazard-lava-sheet.png', frames: 7, width: 40, height: 32, spacing: 2 },
             hazardAcid: { url: 'assets/sprites/hazard-acid-sheet.png', frames: 6, width: 40, height: 32, spacing: 2 },
-            hazardWater: { url: 'assets/sprites/hazard-water-sheet.png', frames: 4, width: 32, height: 40, spacing: 2 }
+            hazardWater: { url: 'assets/sprites/hazard-water-sheet.png', frames: 5, width: 23, height: 21, spacing: 0 }
         };
 
         this.totalCount = Object.keys(this.spriteSheets).length;
@@ -319,7 +319,6 @@ class SpriteManager {
 
         // Calculate source rectangle accounting for spacing
         const spacing = sprite.spacing || 0;
-        const srcX = frameIndex * (sprite.frameWidth + spacing);
         const srcY = 0;
 
         // Calculate how many tiles we need horizontally
@@ -339,6 +338,10 @@ class SpriteManager {
 
         // Draw full tiles with 1px overlap to prevent gaps
         for (let i = 0; i < fullTiles; i++) {
+            // Calculate frame index for this tile (offset by tile index)
+            const tileFrameIndex = (frameIndex + i) % sprite.frames;
+            const srcX = tileFrameIndex * (sprite.frameWidth + spacing);
+            
             // Calculate destination X with slight overlap (except for first tile)
             const destX = roundedX + (i * sprite.frameWidth) - (i > 0 ? 1 : 0);
             // Add 1px to width (except for last full tile if there's no partial)
@@ -353,6 +356,10 @@ class SpriteManager {
 
         // Draw partial tile if needed
         if (partialTileWidth > 0) {
+            // Calculate frame index for the partial tile
+            const tileFrameIndex = (frameIndex + fullTiles) % sprite.frames;
+            const srcX = tileFrameIndex * (sprite.frameWidth + spacing);
+            
             const destX = roundedX + (fullTiles * sprite.frameWidth) - 1; // Overlap by 1px
             
             // Clip the drawing area for the partial tile
