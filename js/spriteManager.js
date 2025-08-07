@@ -28,9 +28,14 @@ class SpriteManager {
             deathChop: { url: 'assets/sprites/lemming-death-chop-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
             deathExplode: { url: 'assets/sprites/lemming-death-explode-sheet.png', frames: 4, width: 6, height: 10, spacing: 2 },
 
-            // NEW: Level element animations
+            // Level element animations
             spawn: { url: 'assets/sprites/spawn-animation-sheet.png', frames: 4, width: LEVEL_EDITOR.BASIC_TOOLS.SPAWN_WIDTH, height: LEVEL_EDITOR.BASIC_TOOLS.SPAWN_HEIGHT, spacing: 3 },
-            exit: { url: 'assets/sprites/exit-animation-sheet.png', frames: 4, width: LEVEL_EDITOR.BASIC_TOOLS.EXIT_WIDTH, height: LEVEL_EDITOR.BASIC_TOOLS.EXIT_HEIGHT, spacing: 3 }
+            exit: { url: 'assets/sprites/exit-animation-sheet.png', frames: 4, width: LEVEL_EDITOR.BASIC_TOOLS.EXIT_WIDTH, height: LEVEL_EDITOR.BASIC_TOOLS.EXIT_HEIGHT, spacing: 3 },
+            
+            // Hazard animations (32px wide, 40px tall, tileable)
+            hazardLava: { url: 'assets/sprites/hazard-lava-sheet.png', frames: 4, width: 32, height: 40, spacing: 2 },
+            hazardAcid: { url: 'assets/sprites/hazard-acid-sheet.png', frames: 6, width: 40, height: 32, spacing: 2 },
+            hazardWater: { url: 'assets/sprites/hazard-water-sheet.png', frames: 4, width: 32, height: 40, spacing: 2 }
         };
 
         this.totalCount = Object.keys(this.spriteSheets).length;
@@ -134,7 +139,10 @@ class SpriteManager {
             deathDrown: '#0066ff',
             deathChop: '#cc0000',
             deathExplode: '#ff8800',
-            explodeCountdown: '#ffff00'
+            explodeCountdown: '#ffff00',
+            hazardLava: '#ff3300',
+            hazardAcid: '#00ff00',
+            hazardWater: '#0099ff'
         };
 
         const color = colors[key] || '#00ff00';
@@ -290,6 +298,66 @@ class SpriteManager {
             srcX, srcY, sprite.frameWidth, sprite.frameHeight,
             x - destWidth / 2, y, destWidth, destHeight
         );
+
+        ctx.restore();
+    }
+
+    /**
+     * Draw a tiled sprite horizontally with vertical stretching
+     * Used for hazard animations that need to repeat across width
+     * @param {CanvasRenderingContext2D} ctx - Canvas context
+     * @param {string} spriteKey - Sprite sheet identifier
+     * @param {number} frameIndex - Which frame to draw (0-based)
+     * @param {number} x - X position to draw at
+     * @param {number} y - Y position to draw at
+     * @param {number} width - Total width to fill with tiles
+     * @param {number} height - Total height (sprite will stretch if needed)
+     */
+    drawTiledSprite(ctx, spriteKey, frameIndex, x, y, width, height) {
+        const sprite = this.getSprite(spriteKey);
+        if (!sprite) return;
+
+        // Calculate source rectangle accounting for spacing
+        const spacing = sprite.spacing || 0;
+        const srcX = frameIndex * (sprite.frameWidth + spacing);
+        const srcY = 0;
+
+        // Calculate how many tiles we need horizontally
+        const tilesNeeded = width / sprite.frameWidth;
+        const fullTiles = Math.floor(tilesNeeded);
+        const partialTileWidth = (width % sprite.frameWidth);
+
+        ctx.save();
+
+        // Draw full tiles
+        for (let i = 0; i < fullTiles; i++) {
+            const destX = x + (i * sprite.frameWidth);
+            
+            ctx.drawImage(
+                sprite.image,
+                srcX, srcY, sprite.frameWidth, sprite.frameHeight,
+                destX, y, sprite.frameWidth, height
+            );
+        }
+
+        // Draw partial tile if needed
+        if (partialTileWidth > 0) {
+            const destX = x + (fullTiles * sprite.frameWidth);
+            
+            // Clip the drawing area for the partial tile
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(destX, y, partialTileWidth, height);
+            ctx.clip();
+            
+            ctx.drawImage(
+                sprite.image,
+                srcX, srcY, sprite.frameWidth, sprite.frameHeight,
+                destX, y, sprite.frameWidth, height
+            );
+            
+            ctx.restore();
+        }
 
         ctx.restore();
     }

@@ -1,4 +1,4 @@
-// Simplified Hazard class using ParticleManager
+// Enhanced Hazard class with animated sprite support
 class Hazard {
     constructor(x, y, width, height, type) {
         this.x = x;
@@ -10,10 +10,37 @@ class Hazard {
         this.animationSpeed = 0.1;
         this.triggered = false;
         this.triggerTime = 0;
+        
+        // Animation controller for synchronized animations
+        this.animationController = new AnimationController();
+        this.setupAnimation();
+    }
+    
+    setupAnimation() {
+        // Map hazard types to their sprite animations
+        const animationMap = {
+            'lava': 'hazardLava',
+            'acid': 'hazardAcid',
+            'water': 'hazardWater'
+        };
+        
+        if (animationMap[this.type]) {
+            this.animationController.currentAnimation = animationMap[this.type];
+            this.animationController.currentFrame = 0;
+            this.animationController.frameTimer = 0;
+            this.animationController.lastFrameTime = Date.now();
+            this.animationController.isAnimating = true;
+            this.animationController.setFrameRate(4); // Slower animation for hazards
+        }
     }
     
     update() {
         this.animationFrame += this.animationSpeed;
+        
+        // Update animation controller for sprite-based hazards
+        if (this.animationController.currentAnimation) {
+            this.animationController.update();
+        }
         
         // Update specific hazard animations
         switch(this.type) {
@@ -41,13 +68,9 @@ class Hazard {
         
         lemming.setDead();
         
-        // Create death particles based on hazard type
-        if (window.particleManager) {
+        // Only create particles for non-liquid hazards
+        if (window.particleManager && this.type !== 'lava' && this.type !== 'acid' && this.type !== 'water') {
             switch(this.type) {
-                case 'lava':
-                    window.particleManager.createLavaParticles(lemming.x, lemming.y + lemming.getHeight()/2);
-                    break;
-                    
                 case 'bearTrap':
                     this.triggered = true;
                     this.triggerTime = 0;
@@ -66,7 +89,9 @@ class Hazard {
         
         switch(this.type) {
             case 'lava':
-                this.drawLava(ctx);
+            case 'acid':
+            case 'water':
+                this.drawAnimatedHazard(ctx);
                 break;
             case 'bearTrap':
                 this.drawBearTrap(ctx);
@@ -79,28 +104,56 @@ class Hazard {
         ctx.restore();
     }
     
-    drawLava(ctx) {
-        // Draw lava pool
-        ctx.fillStyle = '#ff3300';
+    drawAnimatedHazard(ctx) {
+        // Map hazard types to their sprite keys
+        const spriteMap = {
+            'lava': 'hazardLava',
+            'acid': 'hazardAcid',
+            'water': 'hazardWater'
+        };
+        
+        const spriteKey = spriteMap[this.type];
+        
+        // Check if we have the sprite animation
+        if (window.spriteManager && window.spriteManager.getSprite(spriteKey)) {
+            const frameIndex = this.animationController.getCurrentFrame();
+            
+            // Use the tiled sprite drawing method
+            window.spriteManager.drawTiledSprite(
+                ctx,
+                spriteKey,
+                frameIndex,
+                this.x - this.width/2,  // Left edge
+                this.y - this.height/2,  // Top edge
+                this.width,              // Total width to fill
+                this.height              // Total height (will stretch vertically if > 40px)
+            );
+        } else {
+            // Fallback to colored rectangle if sprite not available
+            this.drawFallback(ctx);
+        }
+    }
+    
+    drawFallback(ctx) {
+        // Fallback colors for when sprites aren't loaded
+        const colors = {
+            'lava': '#ff3300',
+            'acid': '#00ff00',
+            'water': '#0099ff'
+        };
+        
+        ctx.fillStyle = colors[this.type] || '#ff00ff';
         ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
         
-        // Draw lava surface with bubbles
-        ctx.fillStyle = '#ff6600';
-        
-        // Animated bubbles
-        for (let i = 0; i < 5; i++) {
-            const bubbleX = this.x - this.width/2 + (i + 0.5) * (this.width / 5);
-            const offset = Math.sin(this.animationFrame + i) * 3;
-            ctx.beginPath();
-            ctx.arc(bubbleX, this.y - this.height/2 + offset, 3, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        // Glowing effect
-        ctx.fillStyle = '#ffaa00';
-        ctx.globalAlpha = 0.5 + Math.sin(this.animationFrame * 2) * 0.2;
-        ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, 3);
-        ctx.globalAlpha = 1;
+        // Add some visual interest to the fallback
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        const waveOffset = Math.sin(this.animationFrame) * 3;
+        ctx.fillRect(this.x - this.width/2, this.y - this.height/2 + waveOffset, this.width, 3);
+    }
+    
+    drawLava(ctx) {
+        // Legacy lava drawing - now handled by drawAnimatedHazard
+        this.drawAnimatedHazard(ctx);
     }
     
     drawBearTrap(ctx) {
@@ -194,5 +247,17 @@ class Hazard {
             ctx.lineTo(spikeX + 1, this.y - this.height/2 + wobble + 5);
             ctx.stroke();
         }
+    }
+    
+    // Static method to synchronize all hazard animations (call once per frame)
+    static synchronizeAnimations(hazards) {
+        // Use a global animation timer based on current time
+        const globalFrame = Math.floor((Date.now() / 250) % 4); // 4 frames, 250ms per frame
+        
+        hazards.forEach(hazard => {
+            if (hazard.animationController && hazard.animationController.currentAnimation) {
+                hazard.animationController.currentFrame = globalFrame;
+            }
+        });
     }
 }
