@@ -14,6 +14,9 @@ class Hazard {
         // Animation controller for synchronized animations
         this.animationController = new AnimationController();
         this.setupAnimation();
+        
+        // Generate random frame offsets for tiled animations
+        this.tileFrameOffsets = this.generateTileFrameOffsets();
     }
     
     setupAnimation() {
@@ -32,6 +35,20 @@ class Hazard {
             this.animationController.isAnimating = true;
             this.animationController.setFrameRate(4); // Slower animation for hazards
         }
+    }
+    
+    generateTileFrameOffsets() {
+        // Calculate how many tiles we'll need
+        const tileWidth = 32; // Based on sprite width
+        const tilesNeeded = Math.ceil(this.width / tileWidth);
+        
+        // Generate random offsets for each tile
+        const offsets = [];
+        for (let i = 0; i < tilesNeeded; i++) {
+            offsets.push(Math.floor(Math.random() * 4)); // 4 frames available
+        }
+        
+        return offsets;
     }
     
     update() {
@@ -118,15 +135,16 @@ class Hazard {
         if (window.spriteManager && window.spriteManager.getSprite(spriteKey)) {
             const frameIndex = this.animationController.getCurrentFrame();
             
-            // Use the tiled sprite drawing method
-            window.spriteManager.drawTiledSprite(
+            // Use the tiled sprite drawing method with random offsets
+            window.spriteManager.drawTiledSpriteWithOffsets(
                 ctx,
                 spriteKey,
                 frameIndex,
                 this.x - this.width/2,  // Left edge
                 this.y - this.height/2,  // Top edge
                 this.width,              // Total width to fill
-                this.height              // Total height (will stretch vertically if > 40px)
+                this.height,             // Total height (will stretch vertically if > 40px)
+                this.tileFrameOffsets    // Pass the random offsets
             );
         } else {
             // Fallback to colored rectangle if sprite not available
