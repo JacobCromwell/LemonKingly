@@ -109,9 +109,9 @@
       ]
     },
     {
-      "id": "08Fun",
+      "id": "08Not As Hard As It Looks",
       "name": "Not as hard as it looks",
-      "filename": "08Fun.json",
+      "filename": "08Not As Hard As It Looks.json",
       "difficulty": "Easy",
       "description": "It's not as hard as it looks",
       "requiredLemmings": 10,
@@ -124,7 +124,7 @@
       ]
     },
     {
-      "id": "09Fun",
+      "id": "09As long as you try your best",
       "name": "Sometimes you get chopped",
       "filename": "09Fun.json",
       "difficulty": "Easy",
@@ -140,7 +140,7 @@
     },
     {
       "id": "10Fun",
-      "name": "Not enough floaters",
+      "name": "Smile if you love lemmings",
       "filename": "10Fun.json",
       "difficulty": "Easy",
       "description": "Thinking is required",

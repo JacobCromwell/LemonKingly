@@ -376,26 +376,14 @@ class Game {
             // Convert action counts to proper format with backward compatibility
             if (levelData.levelSettings.actionCounts) {
                 this.level.actionCounts = {
-                    [ActionType.BLOCKER]: levelData.levelSettings.actionCounts.blocker || 5,
-                    [ActionType.BASHER]: levelData.levelSettings.actionCounts.basher || 5,
-                    [ActionType.DIGGER]: levelData.levelSettings.actionCounts.digger || 5,
-                    [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 5,
-                    [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 5,
-                    [ActionType.FLOATER]: levelData.levelSettings.actionCounts.floater || 5,
-                    [ActionType.EXPLODER]: levelData.levelSettings.actionCounts.exploder || 50,
-                    [ActionType.MINER]: levelData.levelSettings.actionCounts.miner || 50
-                };
-            } else {
-                // Ensure all action types are included with defaults
-                this.level.actionCounts = {
-                    [ActionType.BLOCKER]: 5,
-                    [ActionType.BASHER]: 5,
-                    [ActionType.DIGGER]: 5,
-                    [ActionType.BUILDER]: 5,
-                    [ActionType.CLIMBER]: 5,
-                    [ActionType.FLOATER]: 5,
-                    [ActionType.EXPLODER]: 5,
-                    [ActionType.MINER]: 5
+                    [ActionType.BLOCKER]: levelData.levelSettings.actionCounts.blocker || 0,
+                    [ActionType.BASHER]: levelData.levelSettings.actionCounts.basher || 0,
+                    [ActionType.DIGGER]: levelData.levelSettings.actionCounts.digger || 0,
+                    [ActionType.BUILDER]: levelData.levelSettings.actionCounts.builder || 0,
+                    [ActionType.CLIMBER]: levelData.levelSettings.actionCounts.climber || 0,
+                    [ActionType.FLOATER]: levelData.levelSettings.actionCounts.floater || 0,
+                    [ActionType.EXPLODER]: levelData.levelSettings.actionCounts.exploder || 0,
+                    [ActionType.MINER]: levelData.levelSettings.actionCounts.miner || 0
                 };
             }
         } else {
