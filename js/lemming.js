@@ -308,7 +308,7 @@ class Lemming {
             if (this.fallDistance >= PHYSICS.maxFallHeight && !this.isFloater) {
                 this.setDead('fall');
                 if (window.particleManager) {
-                    window.particleManager.createDeathParticles(this.x, lemmingHeight / 2);
+                    window.particleManager.createDeathParticles(this.x, this.y);
                 }
             } else {
                 this.state = LemmingState.WALKING;
