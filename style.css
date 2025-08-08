@@ -154,10 +154,10 @@ body {
     border-color: #6FCF70;
 }
 
-/* UPDATED ACTION COUNT STYLING - now appears above the action text */
+/* UPDATED ACTION COUNT STYLING - now appears above the sprite icon */
 .actionCount {
     color: white;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: bold;
     text-shadow: 
         -1px -1px 0 black,
@@ -170,6 +170,35 @@ body {
         1px 0 0 black;
     margin-bottom: 2px;
     line-height: 1;
+    position: absolute;
+    top: 2px;
+    z-index: 2;
+}
+
+/* Sprite icon canvas styling */
+.actionIcon {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    margin-top: 8px;
+}
+
+/* Bomb overlay for exploder button */
+.bomb-overlay {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    font-size: 14px;
+    z-index: 2;
+}
+
+/* Action text styling to match the count */
+.actionButton > div:not(.actionCount):not(.actionIcon):not(.bomb-overlay) {
+    font-size: 12px;
+    margin-top: 2px;
+    line-height: 1;
+    text-align: center;
 }
 
 /* Action text styling to match the count */
