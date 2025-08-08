@@ -1,5 +1,6 @@
 Outstanding items
 
+Update level editor so that # of abilities can be choosen via the editor.
 Screen Size Adaptation
 
 Fix so browser refresh isnt needed every time
